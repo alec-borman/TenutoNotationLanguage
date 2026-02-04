@@ -1,4 +1,4 @@
-```markdown
+markdown
 # OmniScore Reference Compiler (`omnic`)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
