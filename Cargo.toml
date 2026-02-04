@@ -1,0 +1,29 @@
+[package]
+name = "omnic"
+version = "0.1.0"
+edition = "2021"
+description = "The Reference Compiler for OmniScore v2.0"
+authors = ["The OmniScore Working Group"]
+
+[dependencies]
+# 1. Lexing (Fast, regex-based tokenizer)
+logos = "0.14"
+
+# 2. Parsing (Error-recovering parser combinators)
+chumsky = "0.9"
+
+# 3. CLI Argument Parsing
+clap = { version = "4.4", features = ["derive"] }
+
+# 4. Error Handling
+thiserror = "1.0"
+anyhow = "1.0"
+ariadne = "0.4" # For pretty error reporting
+
+# 5. Serialization (For .omnb binary format)
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"
+zstd = "0.13" # For compression
+
+# 6. Math
+num-integer = "0.1" # For GCD calculation in Rational Arithmetic

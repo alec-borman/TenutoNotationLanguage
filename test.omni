@@ -1,0 +1,14 @@
+omniscore {
+    meta { title: "Real File Test", tempo: 140 }
+    
+    def vln "Violin I" style=standard
+    
+    measure 1 {
+        %% Testing sticky state across bar lines
+        vln: c4:4 d e f |
+    }
+    
+    measure 2 {
+        vln: g a b c |
+    }
+}
