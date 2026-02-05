@@ -41,8 +41,6 @@
 27. [Interoperability & Exchange](#27-interoperability--exchange)
 28. [Reference Example](#28-reference-example-the-kitchen-sink)
 
----
-
 ### Addendum A: Advanced Implementation & Extensions
 * [A.1 Live Execution Model (REPL & Daemon)](#a1-live-execution-model-repl--daemon)
 * [A.2 Binary Format (.tenb)](#a2-binary-format-tenb)
@@ -51,18 +49,6 @@
 * [A.5 Error Correction (Leniency)](#a5-error-correction-leniency)
 * [A.6 Real-Time Collaboration Protocol](#a6-real-time-collaboration-protocol)
 * [A.7 Implementation Checklist](#a7-implementation-checklist)
-
----
-
-### Addendum A: Advanced Implementation & Extensions
-
-* [A.1 Live Execution Model (REPL & Daemon)](https://www.google.com/search?q=%23a1-live-execution-model-repl--daemon)
-* [A.2 Binary Format (.tenb)](https://www.google.com/search?q=%23a2-binary-format-tenb)
-* [A.3 Cryptographic Integrity & Archival](https://www.google.com/search?q=%23a3-cryptographic-integrity--archival)
-* [A.4 Feature Degradation Matrix](https://www.google.com/search?q=%23a4-feature-degradation-matrix)
-* [A.5 Error Correction (Leniency)](https://www.google.com/search?q=%23a5-error-correction-leniency)
-* [A.6 Real-Time Collaboration Protocol](https://www.google.com/search?q=%23a6-real-time-collaboration-protocol)
-* [A.7 Implementation Checklist](https://www.google.com/search?q=%23a7-implementation-checklist)
 
 ## 1. Introduction
 
