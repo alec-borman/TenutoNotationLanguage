@@ -1,4 +1,4 @@
-# OmniScore Language Specification
+# Tenuto Language Specification
 
 **Version:** 2.0.0
 
@@ -6,7 +6,7 @@
 
 **License:** MIT
 
-**Maintainer:** The OmniScore Working Group
+**Maintainer:** The Tenuto Working Group
 
 ## Table of Contents
 
@@ -45,31 +45,42 @@
 
 ### Addendum A: Advanced Implementation & Extensions
 * [A.1 Live Execution Model (REPL & Daemon)](#a1-live-execution-model-repl--daemon)
-* [A.2 Binary Format (.omnb)](#a2-binary-format-omnb)
+* [A.2 Binary Format (.tenb)](#a2-binary-format-tenb)
 * [A.3 Cryptographic Integrity & Archival](#a3-cryptographic-integrity--archival)
 * [A.4 Feature Degradation Matrix](#a4-feature-degradation-matrix)
 * [A.5 Error Correction (Leniency)](#a5-error-correction-leniency)
 * [A.6 Real-Time Collaboration Protocol](#a6-real-time-collaboration-protocol)
 * [A.7 Implementation Checklist](#a7-implementation-checklist)
 
+---
+
+### Addendum A: Advanced Implementation & Extensions
+
+* [A.1 Live Execution Model (REPL & Daemon)](https://www.google.com/search?q=%23a1-live-execution-model-repl--daemon)
+* [A.2 Binary Format (.tenb)](https://www.google.com/search?q=%23a2-binary-format-tenb)
+* [A.3 Cryptographic Integrity & Archival](https://www.google.com/search?q=%23a3-cryptographic-integrity--archival)
+* [A.4 Feature Degradation Matrix](https://www.google.com/search?q=%23a4-feature-degradation-matrix)
+* [A.5 Error Correction (Leniency)](https://www.google.com/search?q=%23a5-error-correction-leniency)
+* [A.6 Real-Time Collaboration Protocol](https://www.google.com/search?q=%23a6-real-time-collaboration-protocol)
+* [A.7 Implementation Checklist](https://www.google.com/search?q=%23a7-implementation-checklist)
 
 ## 1. Introduction
 
-OmniScore is a declarative, domain-specific language (DSL) designed to serialize musical logic, notation, and performance data into a human-readable text format. Unlike XML-based interchange formats (such as MusicXML) which prioritize visual layout coordinates and graphical preservation, OmniScore prioritizes **musical intent**.
+Tenuto is a declarative, domain-specific language (DSL) designed to serialize musical logic, notation, and performance data into a human-readable text format. Unlike XML-based interchange formats (such as MusicXML) which prioritize visual layout coordinates and graphical preservation, Tenuto prioritizes **musical intent**.
 
-It utilizes a deterministic inference engine to calculate layout, beaming, and audio synthesis at render-time, allowing the user to focus purely on composition structure. This document defines the syntax, grammar, and processing rules for OmniScore Version 2.0.0.
+It utilizes a deterministic inference engine to calculate layout, beaming, and audio synthesis at render-time, allowing the user to focus purely on composition structure. This document defines the syntax, grammar, and processing rules for Tenuto Version 2.0.0.
 
 ### 1.1 Design Philosophy
 
 The language adheres to three core principles designed to maximize efficiency, maintainability, and interoperability:
 
-1. **Inference Over Redundancy (The "Sticky State"):** Musical notation is inherently repetitive. OmniScore leverages this by maintaining a stateful cursor. Attributes such as duration, octave, and articulation persist until explicitly changed. This reduces file size and aligns the code with the mental model of a performer reading a score.
+1. **Inference Over Redundancy (The "Sticky State"):** Musical notation is inherently repetitive. Tenuto leverages this by maintaining a stateful cursor. Attributes such as duration, octave, and articulation persist until explicitly changed. This reduces file size and aligns the code with the mental model of a performer reading a score.
 2. **Semantic Separation:** The definition of an instrument (its "Physics"—range, transposition, tuning) is strictly separated from the event data (the "Notes"). This allows a single musical pattern to be re-assigned from a Violin to a Guitar without rewriting the notation logic.
 3. **Human Readability:** Source code must be intelligible to a musician without the need for rendering software. The syntax mimics standard music theory shorthand, serving as a valid form of archival documentation in its raw state.
 
 ### 1.2 The Coordinate System
 
-OmniScore maps auditory events onto a high-dimensional logical grid. Understanding this coordinate system is essential for implementing the standard correctly.
+Tenuto maps auditory events onto a high-dimensional logical grid. Understanding this coordinate system is essential for implementing the standard correctly.
 
 * **X-Axis (Time):** Linear absolute time. While the code is organized into `Measure` blocks for human convenience, the compiler views the X-axis as a continuous stream of "Ticks" (pulses).
 * **Y-Axis (Source):** Distinct logical threads defined by **Staff IDs**. These represent the instruments or entities producing sound.
@@ -77,35 +88,31 @@ OmniScore maps auditory events onto a high-dimensional logical grid. Understandi
 
 ### 1.3 The Compilation Pipeline
 
-A compliant OmniScore compiler **MUST** implement a multi-stage transformation pipeline to convert source text into a renderable artifact. This pipeline ensures that all context (Global Definitions) is resolved before the linear logic is processed.
+A compliant Tenuto compiler **MUST** implement a multi-stage transformation pipeline to convert source text into a renderable artifact. This pipeline ensures that all context (Global Definitions) is resolved before the linear logic is processed.
 
-1. **Lexing & Parsing:** The raw UTF-8 text is tokenized and validated against the OmniScore Formal Grammar.
+1. **Lexing & Parsing:** The raw UTF-8 text is tokenized and validated against the Tenuto Formal Grammar.
 2. **Context Building:** The compiler scans the `meta` and `def` blocks to establish the global physics of the piece (Time signatures, Instrument capabilities, Tempos).
 3. **Linearization:** The compiler iterates through the `measure` blocks. This is where the "Inference Engine" operates:
+
 * It **MUST** resolve "Sticky" attributes (filling in missing durations or octaves based on previous state).
 * It **MUST** calculate absolute tick positions for every event.
 * It **MUST** validate vertical synchronization (ensuring all voices in a measure sum to the correct duration).
-
 
 4. **Rendering:** The linearized, fully resolved data is mapped to the target output (SVG for scores, MIDI for audio, or MusicXML for interchange).
 
 ### 1.4 Scope & Limitations
 
-It is critical to understand the boundaries of the OmniScore specification.
+It is critical to understand the boundaries of the Tenuto specification.
 
 * **In Scope:**
 * Definition of musical pitch, rhythm, and structural flow.
 * Definition of instrument characteristics (transposition, string tuning, percussion mapping).
 * High-level layout directives (system breaks, page turns).
 * Abstract playback controls (dynamics, tempo, MIDI CC automation).
-
-
 * **Out of Scope:**
-* **Binary Audio:** OmniScore does not embed .wav or .mp3 data. It generates instructions for a synthesizer, but is not a sampler.
-* **DAW Session Data:** OmniScore is not a replacement for Ableton Live or Pro Tools project files. It does not store plugin states, EQ settings, or routing graphs.
-* **Pixel-Perfect Engraving:** While OmniScore supports layout hints, the final calculation of bezier curves and font kerning is the responsibility of the *Renderer*, not the *Language*.
-
-
+* **Binary Audio:** Tenuto does not embed .wav or .mp3 data. It generates instructions for a synthesizer, but is not a sampler.
+* **DAW Session Data:** Tenuto is not a replacement for Ableton Live or Pro Tools project files. It does not store plugin states, EQ settings, or routing graphs.
+* **Pixel-Perfect Engraving:** While Tenuto supports layout hints, the final calculation of bezier curves and font kerning is the responsibility of the *Renderer*, not the *Language*.
 
 ### 1.5 Conformance & Terminology
 
@@ -124,11 +131,12 @@ This specification defines two classes of conformance:
 * **Bold** text is used for defining terms or emphasizing normative requirements.
 * *Italic* text is used for non-normative notes, examples, and commentary.
 
-```omniscore
+```tenuto
 %% Code blocks formatted like this are Non-Normative examples.
 measure 1 {
   vln: c4 d e f |
 }
+
 
 ```
 
@@ -136,7 +144,7 @@ measure 1 {
 
 ## 2. Lexical Structure
 
-This section defines the lexical grammar for OmniScore. A conformant parser **MUST** convert a stream of Unicode characters into a stream of tokens based on the rules defined below.
+This section defines the lexical grammar for Tenuto. A conformant parser **MUST** convert a stream of Unicode characters into a stream of tokens based on the rules defined below.
 
 ### 2.1 Character Set & Encoding
 
@@ -158,18 +166,19 @@ Whitespace characters are used to separate tokens. Beyond separation, whitespace
 Comments are non-executable text segments used for documentation. They are stripped from the token stream during the Lexing phase.
 
 * **Line Comments:** Indicated by a double percentage sign `%%`. All text following `%%` on the same line **MUST** be ignored.
-```omniscore
+
+```tenuto
 %% This is a comment
 c4:4 %% Inline comment
 
-```
 
+```
 
 * **Block Comments:** Block comments are **NOT SUPPORTED** in Version 2.0.0. This design choice prevents parsing ambiguities regarding nested comments.
 
 ### 2.4 Case Sensitivity
 
-OmniScore enforces strict rules regarding case sensitivity to avoid ambiguity between musical data and structural logic.
+Tenuto enforces strict rules regarding case sensitivity to avoid ambiguity between musical data and structural logic.
 
 1. **Keywords:** All reserved keywords (`def`, `measure`, `meta`, `style`) are **Case-Insensitive**. `DEF`, `Def`, and `def` are identical. *Convention:* Lowercase `def` is preferred.
 2. **Note Names:** Pitch literals (`c4`, `F#5`) are **Case-Insensitive**. `c4` and `C4` refer to the same pitch object.
@@ -178,16 +187,16 @@ OmniScore enforces strict rules regarding case sensitivity to avoid ambiguity be
 
 ### 2.5 Literals & Data Types
 
-The following table defines the primitive data types supported by the OmniScore lexer.
+The following table defines the primitive data types supported by the Tenuto lexer.
 
 | Type | Regex Pattern | Examples | Description |
 | --- | --- | --- | --- |
 | **Integer** | `[0-9]+` | `1`, `120` | Used for octaves, BPM, counts. |
 | **Float** | `[0-9]+\.[0-9]+` | `1.5`, `0.75` | Used for precise durations/multipliers. |
 | **String** | `".*"` | `"Violin I"` | UI Labels, Lyrics, Metadata. Supports UTF-8. |
-| **Pitch** | `[a-gA-G][#|b|x...` | `c4`, `f#5` | Scientific Pitch Notation. |
+| **Pitch** | `[a-gA-G][# | b | x...` |
 | **TabCoord** | `[0-9]+-[1-9][0-9]*` | `0-6`, `12-2` | Format: `Fret-String`. |
-| **Boolean** | `true|false` | `true` | Used in logic toggles. |
+| **Boolean** | `true | false` | `true` |
 | **Identifier** | `[a-zA-Z_][a-zA-Z0-9_]*` | `vln`, `My_Macro` | Used for naming Staves and Macros. |
 
 ### 2.6 Operators & Punctuators
@@ -211,7 +220,7 @@ The following symbols act as delimiters or operators and **MUST** be tokenized a
 
 The following tokens are reserved and **MUST NOT** be used as Identifiers to avoid ambiguity in the LL(1) parser:
 
-`omniscore`, `meta`, `def`, `measure`, `group`, `import`, `macro`, `if`, `else`, `return`, `break`, `stretch`, `style`, `clef`, `transpose`, `tuning`, `map`, `patch`, `vol`, `pan`, `lyric`.
+`tenuto`, `meta`, `def`, `measure`, `group`, `import`, `macro`, `if`, `else`, `return`, `break`, `stretch`, `style`, `clef`, `transpose`, `tuning`, `map`, `patch`, `vol`, `pan`, `lyric`.
 
 ### 2.8 Escape Sequences
 
@@ -221,25 +230,26 @@ Within String literals, the following escape sequences **MUST** be supported: `\
 
 ## 3. Document Structure
 
-A valid OmniScore document represents a self-contained unit of musical logic. This section defines the syntactic hierarchy, block ordering, and scoping rules required for a well-formed document.
+A valid Tenuto document represents a self-contained unit of musical logic. This section defines the syntactic hierarchy, block ordering, and scoping rules required for a well-formed document.
 
 ### 3.1 The Root Block
 
-The outermost scope of any OmniScore file **MUST** be enclosed in a generic root block initiated by the `omniscore` keyword. This block establishes the **Global Namespace** for the compilation unit.
+The outermost scope of any Tenuto file **MUST** be enclosed in a generic root block initiated by the `tenuto` keyword. This block establishes the **Global Namespace** for the compilation unit.
 
-* **Implicit Root:** In "Lenient" conformance mode, the `omniscore` wrapper **MAY** be omitted.
+* **Implicit Root:** In "Lenient" conformance mode, the `tenuto` wrapper **MAY** be omitted.
 * **Explicit Root:** In "Strict" conformance mode, the wrapper is **REQUIRED**.
 
-```omniscore
-omniscore {
+```tenuto
+tenuto {
   %% Content goes here
 }
+
 
 ```
 
 ### 3.2 Block Ordering (The Three Phases)
 
-To facilitate efficient single-pass compilation, OmniScore enforces a **Declaration-Before-Use** policy. A valid document structure consists of three sequential phases.
+To facilitate efficient single-pass compilation, Tenuto enforces a **Declaration-Before-Use** policy. A valid document structure consists of three sequential phases.
 
 #### 3.2.1 Phase 1: Configuration (Meta)
 
@@ -301,18 +311,18 @@ The `[Range]` parameter defines which time-slices the block populates.
 
 #### 3.5.2 Additive Merging (The "Open Measure")
 
-OmniScore utilizes an **Additive Merge Strategy**.
+Tenuto utilizes an **Additive Merge Strategy**.
 
-* **Re-definition:** If a `measure` index is encountered that has already been defined (e.g., `measure 1` appears in `flute.omni` and later in `cello.omni`), the compiler **MUST** merge the new content into the existing time slice.
+* **Re-definition:** If a `measure` index is encountered that has already been defined (e.g., `measure 1` appears in `flute.ten` and later in `cello.ten`), the compiler **MUST** merge the new content into the existing time slice.
 * **Conflict:** If the re-definition attempts to modify Global Meta (e.g., changing Time Signature), it is a **Fatal Error**.
 
 ### 3.6 File Standards
 
 To ensure interoperability between operating systems and applications:
 
-* **File Extension:** Source files **MUST** use the `.omni` extension.
-* **MIME Type:** The official MIME type is `text/x-omniscore`.
-* **Shebang:** Executable scripts **MAY** start with `#!/usr/bin/env omnic`.
+* **File Extension:** Source files **MUST** use the `.ten` extension.
+* **MIME Type:** The official MIME type is `text/x-tenuto`.
+* **Shebang:** Executable scripts **MAY** start with `#!/usr/bin/env tenutoc`.
 
 ---
 
@@ -337,7 +347,7 @@ The `style` attribute determines the parsing mode.
 #### 4.2.1 Standard Style (`style=standard`)
 
 * **Input Data:** Pitch Literals (`c4`) or Rests (`r`).
-* **Transposition Logic:** OmniScore logic is **Concert Pitch** by default. The logic stream represents the absolute sounding pitch. The `transpose` attribute affects the **Visual Rendering** only (transposing the display to the appropriate key for the performer).
+* **Transposition Logic:** Tenuto logic is **Concert Pitch** by default. The logic stream represents the absolute sounding pitch. The `transpose` attribute affects the **Visual Rendering** only (transposing the display to the appropriate key for the performer).
 
 #### 4.2.2 Tablature Style (`style=tab`)
 
@@ -394,11 +404,12 @@ To support realistic playback of complex sample libraries, instruments **MAY** d
 
 **Syntax:** `keyswitch={ modifier: note_number, ... }`
 
-```omniscore
+```tenuto
 def vln "Violin" style=standard keyswitch={
   arco: 24,   %% MIDI Note 24 (C0) triggers Arco
   pizz: 25    %% MIDI Note 25 (C#0) triggers Pizzicato
 }
+
 
 ```
 
@@ -408,7 +419,7 @@ def vln "Violin" style=standard keyswitch={
 
 ## 5. The Event Engine: Rhythm & Time
 
-The core of OmniScore's efficiency lies in its handling of time. Unlike coordinate-based formats that require explicit start positions for every event, OmniScore treats music as a **Linear Stream of Durations**. The absolute start time of an event is deterministically calculated as the sum of the durations of all preceding events in that voice.
+The core of Tenuto's efficiency lies in its handling of time. Unlike coordinate-based formats that require explicit start positions for every event, Tenuto treats music as a **Linear Stream of Durations**. The absolute start time of an event is deterministically calculated as the sum of the durations of all preceding events in that voice.
 
 ### 5.1 The Duration Syntax
 
@@ -431,8 +442,6 @@ Durations **MAY** be modified by appending periods (`.`).
 
 * **Single Dot (`.`):** Adds 50% to the base value ().
 * *Example:* `:4.` (Dotted Quarter) =  ticks.
-
-
 * **Double Dot (`..`):** Adds 75% to the base value ().
 
 #### 5.1.2 Duration Multipliers
@@ -444,7 +453,7 @@ For repetitive events or structural blocks (like Multi-Measure Rests), a multipl
 
 ### 5.2 Sticky State (Contextual Inference)
 
-To minimize file size and visual noise, OmniScore employs **Sticky State** logic. If a duration is omitted from an event token, the parser **MUST** infer it from the immediately preceding event in the same Staff/Voice context.
+To minimize file size and visual noise, Tenuto employs **Sticky State** logic. If a duration is omitted from an event token, the parser **MUST** infer it from the immediately preceding event in the same Staff/Voice context.
 
 #### 5.2.1 The Inference Rules
 
@@ -452,8 +461,8 @@ To minimize file size and visual noise, OmniScore employs **Sticky State** logic
 2. **Voice-Local:** Within a staff, stickiness is isolated to the active Voice layer.
 3. **Measure-Crossing:** Stickiness **PERSISTS** across bar lines. It is a continuous state cursor.
 4. **Tuplet-Penetrating:** Stickiness flows into and out of Tuplet groups linearly.
-* *Example:* `c4:4 (d:8 e f):3/2 g` -> `g` is inferred as `:8`.
 
+* *Example:* `c4:4 (d:8 e f):3/2 g` -> `g` is inferred as `:8`.
 
 5. **Initialization:** If the first event of a staff has no explicit duration, the compiler **SHOULD** default to `:4` and emit a **Warning**.
 
@@ -467,12 +476,13 @@ Tuplets define a span of time divided into equal parts contrary to the prevailin
 * **Calculation:** .
 * **Nesting:** Tuplets **MAY** be nested. The timing modification is multiplicative.
 
-```omniscore
+```tenuto
 %% Triplet: 3 eighths in the space of 2
 (c4:8 d e):3/2 
 
 %% Quintuplet: 5 sixteenths in the space of 4
 (c d e f g):5/4
+
 
 ```
 
@@ -486,8 +496,6 @@ Grace notes are ornamental events that theoretically occupy "zero duration" in t
 * **Playback Logic:** Grace notes "steal" time from the *following* event (Appoggiatura) or the *previous* event (Acciaccatura), depending on the renderer's settings. The default behavior is to steal from the following note (On-the-beat execution).
 * **Stickiness:** Grace duration is **NOT** sticky. The state reverts to the last "Real" duration immediately after the grace note.
 * *Example:* `c4:4 d:grace e` -> `e` is inferred as `:4`, not `:grace`.
-
-
 
 ### 5.5 Rests
 
@@ -504,7 +512,7 @@ To ensure deterministic MIDI and audio rendering, a compliant compiler **MUST** 
 
 ## 6. The Pitch Engine
 
-This section defines how frequency data is encoded for instruments using the `style=standard` engine. OmniScore utilizes a modified **Scientific Pitch Notation (SPN)** combined with stateful inference to define pitch.
+This section defines how frequency data is encoded for instruments using the `style=standard` engine. Tenuto utilizes a modified **Scientific Pitch Notation (SPN)** combined with stateful inference to define pitch.
 
 ### 6.1 Pitch Syntax
 
@@ -514,9 +522,9 @@ A valid pitch token consists of three components in strict order:
 
 1. **Step:** Case-insensitive letter `A` through `G`. These correspond to the diatonic steps of the standard Western 12-Tone Equal Temperament (12-TET) scale.
 2. **Accidental (Optional):** Modifier suffix altering the pitch by chromatic steps.
+
 * **Standard:** `#` (Sharp, +1), `b` (Flat, -1), `x` (Double Sharp, +2), `bb` (Double Flat, -2), `n` (Natural, 0).
 * **Microtonal:** `qs` (Quarter Sharp, +0.5), `qf` (Quarter Flat, -0.5), `tqs` (Three-quarter Sharp, +1.5), `tqf` (Three-quarter Flat, -1.5).
-
 
 3. **Octave (Optional):** Integer `0` through `9`.
 
@@ -528,32 +536,28 @@ To ensure this specification remains decipherable over millennia, the pitch onto
 * **Reference Frequency:** Unless overridden in `meta`, the token `a4` is normatively defined as **440 Hz**.
 * **Mathematical Derivation:** All other pitches are derived logarithmically relative to this constant:
 
-
-
 Where  is the distance in semitones from A4.
+
 * **Archival Note:** While `C4` is culturally termed "Middle C", its physical definition is ~261.63 Hz relative to A4=440.
 
 ### 6.3 Sticky Octaves (State Persistence)
 
-To reduce verbosity, OmniScore employs **Sticky Octave** logic.
+To reduce verbosity, Tenuto employs **Sticky Octave** logic.
 
 * **Rule:** If the Octave integer is omitted from a pitch token, the parser **MUST** infer it from the immediately preceding pitch event in the same Voice/Staff context.
 * **Logic:** The inference is **Absolute** (State Copy), not Relative (Interval).
 * *Example:* `c4 b a g` resolves to `c4 b4 a4 g4`.
-
-
 * **Initialization:** If the first note of a staff has no octave, the compiler **SHOULD** default to `4` (The Reference Octave).
 
 ### 6.4 Accidental Logic & Statelessness
 
-To prevent ambiguity caused by "Measure Rules" (which vary by century and style), OmniScore adopts a **Stateless Accidental** model for the raw code.
+To prevent ambiguity caused by "Measure Rules" (which vary by century and style), Tenuto adopts a **Stateless Accidental** model for the raw code.
 
 1. **Explicit Mode:** An accidental in the code (`f#4`) **ALWAYS** sets the pitch to that specific chromatic value.
 2. **Implicit Mode:** A note without an accidental (`f4`) inherits the accidental defined by the current **Key Signature** (Global State).
 3. **Statelessness:** Accidentals do **NOT** persist strictly through the measure in the code logic. Every token is evaluated independently against the Key Signature.
+
 * *Durability Note:* This ensures that if a single measure is extracted or a bar line is moved, the pitch data remains mathematically correct without needing to "scan back" for previous accidentals in the measure.
-
-
 
 ### 6.5 Chords (Vertical Polyphony)
 
@@ -565,8 +569,6 @@ Multiple pitches played simultaneously by a single voice are enclosed in square 
 * **Internal State:** Sticky Octaves apply sequentially *within* the chord from left to right.
 * *Example:* `[c4 e g]` resolves to `[c4 e4 g4]`.
 
-
-
 ### 6.6 Ties
 
 Ties extend the duration of a pitch by connecting it to a subsequent note of the same pitch.
@@ -577,15 +579,14 @@ Ties extend the duration of a pitch by connecting it to a subsequent note of the
 * **Chord Tying:** Ties **MAY** be applied to individual notes within a chord structure, allowing for complex polyphonic suspensions within a single voice.
 * *Example:* `[c4~ e4 g4] [c4 f4 a4]` (C is tied; E and G move to F and A).
 
-
-
 ### 6.7 Data Integrity Recommendations
 
 For files intended for long-term archival (100+ years), it is **RECOMMENDED** to use **Strict Explicit Mode**, where every note includes an explicit Octave and Duration. This immunizes the data against corruption of the "Sticky State" chain.
 
-```omniscore
+```tenuto
 %% Archival Safe
 vln: c4:4 e4:4 g4:4 c5:4
+
 
 ```
 
@@ -593,7 +594,7 @@ vln: c4:4 e4:4 g4:4 c5:4
 
 ## 7. Notational Attributes
 
-Attributes are metadata attached to events that modify their semantic meaning (Amplitude, Envelope, Timbre) or visual presentation. OmniScore utilizes a **Dot Notation** syntax to chain these modifiers.
+Attributes are metadata attached to events that modify their semantic meaning (Amplitude, Envelope, Timbre) or visual presentation. Tenuto utilizes a **Dot Notation** syntax to chain these modifiers.
 
 ### 7.1 Attribute Grammar
 
@@ -603,12 +604,8 @@ Attributes are appended to the Event token, immediately following the duration (
 
 * **Chaining:** Multiple modifiers **MAY** be chained on a single event.
 * *Example:* `c4:4.stacc.acc.ff`
-
-
 * **Arguments:** Modifiers **MAY** accept arguments enclosed in parentheses. Arguments generally support Integers, Floats, or String Literals.
 * *Example:* `.text("dolce")`, `.finger(3)`
-
-
 * **Commutativity:** The order of modifiers is **Commutative** regarding their semantic effect (`.stacc.acc` is identical to `.acc.stacc`). However, for visual rendering, the order **SHOULD** define the Z-stacking order moving outward from the notehead.
 
 ### 7.2 Category A: Dynamics (Amplitude)
@@ -618,8 +615,6 @@ Dynamics control the energy (loudness) of the event.
 * **Tokens:** `pppp`, `ppp`, `pp`, `p`, `mp`, `mf`, `f`, `ff`, `fff`, `ffff`, `sfz`, `fp`, `rfz`.
 * **State Behavior:** Dynamics are **Sticky**. A dynamic token sets the `CurrentAmplitude` state for the Staff. This state persists across bar lines and applies to all subsequent events until a new Dynamic token is encountered.
 * *Logic:* `c4.ff d e` -> `d` and `e` are also `ff`.
-
-
 
 ### 7.3 Category B: Articulations (Envelope)
 
@@ -636,8 +631,6 @@ Articulations modify the temporal envelope (Attack, Decay, Sustain, Release) of 
 * **Transient Logic:** Unlike dynamics, an articulation applies **ONLY** to the event it decorates. It does not persist.
 * *Logic:* `c4.stacc d e` -> Only `c4` is staccato. `d` and `e` are normal.
 
-
-
 #### 7.3.1 The Fermata Exception
 
 The `.fermata` token is unique. While syntactically an articulation, semantically it acts as a **Global Flow Control** instruction.
@@ -653,8 +646,6 @@ Technique attributes modify the physical method of sound production.
 * **State Behavior:** Technique instructions are **Sticky**. They represent a physical change in the instrument state (e.g., putting on a mute) that persists until explicitly reversed.
 * *Logic:* `c4.pizz d e` -> The section plays pizzicato until an `.arco` token is seen.
 
-
-
 ### 7.5 Category D: Text & Physical Hints
 
 These attributes provide visual instructions for the performer but do not necessarily alter the audio synthesis unless a specific Keyswitch Map (Section 4.6) is defined.
@@ -667,17 +658,13 @@ These attributes provide visual instructions for the performer but do not necess
 
 ### 7.6 Extension Mechanism (User-Defined)
 
-To ensure the specification remains durable as musical styles evolve, OmniScore reserves a namespace for custom, user-defined attributes.
+To ensure the specification remains durable as musical styles evolve, Tenuto reserves a namespace for custom, user-defined attributes.
 
 * **Syntax:** `.x_[Identifier]`
 * **Behavior:** Compliant parsers **MUST** ignore unknown attributes prefixed with `x_` during rendering/playback but **MUST** preserve them in the Abstract Syntax Tree (AST). This allows custom tools or future plugins to utilize data without breaking standard compilers.
 * *Example:* `.x_bowScrape`
 
-
-
 ---
-
-
 
 ## 8. The Tablature Engine
 
@@ -690,16 +677,15 @@ The fundamental unit of data is the **Tab Coordinate**, representing the interse
 **Syntax:** `Fret-String`
 
 1. **Fret:** Integer `0` through `N`.
+
 * `0`: Open String.
 * `x` or `X`: Dead Note (Percussive mute with indeterminate pitch).
 
-
 2. **Hyphen:** Mandatory separator token.
 3. **String:** Integer `1` through `N`.
+
 * **Normative Mapping (The Inverse Rule):** String `1` corresponds to the **Highest Pitched String** (physically thinnest). String `N` corresponds to the **Lowest Pitched String**.
 * **Index Resolution:** In the `tuning` array defined in Section 4 (ordered Low to High), String `1` maps to `tuning[Length - 1]`. String `N` maps to `tuning[0]`.
-
-
 
 *Example:* `0-6` represents the Open Low E string on a standard guitar.
 
@@ -739,8 +725,6 @@ Bends represent continuous mechanical alteration of string tension, resulting in
 * **Pre-Bend:** `10-2:4.pb(full).bd(0)` starts at the target pitch (string tension already increased) and releases to the fretted pitch.
 * **Hold:** `10-2:4.bu(full).hold` maintains the target pitch for the duration.
 
-
-
 ### 8.5 Strums & Chords
 
 Simultaneous coordinates are grouped in brackets `[]` to form a Chord Object.
@@ -749,8 +733,6 @@ Simultaneous coordinates are grouped in brackets `[]` to form a Chord Object.
 
 * **Direction:** `.down` (Downstroke, Low strings to High) or `.up` (Upstroke, High strings to Low).
 * *Audio Semantics:* Directions impose a slight millisecond delay (strum speed) between the onset of each note in the chord, rather than perfect simultaneity.
-
-
 * **Ghost Strums:** `[x-6 x-5 x-4]` represents a percussive rake across multiple strings.
 
 ### 8.6 Rhythmic Continuity
@@ -758,7 +740,7 @@ Simultaneous coordinates are grouped in brackets `[]` to form a Chord Object.
 Tablature events adhere to the **Sticky Duration** rules defined in Section 5.
 
 * *Example:* `0-6:8 3-6 5-6` indicates three eighth notes.
-* *Constraint:* Unlike ASCII tab, which is often spatially proportional but rhythmically ambiguous, OmniScore Tablature **MUST** have a strictly defined rhythmic grid. A coordinate without a discernible duration context is a **Syntax Error**.
+* *Constraint:* Unlike ASCII tab, which is often spatially proportional but rhythmically ambiguous, Tenuto Tablature **MUST** have a strictly defined rhythmic grid. A coordinate without a discernible duration context is a **Syntax Error**.
 
 ---
 
@@ -773,8 +755,8 @@ The fundamental unit of data is the **Mapped Key**.
 **Syntax:** `Key (:Duration)? (.Modifier)*`
 
 1. **Key:** An alphanumeric string that **MUST** exist as a key in the instrument's `map` dictionary (defined in Section 4).
-* *Validation:* Usage of a key not present in the map is a **Lookup Error (E901)**.
 
+* *Validation:* Usage of a key not present in the map is a **Lookup Error (E901)**.
 
 2. **Duration:** Adheres to the standard **Sticky State** logic defined in Section 5.
 
@@ -812,8 +794,6 @@ Percussion-specific techniques are applied as dot modifiers. These attributes mo
 * **Measured:** `.roll(1)` indicates exact subdivision (8th or 16th depending on context).
 * **Ties:** The Tilde `~` operator **MAY** be used to extend a roll across bar lines. `s:1.roll ~ s:1` results in a continuous roll of 2 measures.
 
-
-
 ### 9.4 Sticking (Hand Assignment)
 
 For rudimental analysis, sticking is defined via attributes.
@@ -822,23 +802,19 @@ For rudimental analysis, sticking is defined via attributes.
 * **State Behavior:** Sticking is **Transient**.
 * *Example:* `s:16.R s.L s.R s.L` (Paradiddle).
 
-
-
 ### 9.5 The "Rim" Modifier
 
-Many percussion instruments have multiple strike zones (Head vs. Rim). Rather than mandating separate mapped keys for "Snare Head" and "Snare Rim" (which breaks semantic grouping), OmniScore supports a generic `.rim` modifier.
+Many percussion instruments have multiple strike zones (Head vs. Rim). Rather than mandating separate mapped keys for "Snare Head" and "Snare Rim" (which breaks semantic grouping), Tenuto supports a generic `.rim` modifier.
 
 * **Syntax:** `Key.rim`
 * **Semantics:** The renderer looks for a specific "Rim" variant in the sound patch, or alters the notehead (e.g., X notehead) if defined in the Theme.
 * *Example:* `s.rim` (Rimshot or Cross-stick, depending on dynamic context).
 
-
-
 ---
 
 ## 10. Advanced Polyphony
 
-OmniScore supports **Multi-Threaded Logic** within a single staff, allowing for independent rhythmic streams (e.g., a Pianist playing a melody and accompaniment in the same hand, or a Drummer playing independent limb patterns). This is achieved through **Voice Groups**.
+Tenuto supports **Multi-Threaded Logic** within a single staff, allowing for independent rhythmic streams (e.g., a Pianist playing a melody and accompaniment in the same hand, or a Drummer playing independent limb patterns). This is achieved through **Voice Groups**.
 
 ### 10.1 Voice Group Syntax
 
@@ -846,24 +822,23 @@ Polyphonic regions are enclosed in curly braces `{}`. Within this block, specifi
 
 **Syntax:**
 
-```omniscore
+```tenuto
 Staff_ID: {
   Voice_ID: Events... |
   Voice_ID: Events... |
 }
+
 
 ```
 
 * **State Inheritance (Entry):** The Voice Group creates a branching scope.
 * **`v1` (Primary):** Inherits the Sticky State (Octave, Duration) from the event immediately preceding the block.
 * **`v2`...`v4` (Secondary):** Reset to defaults (Octave 4, Quarter Note) upon entry. This isolation prevents the "Melody's" previous duration from accidentally applying to a new "Bass" line entering the texture.
-
-
 * **State Inheritance (Exit):** Upon closing the block `}`, the global Sticky State is restored to the state of the last event in **`v1`** (The Primary Voice).
 
 ### 10.2 Voice Identifiers & Semantics
 
-OmniScore defines four normative voice layers per staff.
+Tenuto defines four normative voice layers per staff.
 
 | Identifier | Role | Default Stem Direction |
 | --- | --- | --- |
@@ -874,7 +849,7 @@ OmniScore defines four normative voice layers per staff.
 
 ### 10.3 The Synchronization Constraint (Time Integrity)
 
-To ensure the measure remains mathematically valid, the OmniScore compiler enforces strict **Temporal Alignment**.
+To ensure the measure remains mathematically valid, the Tenuto compiler enforces strict **Temporal Alignment**.
 
 * **Rule:** The total duration of events in **every** declared voice within a group **MUST** be identical.
 * **Padding:** If a voice requires silence to fill the measure, explicit Rests (`r`) **MUST** be used.
@@ -882,14 +857,13 @@ To ensure the measure remains mathematically valid, the OmniScore compiler enfor
 * If `v1` contains 1920 ticks (Half Note), `v2` must also contain 1920 ticks.
 * **Error:** Failure to balance durations results in a **Synchronization Error (E1001)**.
 
-
-
-```omniscore
+```tenuto
 %% Valid Polyphony (Total: 4 beats)
 vln: {
   v1: c5:2 d5:2 |
   v2: a4:1      |
 }
+
 
 ```
 
@@ -901,8 +875,6 @@ For instruments defined as a `group` (e.g., Piano, Harp), voices may visually cr
 * **Behavior:** The event belongs to the logical stream of the *current* staff (for playback and timekeeping) but is rendered on the *target* staff.
 * *Example:* `pno_rh: c4.cross(pno_lh)` draws a Middle C on the bass clef staff, but it remains stemmed to the treble clef voice.
 
-
-
 ### 10.5 Collision Handling
 
 When multiple voices occupy the same pitch/time coordinate:
@@ -911,7 +883,6 @@ When multiple voices occupy the same pitch/time coordinate:
 2. **Offset:** Voices with differing durations (e.g., Half Note vs Quarter Note) are horizontally offset to preserve visual clarity.
 3. **Seconds:** Intervals of a second (e.g., F and G) are automatically offset to prevent overlapping noteheads.
 
----
 
 ## 11. Structure & Flow Control
 
@@ -925,9 +896,9 @@ Explicit Bar Line tokens denote structural boundaries. While a `measure` block i
 | --- | --- | --- |
 | ` | ` | Single Bar |
 | ` |  | ` |
-| ` | ]` | Final Bar |
-| ` | :` | Start Repeat |
-| `: | ` | End Repeat |
+| ` | ] ` | Final Bar |
+| ` | : ` | Start Repeat |
+| ` : | ` | End Repeat |
 | `: | :` | Double Repeat |
 
 * **Global Synchronization:** Structural tokens are **System-Global**. If `vln` defines a Repeat Sign `|:`, the compiler enforces this repeat on **ALL** staves in the system for that tick.
@@ -935,7 +906,7 @@ Explicit Bar Line tokens denote structural boundaries. While a `measure` block i
 
 ### 11.2 Voltas (Alternative Endings)
 
-Repeated sections often require different endings on subsequent passes. OmniScore uses a Bracket Syntax to define these regions.
+Repeated sections often require different endings on subsequent passes. Tenuto uses a Bracket Syntax to define these regions.
 
 **Syntax:** `[ N. Events... ]`
 
@@ -943,15 +914,13 @@ Repeated sections often require different endings on subsequent passes. OmniScor
 * **Logic:**
 * On Pass , the cursor enters the bracket.
 * On other passes, the cursor **skips** the bracket content entirely.
-
-
 * **Validation:** All staves active in the measure **MUST** define the same Volta brackets to ensure the system stays aligned.
 
-```omniscore
+```tenuto
 measure 5 {
   meta { volta: "1." }  %% Preferred: Define in Meta for clarity
   vln: g4 a b c :| 
-  vlc: g2   c3  :|
+  vlc: g2    c3  :|
 }
 
 ```
@@ -994,7 +963,7 @@ To handle pieces that begin before the first downbeat:
 * **Location:** This attribute is valid ONLY in the first `measure` block of a file.
 * **Behavior:** The measure is treated as "Measure 0" for numbering purposes. The compiler validates that the content length equals the pickup duration, not the full Time Signature.
 
-```omniscore
+```tenuto
 measure 0 {
   meta { time: 4/4, pickup: :8 } %% Pickup is one 8th note
   vln: g4:8 |
@@ -1017,8 +986,6 @@ Lyrics are assigned using the `.lyric` suffix.
 * **Targeting:**
 * `vln.lyric`: Implicitly maps to the **Primary Voice (`v1`)** of the staff.
 * `vln:v2.lyric`: Maps specifically to Voice 2.
-
-
 * **Mapping Logic:** The text string is tokenized into syllables based on the grammar defined in 12.2. These tokens are mapped **1-to-1** onto the pitch events of the target voice.
 * **Skip Rules:** Rests (`r`) and Grace Notes (`:grace`) are **skipped** automatically by the engine. The lyrics map only to "Real" rhythmic events with positive duration.
 
@@ -1028,7 +995,7 @@ The text string is parsed using specific delimiters to determine syllable bounda
 
 | Token | Name | Mapping Behavior | Visual Result |
 | --- | --- | --- | --- |
-| `     ` (Space) | Word Break | Advance to next note. | Standard word spacing. |
+| `          ` (Space) | Word Break | Advance to next note. | Standard word spacing. |
 | `-` | Hyphen | Advance to next note. | Centered dash between notes. |
 | `_` | Melisma | Advance to next note. | Continuous extension line (underscore). |
 | `~` | Elision | **Stay on current note.** | Lyric slur (undertie) joining two words. |
@@ -1037,6 +1004,7 @@ The text string is parsed using specific delimiters to determine syllable bounda
 * **Usage Example:**
 * *Code:* `"Glo- ~ ria __ in ex- cel- sis * De- o"`
 * *Mapping:*
+
 1. `Glo` + `ria` (Elision)  Note 1.
 2. `__` (Melisma extension)  Note 2.
 3. `in`  Note 3.
@@ -1047,17 +1015,13 @@ The text string is parsed using specific delimiters to determine syllable bounda
 8. `De`  Note 8.
 9. `o`  Note 9.
 
-
-
-
-
 ### 12.3 Multiple Stanzas (Verses)
 
 To notate multiple verses (e.g., Hymns), append an integer index to the keyword.
 
 **Syntax:** `.lyric_N` (where N is an integer starting at 1).
 
-```omniscore
+```tenuto
 measure 1 {
   vox: c4 d e f |
   vox.lyric_1: "1. Joy to the world"
@@ -1070,7 +1034,7 @@ measure 1 {
 
 ### 12.4 Non-Western Scripts (Logographic)
 
-OmniScore is UTF-8 native. However, for logographic languages (e.g., Chinese, Japanese) which typically do not use spaces, the **Space Delimiter** is still **REQUIRED** within the source code to define the 1-to-1 mapping.
+Tenuto is UTF-8 native. However, for logographic languages (e.g., Chinese, Japanese) which typically do not use spaces, the **Space Delimiter** is still **REQUIRED** within the source code to define the 1-to-1 mapping.
 
 * *Code:* `"桜 (Sa) 桜 (ku) ra (ra)"`
 * *Rendering:* The engine renders the characters without spacing (based on the Language metadata), but uses the code spaces to align them to the three distinct notes.
@@ -1087,7 +1051,7 @@ To indicate the start of a structural section (e.g., "Chorus:") inside the lyric
 
 ## 13. Layout Directives
 
-OmniScore documents are **Reflowable**. Like HTML, the final visual presentation depends on the target medium (e.g., A4 Paper, iPad Screen, Scrolling Web View). However, specific engraving scenarios require manual overrides to force structural layouts. These are handled via **Layout Directives** contained within `meta` blocks.
+Tenuto documents are **Reflowable**. Like HTML, the final visual presentation depends on the target medium (e.g., A4 Paper, iPad Screen, Scrolling Web View). However, specific engraving scenarios require manual overrides to force structural layouts. These are handled via **Layout Directives** contained within `meta` blocks.
 
 ### 13.1 Break Directives
 
@@ -1097,8 +1061,6 @@ Breaks serve as "Hard Returns" for the rendering engine. They instruct the compi
 
 * **`break: "system"`**: Forces a new musical system (line) to begin *immediately after* the current measure.
 * *Justification:* The renderer **SHOULD** spread the current system to fill the available width (Full Justification) before breaking.
-
-
 * **`break: "page"`**: Forces the content to move to the top of the next page *immediately after* the current measure.
 * **`break: "none"`**: Explicitly forbids a break after this measure (Glue), ensuring the next measure stays on the same system if physically possible.
 
@@ -1113,8 +1075,6 @@ To adjust the visual density of a specific measure (e.g., to compress a measure 
 * `> 1.0`: Expands whitespace (Looser).
 * `< 1.0`: Condenses whitespace (Tighter).
 
-
-
 ### 13.3 Vertical Spacing & Indentation
 
 These attributes control the positioning of the system *containing* the current measure.
@@ -1123,12 +1083,8 @@ These attributes control the positioning of the system *containing* the current 
 
 * **`spacer: Float`**: Adds extra vertical whitespace (in Staff Spaces) *below* the current system.
 * *Usage:* Separating distinct exercises or movements on a single page.
-
-
 * **`indent: Float`**: Adds horizontal whitespace (in Staff Spaces) to the *start* of the system.
 * *Usage:* Standard practice for the first system of a piece, or to visually offset a Coda section.
-
-
 
 ### 13.4 Visibility Controls
 
@@ -1141,13 +1097,11 @@ Specific elements can be hidden for layout clarity (e.g., Cadenzas, Cutaway Scor
 * **`staff_scale: Float`**: Scales the entire staff size relative to the global staff size.
 * *Example:* `staff_scale: 0.7` is used for **Ossia** staves or **Cue** lines.
 
-
-
 ---
 
 ## 14. Playback Control (The Synth Engine)
 
-While OmniScore is primarily a notation format, it includes a robust set of directives to drive audio synthesis. To ensure longevity, these controls are defined as **Abstract Mathematical Values** rather than hardware-specific byte codes. It is the responsibility of the Compiler/Renderer to map these values to the target protocol (MIDI 1.0, MIDI 2.0, OSC, or Internal Synthesis).
+While Tenuto is primarily a notation format, it includes a robust set of directives to drive audio synthesis. To ensure longevity, these controls are defined as **Abstract Mathematical Values** rather than hardware-specific byte codes. It is the responsibility of the Compiler/Renderer to map these values to the target protocol (MIDI 1.0, MIDI 2.0, OSC, or Internal Synthesis).
 
 ### 14.1 The Abstract Mixer
 
@@ -1158,13 +1112,9 @@ Mixer parameters are properties of the **Staff State**. They can be set globally
 * **`vol: Float`**: Normalized Gain.
 * **Range:** `0.0` (Silence) to `1.0` (Unity Gain / Maximum Velocity).
 * *Default:* `1.0`.
-
-
 * **`pan: Float`**: Bipolar Stereo position.
 * **Range:** `-1.0` (Hard Left) to `+1.0` (Hard Right). `0.0` is Center.
 * *Default:* `0.0`.
-
-
 
 #### 14.1.2 Effects Sends
 
@@ -1178,7 +1128,7 @@ To support spatialization and timbre modification without defining specific plug
 * **`mute: Boolean`**: If `true`, the staff produces no audio but preserves its logical state.
 * **`solo: Boolean`**: If `true`, *only* this staff (and other soloed staves) produce audio.
 
-```omniscore
+```tenuto
 measure 1 {
   %% Fade out violin, pan left, increase reverb over the measure
   meta { vln.vol: [1.0, 0.0], vln.pan: -0.5, vln.reverb: 0.8 }
@@ -1209,8 +1159,6 @@ Tempo controls the rate of the "Tick" counter relative to wall-clock time.
 * `"exp"`: Exponential curve (). Recommended for natural-sounding *Accelerando*.
 * `"log"`: Logarithmic curve. Recommended for natural-sounding *Ritardando*.
 
-
-
 ### 14.4 Micro-Timing (Swing)
 
 Swing alters the playback start time of off-beat notes without changing their notated duration or metric position.
@@ -1222,8 +1170,6 @@ Swing alters the playback start time of off-beat notes without changing their no
 * `50`: Straight (No swing). 50/50 split.
 * `66`: Triplet Swing (Standard Jazz). 67/33 split.
 * `75`: Hard Swing (Funk/Dotted). 75/25 split.
-
-
 * **Grid Resolution:** The engine **SHOULD** auto-detect the quantization level based on the tempo (typically swinging 8th notes below 100 BPM, and 16th notes below 60 BPM). Explicit overrides are handled via `swing_grid: Duration`.
 
 ### 14.5 Humanization
@@ -1238,10 +1184,9 @@ To prevent the "Machine Gun Effect" inherent in digital playback, the engine sup
 
 ---
 
-
 ## 15. Macros & Variables
 
-To adhere to the design principle of **Inference Over Redundancy**, OmniScore supports a robust Pre-Processor that handles variable substitution and macro expansion *before* the Linearization phase. This allows composers to define constants for global settings and reusable logic blocks for repetitive musical patterns.
+To adhere to the design principle of **Inference Over Redundancy**, Tenuto supports a robust Pre-Processor that handles variable substitution and macro expansion *before* the Linearization phase. This allows composers to define constants for global settings and reusable logic blocks for repetitive musical patterns.
 
 ### 15.1 Variables (Constants)
 
@@ -1252,12 +1197,10 @@ Variables store primitive data types (Integers, Floats, Strings, TabCoords) for 
 * **Naming:** Case-sensitive alphanumeric identifier starting with a letter.
 * **Usage:** Prefix with `$`.
 * **Scope:**
-* **Global:** Defined in the Root block or `omniscore` header. Visible to all subsequent blocks.
+* **Global:** Defined in the Root block or `tenuto` header. Visible to all subsequent blocks.
 * **Local:** Variables are generally **NOT** supported inside `measure` blocks to prevent ambiguity regarding state mutation. They are configuration tools, not dynamic state cursors.
 
-
-
-```omniscore
+```tenuto
 var FortePlus = 115
 var ThemeName = "Main Motif"
 
@@ -1272,20 +1215,20 @@ Macros act as reusable containers for musical patterns. They function as **Compi
 **Syntax:** `macro Name(Arg1, Arg2=Default) = { Events... }`
 
 * **Definition:**
-```omniscore
+
+```tenuto
 %% A drum pattern taking a Hi-Hat type and a Velocity
 macro RockBeat(hat, v=90) = { k:4 $hat.vel($v) s:4 $hat }
 
 ```
 
-
 * **Invocation:**
-```omniscore
-drm: $RockBeat(h_closed)       %% Uses default v=90
-drm: $RockBeat(h_open, 110)    %% Overrides v with 110
+
+```tenuto
+drm: $RockBeat(h_closed)        %% Uses default v=90
+drm: $RockBeat(h_open, 110)     %% Overrides v with 110
 
 ```
-
 
 * **Argument Substitution:** The compiler replaces instances of `$ArgName` within the macro body with the provided values.
 
@@ -1312,7 +1255,7 @@ Macros allow for conditional compilation based on external flags, useful for gen
 
 **Syntax:** `if (Condition) { ... }`
 
-```omniscore
+```tenuto
 measure 1 {
   if (target == "audio") {
     %% Only compiled when generating audio
@@ -1326,7 +1269,7 @@ measure 1 {
 
 ## 16. File Organization
 
-To manage complexity in large-scale works (e.g., Symphonies, Operas) and facilitate collaboration, OmniScore supports a modular architecture. This allows the separation of **Definitions** (Physics) from **Logic** (Notes), and the separation of distinct instrument families into their own source files.
+To manage complexity in large-scale works (e.g., Symphonies, Operas) and facilitate collaboration, Tenuto supports a modular architecture. This allows the separation of **Definitions** (Physics) from **Logic** (Notes), and the separation of distinct instrument families into their own source files.
 
 ### 16.1 The Import Directive
 
@@ -1340,47 +1283,41 @@ The `import` statement instructs the compiler to read and process the contents o
 
 ### 16.2 The Additive Merge Model (The "Open Measure")
 
-Unlike imperative programming languages where re-defining a function overwrites the previous definition, OmniScore utilizes an **Additive Merge Strategy** for temporal logic.
+Unlike imperative programming languages where re-defining a function overwrites the previous definition, Tenuto utilizes an **Additive Merge Strategy** for temporal logic.
 
 * **Principle:** A `measure` block is an "Open Container" indexed by an integer (Time Slice).
-* **Behavior:** If `measure 1` is defined in `strings.omni` and also in `winds.omni`, the compiler **MERGES** the contents into a single internal Measure Object at `Index 1`.
+* **Behavior:** If `measure 1` is defined in `strings.ten` and also in `winds.ten`, the compiler **MERGES** the contents into a single internal Measure Object at `Index 1`.
 * **Conflict Resolution:**
 * **Event Data:** Merged additively. Content from `strings` and `winds` will coexist in the final system.
-* **Metadata:** Must be consistent. If `strings.omni` declares `time: 4/4` and `winds.omni` declares `time: 3/4` for the *same measure index*, the compiler **MUST** throw a **Meta Mismatch Error (E1601)**.
-
-
+* **Metadata:** Must be consistent. If `strings.ten` declares `time: 4/4` and `winds.ten` declares `time: 3/4` for the *same measure index*, the compiler **MUST** throw a **Meta Mismatch Error (E1601)**.
 
 ### 16.3 Scope & Visibility
 
 * **Definitions:** `def` statements inside an imported file populate the **Global Symbol Table**.
-* *Constraint:* The `def` must be processed before any `measure` block attempts to use that Staff ID. Therefore, `import "setup.omni"` should typically appear at the top of the Master Linker.
-
-
+* *Constraint:* The `def` must be processed before any `measure` block attempts to use that Staff ID. Therefore, `import "setup.ten"` should typically appear at the top of the Master Linker.
 * **Variables:** Variables defined in the root of an imported file become **Global**.
 * *Best Practice:* To avoid namespace collisions, reusable libraries **SHOULD** use unique prefixes for their variables (e.g., `$std_drum_vol`).
-
-
 
 ### 16.4 Project Structure Standards
 
 For interoperability and version control (Git), the following directory structure is the **Normative Standard** for complex projects:
 
-* **`score.omni`**: The Master Linker. Contains `meta` (Global settings) and `import` statements. No musical logic.
-* **`def/`**: Directory for definition files (e.g., `instruments.omni`).
-* **`src/`**: Directory for logic files (e.g., `strings.omni`, `winds.omni`).
+* **`score.ten`**: The Master Linker. Contains `meta` (Global settings) and `import` statements. No musical logic.
+* **`def/`**: Directory for definition files (e.g., `instruments.ten`).
+* **`src/`**: Directory for logic files (e.g., `strings.ten`, `winds.ten`).
 * **`lib/`**: Directory for shared macros and variables.
 
-```omniscore
-%% score.omni
-omniscore {
+```tenuto
+%% score.ten
+tenuto {
   meta { title: "Symphony No. 1" }
   
   %% 1. Load Physics
-  import "def/orchestra.omni"
+  import "def/orchestra.ten"
   
   %% 2. Load Logic (Merged Additively)
-  import "src/movement_1.omni"
-  import "src/movement_2.omni"
+  import "src/movement_1.ten"
+  import "src/movement_2.ten"
 }
 
 ```
@@ -1389,7 +1326,7 @@ omniscore {
 
 ## 17. Advanced Engraving Controls
 
-OmniScore relies on a sophisticated **Inference Engine** to handle standard engraving rules (adhering to conventions like Gould's *Behind Bars*). However, professional scores often require manual overrides to solve visual collisions, articulate phrasing, or notate contemporary techniques. These overrides are applied as **Attributes**.
+Tenuto relies on a sophisticated **Inference Engine** to handle standard engraving rules (adhering to conventions like Gould's *Behind Bars*). However, professional scores often require manual overrides to solve visual collisions, articulate phrasing, or notate contemporary techniques. These overrides are applied as **Attributes**.
 
 ### 17.1 Manual Beaming
 
@@ -1401,7 +1338,7 @@ By default, the engine groups beams based on the Time Signature and Metric Grid.
 
 **Syntax:**
 
-```omniscore
+```tenuto
 %% Beam across a rest (Rest is included in the beam group)
 c8.bm d8 r8 e8.bme
 
@@ -1428,8 +1365,6 @@ Stem direction is calculated based on the note's position on the staff and its V
 * **Length:** `.stem_len(Float)`.
 * *Value:* Relative to default length (1.0 = standard 3.5 spaces).
 * *Usage:* Essential for avoiding collisions in dense polyphonic passages or extending stems to meet cross-staff beams.
-
-
 
 ### 17.3 Curve Geometry (Slurs & Ties)
 
@@ -1474,8 +1409,6 @@ Decorators are attributes attached to a single event. They imply a specific alte
 * **Trill Extension:** To draw a wavy extension line (spanner) after the symbol, use `.tr_ext`.
 * *Example:* `c1.tr.tr_ext` implies the trill continues for the full duration of the whole note.
 
-
-
 ### 18.2 Arpeggiation & Tremolo
 
 Modifications to the attack envelope or repetition rate of a chord or note.
@@ -1484,8 +1417,6 @@ Modifications to the attack envelope or repetition rate of a chord or note.
 * **`.arp(down)`**: Arpeggiate top-to-bottom.
 * **`.trem(N)`**: Single-note tremolo. `N` = number of slashes (e.g., 3 for unmeasured/32nd notes).
 * *Audio:* Repeats the note at the specified subdivision rate.
-
-
 
 ### 18.3 Connective Spanners (Glissando)
 
@@ -1500,11 +1431,9 @@ Connective spanners are attributes applied to a **Source Event**. The engine aut
 * **`.fingered_trem`**: Tremolo between two distinct pitches. Applied to the first note.
 * *Example:* `c2.fingered_trem e2` renders as two whole notes with tremolo bars connecting them. The total duration is shared between the two (they are not played sequentially).
 
-
-
 ### 18.4 State Lines (Ottava & Pedal)
 
-For lines that span arbitrary durations (potentially across measures), OmniScore uses **State Toggles**.
+For lines that span arbitrary durations (potentially across measures), Tenuto uses **State Toggles**.
 
 #### 18.4.1 Ottava (Octave Shift)
 
@@ -1524,11 +1453,11 @@ Modifies both the visual display (bracket) and the playback pitch.
 
 ## 19. Microtonality & Tuning Systems
 
-OmniScore supports non-12TET (Equal Temperament) tuning systems as native elements of the language. This allows for the precise notation of Maqam, Just Intonation, Xenharmonic scales, and historic temperaments.
+Tenuto supports non-12TET (Equal Temperament) tuning systems as native elements of the language. This allows for the precise notation of Maqam, Just Intonation, Xenharmonic scales, and historic temperaments.
 
 ### 19.1 Extended Accidental Syntax
 
-For systems based on subdivisions of the tone (Quarter-tones), OmniScore extends the standard accidental grammar defined in Section 6.
+For systems based on subdivisions of the tone (Quarter-tones), Tenuto extends the standard accidental grammar defined in Section 6.
 
 | Token | Name | Interval Deviation | Visual Symbol |
 | --- | --- | --- | --- |
@@ -1550,8 +1479,6 @@ For precise retuning that does not align with standard symbols (e.g., spectralis
 * **Granularity:** Integers or Floats.
 * **Additive Logic:** Deviations are additive to the base pitch *and* its accidental.
 * *Example:* `c#4+10` means "Start at C#, then add 10 cents."
-
-
 * **Rendering:** The renderer **SHOULD** place the cent deviation value as a small number above the note, or use an arrow if the deviation is small (< 33 cents).
 
 ### 19.3 Tuning Arrows (Helmholtz-Ellis / Just Intonation)
@@ -1564,7 +1491,7 @@ For systems relying on commatic shifts (Syntonic comma, Pythagorean comma):
 
 ### 19.4 Absolute Frequency Literals
 
-For electronic music, acoustics testing, or drone music where "Note Names" are irrelevant abstractions, OmniScore supports raw frequency input.
+For electronic music, acoustics testing, or drone music where "Note Names" are irrelevant abstractions, Tenuto supports raw frequency input.
 
 **Syntax:** `hz(Frequency)`
 
@@ -1573,25 +1500,23 @@ For electronic music, acoustics testing, or drone music where "Note Names" are i
 
 ### 19.5 External Tuning Maps (.scl / .kbm)
 
-To support complex arbitrary tuning systems (19-TET, Slendro, Pelog, Partch), OmniScore adopts the industry-standard **Scala** format.
+To support complex arbitrary tuning systems (19-TET, Slendro, Pelog, Partch), Tenuto adopts the industry-standard **Scala** format.
 
 **Syntax:** `meta { tuning_file: "Path/To/Scale.scl", tuning_root: Pitch }`
 
 * **Behavior:** The compiler maps the linear diatonic steps of the staff (C, D, E...) to the steps defined in the SCL file, anchored at `tuning_root`.
 * **Semantic Separation:** When a custom tuning map is active:
+
 1. **Visual:** The notation remains "nominal" (what the player reads/fingers).
 2. **Audio:** The frequency is determined strictly by the map.
 
-
 * *Note:* This decouples the "Written Note" from the "Sounding Pitch," essential for instruments with fixed but non-standard intonation (e.g., a prepared piano or a specific Gamelan metallophone).
-
-
 
 ---
 
 ## 20. Visual Styling (The Theme Engine)
 
-OmniScore strictly enforces the separation of **Musical Data** (Pitch/Rhythm) from **Visual Presentation** (Ink/Fonts). The **Theme Engine** controls the rendering layer, allowing the same logical score to be displayed in drastically different visual styles (e.g., Classical vs. Jazz) without altering a single line of the source code.
+Tenuto strictly enforces the separation of **Musical Data** (Pitch/Rhythm) from **Visual Presentation** (Ink/Fonts). The **Theme Engine** controls the rendering layer, allowing the same logical score to be displayed in drastically different visual styles (e.g., Classical vs. Jazz) without altering a single line of the source code.
 
 ### 20.1 Theme Profiles
 
@@ -1631,7 +1556,7 @@ The notehead shape conveys performance semantics (e.g., percussion technique, ha
 
 ### 20.4 Text & Font Families
 
-To ensure portability across operating systems and eras, OmniScore uses **Generic Font Families** rather than specific file references.
+To ensure portability across operating systems and eras, Tenuto uses **Generic Font Families** rather than specific file references.
 
 **Syntax:** `meta { font_face: "Family" }`
 
@@ -1640,8 +1565,6 @@ To ensure portability across operating systems and eras, OmniScore uses **Generi
 * `"sans"`: Modern, clean (e.g., Helvetica).
 * `"mono"`: Fixed-width (e.g., Courier).
 * `"hand"`: Handwritten style (e.g., JazzText).
-
-
 * **Behavior:** The renderer is responsible for mapping these generics to the best available font on the host system.
 
 ### 20.5 Visibility & Cue Notes
@@ -1650,21 +1573,12 @@ Attributes to control the rendering presence and scale of objects.
 
 * **`.hidden`**: The object is effectively invisible (Opacity 0) but still occupies layout space.
 * *Usage:* "Fill in the blank" worksheets or aligning lyrics to a rhythm that shouldn't be seen.
-
-
 * **`.cue`**: Renders the event at a reduced size (normatively **70%** of the global staff size).
 * *Usage:* Cue notes, Ossia bars, or grace notes that are measured (not timeless).
 
-
-
----
-
-
-
-
 ## 21. Advanced MIDI & Automation
 
-For high-fidelity playback, OmniScore exposes raw control over the synthesis engine. While `vol` and `pan` (Section 14) are high-level abstractions, this section deals with the low-level protocols (MIDI 1.0, MIDI 2.0, or OSC) used to drive virtual instruments. This allows for the precise manipulation of timbre, expression, and synthesizer parameters directly from the score logic.
+For high-fidelity playback, Tenuto exposes raw control over the synthesis engine. While `vol` and `pan` (Section 14) are high-level abstractions, this section deals with the low-level protocols (MIDI 1.0, MIDI 2.0, or OSC) used to drive virtual instruments. This allows for the precise manipulation of timbre, expression, and synthesizer parameters directly from the score logic.
 
 ### 21.1 Control Change (CC) Messages
 
@@ -1686,14 +1600,13 @@ To create smooth changes (e.g., a crescendo swell via Expression) over the durat
 * `"linear"` (Default): Constant rate of change.
 * `"exp"`: Exponential. Recommended for Volume/Expression swells to match human hearing (Decibels).
 * `"log"`: Logarithmic.
-
-
 * **Duration:** The ramp lasts for the exact duration of the host event.
 * **Density:** The resolution of the generated data is implementation-dependent (Recommended: 1 event per 10ms).
 
-```omniscore
+```tenuto
 %% Expression (CC 11) swells exponentially from 0 to 100
 c4:1.cc(11, [0, 100], "exp")
+
 
 ```
 
@@ -1704,19 +1617,21 @@ Keyswitches are silent notes used to trigger specific sample layers in libraries
 **1. Definition:**
 In the `def` block, map a custom attribute name to a MIDI Note Number.
 
-```omniscore
+```tenuto
 def vln "Violin" keyswitch={
   arco: 24,  %% C0
   pizz: 25   %% C#0
 }
+
 
 ```
 
 **2. Usage:**
 The defined keys become valid attributes for that staff.
 
-```omniscore
+```tenuto
 vln: c4:4.pizz  %% Triggers Note 25, then plays C4
+
 
 ```
 
@@ -1727,8 +1642,6 @@ To control pitch and pressure dynamically:
 * **`.bend(Cents)`**: Sends Pitch Bend data.
 * *Range:* `+/-` Cents (e.g., `.bend(200)` is +2 semitones).
 * *Ramp:* `.bend([0, 200])` bends up over the note's duration.
-
-
 * **`.press(Value)`**: Channel Pressure (Aftertouch). Affects the whole channel.
 * **`.polypress(Value)`**: Polyphonic Aftertouch. Affects only this specific note (if supported by the synth/MPE).
 
@@ -1745,29 +1658,28 @@ To switch instrument patches mid-stream:
 
 ## 22. Compiler Directives & Debugging
 
-These directives control how the OmniScore compiler processes the source text, validates logic, and reports issues. They are essential for maintaining large scores, ensuring archival stability across software versions, and debugging complex logic.
+These directives control how the Tenuto compiler processes the source text, validates logic, and reports issues. They are essential for maintaining large scores, ensuring archival stability across software versions, and debugging complex logic.
 
 ### 22.1 Language Versioning
 
 To ensure "Deep Time" durability, a file **MUST** declare the version of the specification it adheres to. This prevents future compilers from misinterpreting syntax that may be deprecated or redefined in later epochs.
 
-**Syntax:** `meta { omni_version: "Major.Minor" }`
+**Syntax:** `meta { tenuto_version: "Major.Minor" }`
 
 * **Location:** This attribute **SHOULD** appear in the first `meta` block of the root scope.
-* **Validation:** If the compiler supports version 3.0 but encounters `omni_version: "2.0"`, it **MUST** activate its "Legacy 2.x Parser" mode or emit a fatal incompatibility error if backward compatibility is not supported.
+* **Validation:** If the compiler supports version 3.0 but encounters `tenuto_version: "2.0"`, it **MUST** activate its "Legacy 2.x Parser" mode or emit a fatal incompatibility error if backward compatibility is not supported.
 
 ### 22.2 Strict Mode
 
-By default, OmniScore is **Lenient**. It attempts to auto-correct common mistakes (e.g., auto-closing beams at barlines, inferring missing durations). However, for archival quality or library development, **Strict Mode** forces explicit definitions.
+By default, Tenuto is **Lenient**. It attempts to auto-correct common mistakes (e.g., auto-closing beams at barlines, inferring missing durations). However, for archival quality or library development, **Strict Mode** forces explicit definitions.
 
 **Syntax:** `meta { strict: true }`
 
 * **Constraints Enforced:**
+
 1. **Beaming:** Beams must be explicitly closed (`.bme`) before barlines.
 2. **Stickiness:** "Sticky" attributes (Duration, Octave) do **NOT** persist across measure boundaries. Every measure must initialize its state explicitly.
 3. **Sync:** Voice Group durations must match exactly (no auto-padding with rests).
-
-
 
 ### 22.3 Warning Control
 
@@ -1789,9 +1701,7 @@ To support multi-target rendering (e.g., generating a Conductor's Score vs. a Vi
 * `part_id`: The ID of the staff currently being rendered (e.g., `"vln"`).
 * `debug`: Boolean.
 
-
-
-```omniscore
+```tenuto
 measure 1 {
   vln: c4 d e f |
   
@@ -1801,6 +1711,7 @@ measure 1 {
   }
 }
 
+
 ```
 
 ### 22.5 Debugging Tools
@@ -1809,15 +1720,13 @@ For analyzing compiler state during logic development.
 
 * **`.trace`**: Attribute. Dumps the current **State Vector** (Tick, Octave, Duration, Velocity) of the event to the compiler log/console.
 * *Example:* `c4.trace` prints `[Tick: 1920, Pitch: C4, Dur: :4, Vel: 100]`.
-
-
 * **`meta { error: "Message" }`**: Halts compilation immediately with a custom user message. Useful for validating macro arguments.
 
 ---
 
 ## 23. The Standard Library
 
-To ensure interoperability and reduce boilerplate code, every OmniScore compiler **MUST** implement the following **Standard Library** of constants. These identifiers are implicitly available in the Global Scope of every document and do not require import statements.
+To ensure interoperability and reduce boilerplate code, every Tenuto compiler **MUST** implement the following **Standard Library** of constants. These identifiers are implicitly available in the Global Scope of every document and do not require import statements.
 
 ### 23.1 Standard Clefs
 
@@ -1882,7 +1791,7 @@ String constants mapping to the standard General MIDI Sound Set (Program Numbers
 
 ## 24. Error Reference
 
-The OmniScore compiler emits specific codes to aid debugging. Implementations **MUST** use these standardized codes to ensure that error messages are searchable, consistent across different tools, and machine-parsable by IDEs and CI/CD pipelines.
+The Tenuto compiler emits specific codes to aid debugging. Implementations **MUST** use these standardized codes to ensure that error messages are searchable, consistent across different tools, and machine-parsable by IDEs and CI/CD pipelines.
 
 ### 24.1 Severity Levels
 
@@ -1894,7 +1803,7 @@ The OmniScore compiler emits specific codes to aid debugging. Implementations **
 
 * **E1001: Malformed Token.** The parser encountered a character sequence that violates the grammar (e.g., illegal symbols inside a pitch token).
 * **E1002: Unbalanced Delimiter.** A block `{`, `[`, or `(` was opened but never closed.
-* **E1004: Version Incompatible.** The file requests a specification version (`omni_version`) higher than the compiler supports.
+* **E1004: Version Incompatible.** The file requests a specification version (`tenuto_version`) higher than the compiler supports.
 * **E1005: Encoding Error.** The source file is not valid UTF-8.
 
 ### 24.3 2000-Series: Definition & Import Errors
@@ -1938,11 +1847,11 @@ These codes are reserved for the compiler environment itself.
 
 ## 25. Implementation Guidelines
 
-To ensure that valid OmniScore files produce identical logical and auditory output across different software implementations (CLIs, DAWs, Web Libraries) and operating systems, compilers **MUST** adhere to the following architectural and mathematical standards.
+To ensure that valid Tenuto files produce identical logical and auditory output across different software implementations (CLIs, DAWs, Web Libraries) and operating systems, compilers **MUST** adhere to the following architectural and mathematical standards.
 
 ### 25.1 File Standards
 
-* **Extension:** Source files **SHOULD** use the `.omni` extension.
+* **Extension:** Source files **SHOULD** use the `.ten` extension.
 * **Encoding:** Files **MUST** be encoded in **UTF-8**.
 * **Normalization:** The compiler **MUST** normalize all identifiers and string literals to **Unicode NFC** (Normalization Form C) before parsing. This prevents "Variable Not Found" errors caused by visually identical but byte-distinct characters (e.g., on macOS vs. Windows filesystems).
 
@@ -1983,7 +1892,7 @@ A compliant compiler **SHOULD** follow this logical execution flow:
 
 ## 26. Formal Grammar (EBNF)
 
-This section provides the **Normative Syntax** of OmniScore v2.0 using Extended Backus-Naur Form (EBNF). In the event of a contradiction between the prose description in previous sections and this grammar, this grammar takes precedence as the authority for parser implementation.
+This section provides the **Normative Syntax** of Tenuto v2.0 using Extended Backus-Naur Form (EBNF). In the event of a contradiction between the prose description in previous sections and this grammar, this grammar takes precedence as the authority for parser implementation.
 
 ### 26.1 Lexical Tokens (Terminals)
 
@@ -2007,6 +1916,7 @@ DURATION    ::= ":" [0-9]+ ("." [0-9]+)?
 WHITESPACE  ::= [ \t\r\n]+
 COMMENT     ::= "%%" [^\r\n]*
 
+
 ```
 
 ### 26.2 High-Level Structure
@@ -2014,7 +1924,7 @@ COMMENT     ::= "%%" [^\r\n]*
 ```ebnf
 Score       ::= Header? TopLevel*
 
-Header      ::= "omniscore" STRING? /* Version Declaration */
+Header      ::= "tenuto" STRING? /* Version Declaration */
 
 TopLevel    ::= Import
               | Definition
@@ -2039,6 +1949,7 @@ Measure     ::= "measure" (INTEGER | IDENTIFIER)? AttributeList? "{" Logic* "}"
 Repeat      ::= "repeat" INTEGER? "{" Logic* "}"
 
 Volta       ::= "volta" Range "{" Logic* "}"
+
 
 ```
 
@@ -2072,6 +1983,7 @@ MacroCall   ::= "$" IDENTIFIER ("(" ArgList ")")? Transposition?
 
 Transposition ::= ("+" | "-") INTEGER
 
+
 ```
 
 ### 26.4 Attributes & Data Types
@@ -2093,67 +2005,64 @@ Value       ::= INTEGER | FLOAT | STRING | IDENTIFIER | Array | Map
 Array       ::= "[" Value ("," Value)* "]"
 Map         ::= "{" KeyValueList "}"
 
+
 ```
 
 ---
 
 ## 27. Interoperability & Exchange
 
-OmniScore is designed to sit in the center of the modern music toolchain, serving as a high-level abstraction that can be compiled down to presentation formats (PDF/SVG) or interchange formats (MusicXML, MIDI). This section defines the **Normative Mapping** rules to ensure consistent export behavior across different compilers.
+Tenuto is designed to sit in the center of the modern music toolchain, serving as a high-level abstraction that can be compiled down to presentation formats (PDF/SVG) or interchange formats (MusicXML, MIDI). This section defines the **Normative Mapping** rules to ensure consistent export behavior across different compilers.
 
 ### 27.1 MusicXML 4.0 Mapping
 
-When exporting to MusicXML, the compiler **MUST** map OmniScore structures as follows to ensure visual fidelity in notation software (e.g., Dorico, Finale, MuseScore).
+When exporting to MusicXML, the compiler **MUST** map Tenuto structures as follows to ensure visual fidelity in notation software (e.g., Dorico, Finale, MuseScore).
 
 1. **Root Structure:**
-* The `omniscore` block maps to the root `<score-partwise>` element.
+
+* The `tenuto` block maps to the root `<score-partwise>` element.
 * Metadata (`title`, `composer`) maps to `<work><work-title>` and `<identification><creator>`.
 
-
 2. **Definitions:**
+
 * Each `def` statement maps to a `<score-part>` element in the `<part-list>`.
 * `group` blocks map to `<part-group type="start">` and `<part-group type="stop">`.
 
-
 3. **Logic & Time:**
-* `measure` blocks map to sequential `<measure>` elements.
-* **Voices:** OmniScore voice IDs (`v1`, `v2`) map to MusicXML `<voice>` integers (1, 2).
 
+* `measure` blocks map to sequential `<measure>` elements.
+* **Voices:** Tenuto voice IDs (`v1`, `v2`) map to MusicXML `<voice>` integers (1, 2).
 
 4. **Event Data:**
+
 * `style=standard` events map to `<note><pitch>`.
 * `style=tab` events map to `<note><notation><technical><fret>` and `<string>`.
 * `microtonality` (`qs`, `qf`) maps to `<pitch><alter>` (decimal values, e.g., 0.5) and `<accidental>` tags.
-
-
 
 ### 27.2 MIDI 1.0 / 2.0 Mapping
 
 When exporting to Standard MIDI Files (SMF), the compiler **MUST** adhere to these resolutions to ensure consistent playback.
 
 1. **Timing & Resolution:**
+
 * Files **SHOULD** use a resolution of **480 PPQ** (or higher) to accurately capture complex tuplets.
 * Duration Multipliers (`:1 * 4`) must be unrolled into actual time.
 
-
 2. **Track Layout:**
+
 * Each `def` becomes a dedicated MIDI Track.
 * `style=grid` (Percussion) **MUST** default to MIDI Channel 10 unless the `channel` attribute is explicitly defined.
 
-
 3. **Articulation Mapping (Gate Times):**
+
 * To ensure articulation is audible:
 * `.stacc`  Reduce Note-On duration to 50% of the notated value.
 * `.ten`  Maintain 100% duration (Legato).
 * *Default:* 90% duration (to simulate natural phrasing/breath).
 
-
-
-
 4. **Dynamics:**
+
 * Maps `pppp` (Velocity 16) through `ffff` (Velocity 127). Standard `mf` should map to 80.
-
-
 
 ---
 
@@ -2161,13 +2070,13 @@ When exporting to Standard MIDI Files (SMF), the compiler **MUST** adhere to the
 
 The following example demonstrates the integration of the V2 engines (Standard, Tab, Percussion, Macros, and Logic) into a single valid document. It serves as a validation test for compliant compilers.
 
-```omniscore
-omniscore {
+```tenuto
+tenuto {
   meta { 
-    title: "OmniScore V2 Reference", 
+    title: "Tenuto V2 Reference", 
     tempo: 130, 
     style: "jazz",
-    omni_version: "2.0"
+    tenuto_version: "2.0"
   }
 
   %% 1. DEFINITIONS (The Physics)
@@ -2210,13 +2119,12 @@ omniscore {
   }
 }
 
+
 ```
-
-
 
 # Addendum A: Advanced Implementation & Extensions
 
-**Version:** 1.1 (Extension to OmniScore 2.0)
+**Version:** 1.1 (Extension to Tenuto 2.0)
 
 **Status:** Normative
 
@@ -2226,13 +2134,13 @@ omniscore {
 
 ## A.1 Live Execution Model (REPL & Daemon)
 
-To support live coding and interactive performance, OmniScore defines a standard runtime environment that persists state between compilation events.
+To support live coding and interactive performance, Tenuto defines a standard runtime environment that persists state between compilation events.
 
-### A.1.1 The Runtime Daemon (`omnid`)
+### A.1.1 The Runtime Daemon (`tenutod`)
 
 Implementations **SHOULD** provide a daemon process that exposes two primary interfaces:
 
-1. **REPL Socket:** Accepts OmniScore code chunks (text or binary) via WebSocket or Unix Socket.
+1. **REPL Socket:** Accepts Tenuto code chunks (text or binary) via WebSocket or Unix Socket.
 2. **Control API:** REST/OSC interface for querying state (e.g., `GET /v1/state/tempo`) without injecting logic.
 
 ### A.1.2 State Mutation & Timing
@@ -2245,9 +2153,10 @@ The `@sync` directive is expanded to the `@at` directive for precise scheduling.
 * **Absolute Timing:** `@at(measure 12)` queues execution for the downbeat of Measure 12.
 * **Timecode:** `@at(01:30.500)` queues execution for a specific SMPTE/Wall-clock time.
 
-```omniscore
+```tenuto
 %% Queue a key change at the start of the next phrase
 @at(measure 17) meta { key: "D" }
+
 
 ```
 
@@ -2264,16 +2173,17 @@ For efficient network transmission, the daemon accepts **Change Sets** rather th
   "parent_hash": "a1b2c3..."
 }
 
+
 ```
 
 ---
 
-## A.2 Binary Format (.omnb)
+## A.2 Binary Format (.tenb)
 
-For high-performance parsing and network transmission, OmniScore defines a canonical **Binary Encoding**.
+For high-performance parsing and network transmission, Tenuto defines a canonical **Binary Encoding**.
 
-* **Extension:** `.omnb`
-* **MIME:** `application/x-omniscore-binary`
+* **Extension:** `.tenb`
+* **MIME:** `application/x-tenuto-binary`
 * **Endianness:** Little-Endian
 
 ### A.2.1 Chunk Types
@@ -2304,7 +2214,7 @@ The logic stream is highly optimized for sequential reading.
 Each event is packed: `[Type][Flags][TickOffset][Data...]`
 
 * **TickOffset:** Varint delta from the previous event (enables highly efficient packing).
-* **Compression:** Logic chunks **MUST** be compressed using **Zstandard (zstd)** with a standard dictionary trained on the OmniScore corpus.
+* **Compression:** Logic chunks **MUST** be compressed using **Zstandard (zstd)** with a standard dictionary trained on the Tenuto corpus.
 
 ---
 
@@ -2325,7 +2235,7 @@ Before hashing, the source must be normalized to ensure consistent signatures re
 
 Files **MAY** include a hash of the canonical form.
 
-```omniscore
+```tenuto
 meta {
   integrity: {
     algorithm: "sha256",
@@ -2334,6 +2244,7 @@ meta {
     signature: "gpg-signature-string"
   }
 }
+
 
 ```
 
@@ -2351,19 +2262,43 @@ Renderers have varying capabilities (e.g., a simple MIDI player vs. a pro notati
 | --- | --- | --- |
 | **Tier 1 (Basic)** | MIDI/Text Only | **Microtonality:** Round to nearest semitone.<br>
 
-<br>**Noteheads:** All map to `normal`.<br>
+ |
 
-<br>**Techniques:** Ignored. |
-| **Tier 2 (Standard)** | Notation Editors | **Microtonality:** Pitch Bend or Accidentals.<br>
 
-<br>**Noteheads:** Support `x`, `diamond`, `triangle`.<br>
 
-<br>**Techniques:** Text labels. |
-| **Tier 3 (Reference)** | Full Engine | **Microtonality:** Exact frequency synthesis.<br>
+**Noteheads:** All map to `normal`.
 
-<br>**Noteheads:** Full SVG shape support.<br>
 
-<br>**Techniques:** Sample switching / Modeling. |
+
+
+
+**Techniques:** Ignored. |
+| **Tier 2 (Standard)** | Notation Editors | **Microtonality:** Pitch Bend or Accidentals.
+
+
+
+
+
+**Noteheads:** Support `x`, `diamond`, `triangle`.
+
+
+
+
+
+**Techniques:** Text labels. |
+| **Tier 3 (Reference)** | Full Engine | **Microtonality:** Exact frequency synthesis.
+
+
+
+
+
+**Noteheads:** Full SVG shape support.
+
+
+
+
+
+**Techniques:** Sample switching / Modeling. |
 
 ---
 
@@ -2392,13 +2327,14 @@ When a compiler applies a correction, it **MUST** generate a machine-readable lo
   "confidence": 0.85
 }
 
+
 ```
 
 ---
 
 ## A.6 Real-Time Collaboration Protocol
 
-For multi-user editing, OmniScore defines the **OmniScore Synchronization Protocol (OSP)**.
+For multi-user editing, Tenuto defines the **OmniScore Synchronization Protocol (OSP)**.
 
 ### A.6.1 CRDT Model
 
@@ -2425,17 +2361,18 @@ message OSPMessage {
   repeated Operation operations = 4;
 }
 
+
 ```
 
 ---
 
 ## A.7 Implementation Checklist
 
-To claim full compliance with OmniScore 2.0 + Addendum A, an implementation must:
+To claim full compliance with Tenuto 2.0 + Addendum A, an implementation must:
 
-* [ ] Parse and Generate valid `.omni` text and `.omnb` binary files.
+* [ ] Parse and Generate valid `.ten` text and `.tenb` binary files.
 * [ ] Validate Cryptographic Hashes (SHA-256) on load.
 * [ ] Implement the `@at` scheduling directive.
 * [ ] Expose the Correction Log via API or Console.
 * [ ] Declare a Renderer Tier (1-3) and strictly follow degradation rules.
-* [ ] Support WebSocket connections for the `omnid` protocol.
+* [ ] Support WebSocket connections for the `tenutod` protocol.

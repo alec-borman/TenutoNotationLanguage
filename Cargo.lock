@@ -325,22 +325,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "omnic"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "ariadne",
- "bincode",
- "chumsky",
- "clap",
- "logos",
- "num-integer",
- "serde",
- "thiserror",
- "zstd",
-]
-
-[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -462,6 +446,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tenutoc"
+version = "2.0.0"
+dependencies = [
+ "anyhow",
+ "ariadne",
+ "bincode",
+ "chumsky",
+ "clap",
+ "logos",
+ "num-integer",
+ "serde",
+ "thiserror",
+ "zstd",
 ]
 
 [[package]]

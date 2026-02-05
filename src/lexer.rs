@@ -1,25 +1,25 @@
 use logos::Logos;
 
-/// OmniScore Token Definitions
+/// Tenuto Token Definitions
 /// Implements Spec Section 26.1 (Lexical Tokens)
 #[derive(Logos, Debug, PartialEq, Eq, Clone, Hash)]
-#[logos(skip r"[ \t\r\n\f]+")] // CHANGED: Added \r to the skip list for Windows support
+#[logos(skip r"[ \t\r\n\f]+")] // Ignore whitespace
 #[logos(skip r"%%.*")]          // Spec 2.3: Ignore Line Comments
 pub enum Token {
 
     // ========================================================================
     // 1. KEYWORDS (Case-Insensitive)
     // ========================================================================
-    #[regex("(?i)omniscore")]  KwOmniscore,
-    #[regex("(?i)meta")]       KwMeta,
-    #[regex("(?i)def")]        KwDef,
-    #[regex("(?i)measure")]    KwMeasure,
-    #[regex("(?i)group")]      KwGroup,
-    #[regex("(?i)import")]     KwImport,
-    #[regex("(?i)macro")]      KwMacro,
-    #[regex("(?i)var")]        KwVar,
-    #[regex("(?i)if")]         KwIf,
-    #[regex("(?i)else")]       KwElse,
+    #[regex("(?i)tenuto")]      KwTenuto,
+    #[regex("(?i)meta")]        KwMeta,
+    #[regex("(?i)def")]         KwDef,
+    #[regex("(?i)measure")]     KwMeasure,
+    #[regex("(?i)group")]       KwGroup,
+    #[regex("(?i)import")]      KwImport,
+    #[regex("(?i)macro")]       KwMacro,
+    #[regex("(?i)var")]         KwVar,
+    #[regex("(?i)if")]          KwIf,
+    #[regex("(?i)else")]        KwElse,
 
     // ========================================================================
     // 2. PUNCTUATION & OPERATORS (Spec 2.6)
@@ -40,6 +40,7 @@ pub enum Token {
     #[token("*")] Star,
     #[token("+")] Plus,
     #[token("-")] Minus,
+    #[token("/")] Slash, // <--- CRITICAL FIX: Added for Tuplets
 
     // Structure Tokens
     #[token("|:")]  RepeatStart,
@@ -90,7 +91,7 @@ pub enum Token {
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string(), priority=1)]
     Identifier(String),
 
-    // Trap C-style comments
+    // Trap C-style comments to fail gracefully if user confuses syntax
     #[regex(r"//.*", |_| false)] 
     InvalidComment,
 }

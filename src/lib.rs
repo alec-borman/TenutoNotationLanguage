@@ -1,11 +1,12 @@
 pub mod lexer;
 pub mod parser;
-pub mod ir; // <--- ADD THIS LINE
+pub mod ir;
 
 use thiserror::Error;
 use num_integer::Integer;
 
 /// The Fundamental Unit of Time (Rational Arithmetic)
+/// Used to prevent floating point drift in rhythmic calculations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Rational {
     pub num: u64,
@@ -27,9 +28,9 @@ impl Rational {
     }
 }
 
-/// Standardized Error Codes
+/// Standardized Error Codes conforming to Spec Section 24
 #[derive(Error, Debug)]
-pub enum OmniError {
+pub enum TenutoError {
     #[error("E1001: Malformed Token at position {0}")]
     LexicalError(usize),
 

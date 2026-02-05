@@ -3,14 +3,14 @@ use std::path::PathBuf;
 use logos::Logos;
 use chumsky::Parser as ChumskyParser; 
 use chumsky::Stream;
-use omnic::lexer::Token;
-use omnic::parser::parser; 
-use omnic::ir; 
+use tenutoc::lexer::Token; // Changed from omnic
+use tenutoc::parser::parser; 
+use tenutoc::ir; 
 
 #[derive(Parser)]
-#[command(name = "omnic")]
+#[command(name = "tenutoc")]
 #[command(version = "2.0.0")]
-#[command(about = "Reference Compiler for OmniScore v2.0", long_about = None)]
+#[command(about = "Reference Compiler for Tenuto v2.0", long_about = None)]
 struct Cli {
     #[arg(short, long, value_name = "FILE")]
     input: PathBuf,
@@ -19,7 +19,7 @@ struct Cli {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     
-    println!("🎵 omnic v2.0.0");
+    println!("🎵 tenutoc v2.0.0");
     println!("Reading {:?}", cli.input);
 
     // 1. Read Source
