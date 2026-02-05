@@ -3,17 +3,23 @@ use std::path::PathBuf;
 use logos::Logos;
 use chumsky::Parser as ChumskyParser; 
 use chumsky::Stream;
-use tenutoc::lexer::Token; // Changed from omnic
+use tenutoc::lexer::Token;
 use tenutoc::parser::parser; 
 use tenutoc::ir; 
+use tenutoc::midi; // <--- Import MIDI
 
 #[derive(Parser)]
 #[command(name = "tenutoc")]
 #[command(version = "2.0.0")]
 #[command(about = "Reference Compiler for Tenuto v2.0", long_about = None)]
 struct Cli {
+    /// Input source file (.ten)
     #[arg(short, long, value_name = "FILE")]
     input: PathBuf,
+
+    /// Output MIDI file (.mid)
+    #[arg(short, long, value_name = "OUT")]
+    output: Option<PathBuf>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,13 +34,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Lexical Analysis
     let lexer = Token::lexer(source.as_str());
-    
     let token_stream: Vec<(Token, std::ops::Range<usize>)> = lexer.spanned()
         .map(|(tok, span)| match tok {
             Ok(t) => (t, span),
             Err(_) => (Token::InvalidComment, span), 
         })
-        // FILTER: Remove InvalidComments/Lexer Errors so the Parser doesn't panic
         .filter(|(tok, _)| *tok != Token::InvalidComment) 
         .collect();
 
@@ -46,28 +50,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stream = Stream::from_iter(eoi, token_stream.into_iter());
 
     let (ast, parse_errs) = parser().parse_recovery(stream);
-    
-    for err in parse_errs {
-        println!("❌ Parse Error: {:?}", err);
-    }
+    for err in parse_errs { println!("❌ Parse Error: {:?}", err); }
 
     if let Some(score) = ast {
         println!("✅ Phase 2: Parsing Complete.");
         
-        // 4. Linearization (Phase 3)
+        // 4. Linearization
         println!("--- Starting Inference Engine ---");
-        
         match ir::compile(score) {
             Ok(timeline) => {
                 println!("✅ Phase 3: Linearization Complete.");
-                println!("Score Title: {}", timeline.title);
-                println!("Global Tempo: {} BPM", timeline.tempo);
+                println!("    Title: {}", timeline.title);
+                println!("    Tempo: {} BPM", timeline.tempo);
                 
-                for (id, track) in timeline.tracks {
-                    println!("Track [{}]: {} events", id, track.events.len());
-                    for (i, e) in track.events.iter().enumerate() {
-                        println!("  {}: Tick {:4} -> Dur {:3} | {:?}", i, e.tick, e.duration_ticks, e.kind);
-                    }
+                // 5. MIDI Export
+                if let Some(out_path) = cli.output {
+                    println!("--- Starting MIDI Encoder ---");
+                    let bytes = midi::export(&timeline)?;
+                    std::fs::write(&out_path, bytes)?;
+                    println!("🎹 Saved MIDI to {:?}", out_path);
+                } else {
+                    println!("ℹ️  No output file specified. Use --output <FILE.mid> to save.");
                 }
             },
             Err(e) => eprintln!("🔥 Logic Error: {}", e),

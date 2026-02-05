@@ -6,24 +6,27 @@ description = "The Reference Compiler for Tenuto v2.0"
 authors = ["The Tenuto Working Group", "Alec Borman"]
 
 [dependencies]
-# 1. Lexing (Fast, regex-based tokenizer)
+# 1. Lexing
 logos = "0.14"
 
-# 2. Parsing (Error-recovering parser combinators)
+# 2. Parsing
 chumsky = "0.9"
 
-# 3. CLI Argument Parsing
+# 3. CLI
 clap = { version = "4.4", features = ["derive"] }
 
 # 4. Error Handling
 thiserror = "1.0"
 anyhow = "1.0"
-ariadne = "0.4" # For pretty error reporting
+ariadne = "0.4"
 
-# 5. Serialization (For .tenb binary format)
+# 5. Serialization
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.3"
-zstd = "0.13" # For compression
+zstd = "0.13"
 
 # 6. Math
-num-integer = "0.1" # For GCD calculation in Rational Arithmetic
+num-integer = "0.1"
+
+# 7. MIDI Support (NEW)
+midly = "0.5"

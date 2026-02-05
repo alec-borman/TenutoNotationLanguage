@@ -1,12 +1,13 @@
 pub mod lexer;
 pub mod parser;
 pub mod ir;
+pub mod midi;   // <--- Added MIDI module
+// pub mod binary; // Keeping this commented out or removed if we strictly "rolled back"
 
 use thiserror::Error;
+// ... (rest of file remains the same)
 use num_integer::Integer;
 
-/// The Fundamental Unit of Time (Rational Arithmetic)
-/// Used to prevent floating point drift in rhythmic calculations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Rational {
     pub num: u64,
@@ -23,12 +24,10 @@ impl Rational {
     }
 
     pub fn to_ticks(&self, ppq: u32) -> u64 {
-        // formula: (num/den) * 4 * ppq (Whole note = 4 beats)
         (self.num * 4 * ppq as u64) / self.den
     }
 }
 
-/// Standardized Error Codes conforming to Spec Section 24
 #[derive(Error, Debug)]
 pub enum TenutoError {
     #[error("E1001: Malformed Token at position {0}")]
@@ -38,7 +37,6 @@ pub enum TenutoError {
     IoError(#[from] std::io::Error),
 }
 
-/// The Compiler Pipeline State
 pub struct Pipeline {
     pub source: String,
     pub strict_mode: bool,
