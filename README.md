@@ -197,7 +197,7 @@ We welcome contributions in:
 - **Performance optimizations**
 
 **Development Process:**
-1. Read the [Tenuto Language Specification](tenuto-specification.md)
+1. Read the [Tenuto Language Specification](docs/tenuto-specification.md)
 2. Follow Rust standards: "Parse, don't validate"
 3. Run test suite: `cargo test` (includes sticky state/tuplet regression tests)
 
@@ -211,7 +211,7 @@ MIT License © 2026 Alec Borman and the Tenuto Working Group
 
 ## 🔗 Resources
 
-- [Full Language Specification](tenuto-specification.md)
+- [Full Language Specification](docs/tenuto-specification.md)
 - [API Documentation](docs/api.md)
 - [Example Gallery](examples/)
 - [Community Discord](https://discord.gg/tenuto)
