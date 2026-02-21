@@ -1,14 +1,12 @@
 # Tenuto Language Specification
 
-**Version:** 2.0.0
+**Version:** 2.1.0
 
 **Status:** Normative / Final
 
 **License:** MIT
 
 **Maintainer:** The Tenuto Working Group
-
-## Table of Contents
 
 ## Table of Contents
 
@@ -50,11 +48,13 @@
 * [A.6 Real-Time Collaboration Protocol](#a6-real-time-collaboration-protocol)
 * [A.7 Implementation Checklist](#a7-implementation-checklist)
 
+---
+
 ## 1. Introduction
 
 Tenuto is a declarative, domain-specific language (DSL) designed to serialize musical logic, notation, and performance data into a human-readable text format. Unlike XML-based interchange formats (such as MusicXML) which prioritize visual layout coordinates and graphical preservation, Tenuto prioritizes **musical intent**.
 
-It utilizes a deterministic inference engine to calculate layout, beaming, and audio synthesis at render-time, allowing the user to focus purely on composition structure. This document defines the syntax, grammar, and processing rules for Tenuto Version 2.0.0.
+It utilizes a deterministic inference engine to calculate layout, beaming, and audio synthesis at render-time, allowing the user to focus purely on composition structure. This document defines the syntax, grammar, and processing rules for Tenuto Version 2.1.0.
 
 ### 1.1 Design Philosophy
 
@@ -68,7 +68,7 @@ The language adheres to three core principles designed to maximize efficiency, m
 
 Tenuto maps auditory events onto a high-dimensional logical grid. Understanding this coordinate system is essential for implementing the standard correctly.
 
-* **X-Axis (Time):** Linear absolute time. While the code is organized into `Measure` blocks for human convenience, the compiler views the X-axis as a continuous stream of "Ticks" (pulses).
+* **X-Axis (Time):** Linear absolute time. While the code is organized into `measure` blocks for human convenience, the compiler views the X-axis as a continuous stream of "Ticks" (pulses).
 * **Y-Axis (Source):** Distinct logical threads defined by **Staff IDs**. These represent the instruments or entities producing sound.
 * **Z-Axis (Polyphony):** Vertical layering within a single Time/Source coordinate. These are handled via **Voices** (e.g., Soprano/Alto on a single staff).
 
@@ -77,13 +77,11 @@ Tenuto maps auditory events onto a high-dimensional logical grid. Understanding 
 A compliant Tenuto compiler **MUST** implement a multi-stage transformation pipeline to convert source text into a renderable artifact. This pipeline ensures that all context (Global Definitions) is resolved before the linear logic is processed.
 
 1. **Lexing & Parsing:** The raw UTF-8 text is tokenized and validated against the Tenuto Formal Grammar.
-2. **Context Building:** The compiler scans the `meta` and `def` blocks to establish the global physics of the piece (Time signatures, Instrument capabilities, Tempos).
+2. **Context Building:** The compiler scans the `meta` blocks and `def` blocks to establish the global physics of the piece (Time signatures, Instrument capabilities, Tempos).
 3. **Linearization:** The compiler iterates through the `measure` blocks. This is where the "Inference Engine" operates:
-
-* It **MUST** resolve "Sticky" attributes (filling in missing durations or octaves based on previous state).
-* It **MUST** calculate absolute tick positions for every event.
-* It **MUST** validate vertical synchronization (ensuring all voices in a measure sum to the correct duration).
-
+   * It **MUST** resolve "Sticky" attributes (filling in missing durations or octaves based on previous state).
+   * It **MUST** calculate absolute tick positions for every event.
+   * It **MUST** validate vertical synchronization (ensuring all voices in a measure sum to the correct duration).
 4. **Rendering:** The linearized, fully resolved data is mapped to the target output (SVG for scores, MIDI for audio, or MusicXML for interchange).
 
 ### 1.4 Scope & Limitations
@@ -91,18 +89,18 @@ A compliant Tenuto compiler **MUST** implement a multi-stage transformation pipe
 It is critical to understand the boundaries of the Tenuto specification.
 
 * **In Scope:**
-* Definition of musical pitch, rhythm, and structural flow.
-* Definition of instrument characteristics (transposition, string tuning, percussion mapping).
-* High-level layout directives (system breaks, page turns).
-* Abstract playback controls (dynamics, tempo, MIDI CC automation).
+  * Definition of musical pitch, rhythm, and structural flow.
+  * Definition of instrument characteristics (transposition, string tuning, percussion mapping).
+  * High-level layout directives (system breaks, page turns).
+  * Abstract playback controls (dynamics, tempo, MIDI CC automation).
 * **Out of Scope:**
-* **Binary Audio:** Tenuto does not embed .wav or .mp3 data. It generates instructions for a synthesizer, but is not a sampler.
-* **DAW Session Data:** Tenuto is not a replacement for Ableton Live or Pro Tools project files. It does not store plugin states, EQ settings, or routing graphs.
-* **Pixel-Perfect Engraving:** While Tenuto supports layout hints, the final calculation of bezier curves and font kerning is the responsibility of the *Renderer*, not the *Language*.
+  * **Binary Audio:** Tenuto does not embed .wav or .mp3 data. It generates instructions for a synthesizer, but is not a sampler.
+  * **DAW Session Data:** Tenuto is not a replacement for Ableton Live or Pro Tools project files. It does not store plugin states, EQ settings, or routing graphs.
+  * **Pixel-Perfect Engraving:** While Tenuto supports layout hints, the final calculation of bezier curves and font kerning is the responsibility of the *Renderer*, not the *Language*.
 
 ### 1.5 Conformance & Terminology
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
 
 #### 1.5.1 Conformance Classes
 
@@ -122,8 +120,6 @@ This specification defines two classes of conformance:
 measure 1 {
   vln: c4 d e f |
 }
-
-
 ```
 
 ---
@@ -156,11 +152,9 @@ Comments are non-executable text segments used for documentation. They are strip
 ```tenuto
 %% This is a comment
 c4:4 %% Inline comment
-
-
 ```
 
-* **Block Comments:** Block comments are **NOT SUPPORTED** in Version 2.0.0. This design choice prevents parsing ambiguities regarding nested comments.
+* **Block Comments:** Block comments are **NOT SUPPORTED** in Version 2.1.0. This design choice prevents parsing ambiguities regarding nested comments.
 
 ### 2.4 Case Sensitivity
 
@@ -180,27 +174,29 @@ The following table defines the primitive data types supported by the Tenuto lex
 | **Integer** | `[0-9]+` | `1`, `120` | Used for octaves, BPM, counts. |
 | **Float** | `[0-9]+\.[0-9]+` | `1.5`, `0.75` | Used for precise durations/multipliers. |
 | **String** | `".*"` | `"Violin I"` | UI Labels, Lyrics, Metadata. Supports UTF-8. |
-| **Pitch** | `[a-gA-G][# | b | x...` |
+| **Pitch** | `[a-gA-G][#|b|x|qs...`| `c4`, `F#5` | Modified Scientific Pitch Notation. |
 | **TabCoord** | `[0-9]+-[1-9][0-9]*` | `0-6`, `12-2` | Format: `Fret-String`. |
-| **Boolean** | `true | false` | `true` |
-| **Identifier** | `[a-zA-Z_][a-zA-Z0-9_]*` | `vln`, `My_Macro` | Used for naming Staves and Macros. |
+| **Boolean** | `true \| false` | `true` | |
+| **Identifier**| `[a-zA-Z_][a-zA-Z0-9_]*`| `vln`, `My_Macro` | Used for naming Staves and Macros. |
 
-### 2.6 Operators & Punctuators
+### 2.6 Operators & Punctuators (Updated for 2.1)
 
-The following symbols act as delimiters or operators and **MUST** be tokenized as distinct lexical elements, even if adjacent to other tokens.
+The following symbols act as delimiters or operators to provide unique entry-points for complex data structures. A conformant parser **MUST** tokenize compound sigils (`<[`, `]>`, `@{`) as single atomic units.
 
 | Symbol | Name | Usage |
 | --- | --- | --- |
-| `{` `}` | Braces | Scope definition (Groups, Voices, Meta blocks). |
-| `[` `]` | Brackets | Chord grouping, Volta endings. |
-| `:` | Colon | Assignment (Staff), Duration separator (`c4:4`). |
-| `.` | Dot | Attribute accessor (`.stacc`), Dotted rhythm (`:4.`). |
-| `,` | Comma | List separator (Meta keys, Arrays). |
-| `~` | Tilde | Tie connection. |
-| ` | ` | Pipe |
+| `{` `}` | **Structural Braces** | Scope definition for high-level blocks (`tenuto`, `measure`, `group`, `macro`). |
+| `<[` `]>` | **Voice Brackets** | **[NEW]** Encloses multi-voice polyphonic blocks (`v1: ... \| v2: ...`). |
+| `@{` `}` | **Map Sigil** | **[NEW]** Encloses Key-Value Data Maps (Metadata and Attributes). |
+| `[` `]` | Brackets | Pitch Chord grouping (`[c4 e4 g4]`) or Volta numbering. |
+| `:` | Colon | Assignment (Staff/Voice ID) or Duration separator (`c4:4`). |
+| `.` | Dot | Attribute accessor (`.stacc`). |
+| `,` | Comma | List separator within Maps and Arrays. |
+| `~` | Tilde | Tie connection between notes. |
+| `\|` | Pipe | Bar line or block separator. |
 | `$` | Dollar | Macro invocation prefix. |
-| `(` `)` | Parentheses | Tuplet grouping, Argument lists. |
-| `=` | Equals | Definition assignment. |
+| `(` `)` | Parentheses | Tuplet grouping or Macro argument lists. |
+| `=` | Equals | Definition assignment (`var` or `macro`). |
 
 ### 2.7 Reserved Keywords
 
@@ -229,8 +225,6 @@ The outermost scope of any Tenuto file **MUST** be enclosed in a generic root bl
 tenuto {
   %% Content goes here
 }
-
-
 ```
 
 ### 3.2 Block Ordering (The Three Phases)
@@ -241,7 +235,7 @@ To facilitate efficient single-pass compilation, Tenuto enforces a **Declaration
 
 The `meta` block establishes the global environment (Time Signature, Tempo, Key).
 
-* **Constraint:** Global physics constants (like `time: 4/4`) **MUST** be defined before the first `measure` block.
+* **Constraint:** Global physics constants (like `time: "4/4"`) **MUST** be defined before the first `measure` block.
 
 #### 3.2.2 Phase 2: Definition (Defs)
 
@@ -257,11 +251,14 @@ The `measure` blocks contain the event data.
 * **Constraint:** Once the Logic phase begins, new `def` statements are **FORBIDDEN** within the same scope.
 * **Import Exception:** The `import` statement is a pre-processor directive. If an imported file contains `def` blocks, they are processed as if they appeared at the point of import. Therefore, imports containing definitions **MUST** appear before the Logic phase begins.
 
-### 3.3 Metadata Scope & Keys
+### 3.3 Metadata Scope & Keys (Updated for 2.1)
 
-The `meta` block defines properties that persist until overridden (Sticky State). Use of `meta` inside a measure creates a **Local Scope** that inherits from the Global Scope.
+To distinguish configuration data from musical logic, all `meta` blocks and data maps **MUST** be initiated with the `@` sigil. This allows recursive descent parsers to differentiate between a `Value::Map` and a structural block without backtracking.
 
-**Syntax:** `meta { key: value, ... }`
+**Syntax:** `meta @{ key: value, ... }`
+
+* **Global Meta:** Establishes the environment for the entire document (persists until overridden).
+* **Local Meta:** When used inside a `measure`, it creates a local override that inherits from the Global scope.
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -271,6 +268,15 @@ The `meta` block defines properties that persist until overridden (Sticky State)
 | `time` | String | "4/4" | Time signature. |
 | `key` | String | "C" | Key signature. |
 | `swing` | Integer | 0 | Swing percentage (0-100). |
+
+```tenuto
+%% Global Metadata Example
+meta @{
+  title: "Tenuto V2.1 Specification",
+  tempo: 120,
+  time: "4/4"
+}
+```
 
 ### 3.4 Definition Scope
 
@@ -285,15 +291,15 @@ The `def` statement registers a Staff ID.
 
 The `measure` block serves as the container for temporal events.
 
-**Syntax:** `measure [Range] ...`
+**Syntax:** `measure [Range] { ... }`
 
 #### 3.5.1 Measure Range Grammar
 
 The `[Range]` parameter defines which time-slices the block populates.
 
-* **Single Index:** `measure 1` (Standard usage).
-* **Range:** `measure 1-4` (Populates 4 sequential measures with the same logic).
-* **List:** `measure 1, 3, 5` (Populates specific indices).
+* **Single Index:** `measure 1 { ... }` (Standard usage).
+* **Range:** `measure 1-4 { ... }` (Populates 4 sequential measures with the same logic).
+* **List:** `measure 1, 3, 5 { ... }` (Populates specific indices).
 
 #### 3.5.2 Additive Merging (The "Open Measure")
 
@@ -324,7 +330,7 @@ The `def` keyword registers a new Staff ID in the Global Symbol Table.
 
 * **ID:** An alphanumeric identifier (e.g., `vln`). It **MUST** be unique within the Global Namespace.
 * **Label:** A String literal (e.g., `"Violin I"`). Used by the Renderer for visual staff labels.
-* **Attributes:** A space-separated list of `key=value` pairs.
+* **Attributes:** A space-separated list of `key=value` pairs. If the value is a complex object, it uses the Map Sigil (`@{ ... }`).
 
 ### 4.2 Staff Styles (The Engines)
 
@@ -357,19 +363,19 @@ The following table defines the normative attributes for instrument definition.
 | **`transpose`** | `standard` | Integer | `0` | Visual semitone offset. |
 | **`tuning`** | `tab` | Array | `guitar_std` | Open string pitches (Low to High). |
 | **`capo`** | `tab` | Integer | `0` | Fret offset. |
-| **`map`** | `grid` | Map | `gm_std` | Input Token mapping. |
+| **`map`** | `grid` | Map | `gm_std` | Input Token mapping (Uses `@{}`). |
 | **`patch`** | All | String | "Grand Piano" | General MIDI Name or SoundFont ID. |
 | **`channel`** | All | Integer | Auto | MIDI Channel (1-16). Defaults to auto-increment. |
 | **`bank`** | All | Integer | `0` | MIDI Bank Select (MSB). |
-| **`keyswitch`** | `standard` | Map | `{}` | Articulation map (See 4.6). |
+| **`keyswitch`** | `standard` | Map | `@{}` | Articulation map (See 4.6). |
 | **`vol`** | All | Integer | `100` | Default Volume (CC 7). |
 | **`pan`** | All | Integer | `0` | Default Pan (CC 10). |
 
 ### 4.4 Percussion Mapping
 
-For `style=grid`, the `map` attribute defines the input schema.
+For `style=grid`, the `map` attribute defines the input schema using the Map Sigil.
 
-**Syntax:** `map={ key: [position, midi_note], ... }`
+**Syntax:** `map=@{ key: [position, midi_note], ... }`
 
 * **Key:** The character used in the logic stream (e.g., `k`).
 * **Position:** Integer. Vertical staff offset (0 = bottom line).
@@ -386,17 +392,15 @@ Staves **MAY** be grouped using the `group` block.
 
 ### 4.6 Articulation Maps (Keyswitches)
 
-To support realistic playback of complex sample libraries, instruments **MAY** define a `keyswitch` map. This binds an attribute modifier (logic) to a specific MIDI note (audio trigger).
+To support realistic playback of complex sample libraries, instruments **MAY** define a `keyswitch` map using the Map Sigil (`@{ ... }`). This binds an attribute modifier (logic) to a specific MIDI note (audio trigger).
 
-**Syntax:** `keyswitch={ modifier: note_number, ... }`
+**Syntax:** `keyswitch=@{ modifier: note_number, ... }`
 
 ```tenuto
-def vln "Violin" style=standard keyswitch={
+def vln "Violin" style=standard keyswitch=@{
   arco: 24,   %% MIDI Note 24 (C0) triggers Arco
   pizz: 25    %% MIDI Note 25 (C#0) triggers Pizzicato
 }
-
-
 ```
 
 *Usage:* In the logic stream, appending `.pizz` to an event will silently trigger MIDI note 25 before playing the event.
@@ -426,9 +430,9 @@ Duration is denoted by a colon followed by a value (`:value`). The base values c
 
 Durations **MAY** be modified by appending periods (`.`).
 
-* **Single Dot (`.`):** Adds 50% to the base value ().
-* *Example:* `:4.` (Dotted Quarter) =  ticks.
-* **Double Dot (`..`):** Adds 75% to the base value ().
+* **Single Dot (`.`):** Adds 50% to the base value.
+* *Example:* `:4.` (Dotted Quarter) = 1440 ticks.
+* **Double Dot (`..`):** Adds 75% to the base value.
 
 #### 5.1.2 Duration Multipliers
 
@@ -447,9 +451,7 @@ To minimize file size and visual noise, Tenuto employs **Sticky State** logic. I
 2. **Voice-Local:** Within a staff, stickiness is isolated to the active Voice layer.
 3. **Measure-Crossing:** Stickiness **PERSISTS** across bar lines. It is a continuous state cursor.
 4. **Tuplet-Penetrating:** Stickiness flows into and out of Tuplet groups linearly.
-
-* *Example:* `c4:4 (d:8 e f):3/2 g` -> `g` is inferred as `:8`.
-
+   * *Example:* `c4:4 (d:8 e f):3/2 g` -> `g` is inferred as `:8`.
 5. **Initialization:** If the first event of a staff has no explicit duration, the compiler **SHOULD** default to `:4` and emit a **Warning**.
 
 ### 5.3 Tuplets (Irrational Rhythms)
@@ -458,8 +460,7 @@ Tuplets define a span of time divided into equal parts contrary to the prevailin
 
 **Syntax:** `( [Events...] ):Actual/Normal`
 
-* **Ratio ():** "Play  notes in the time of ."
-* **Calculation:** .
+* **Ratio:** "Play X notes in the time of Y."
 * **Nesting:** Tuplets **MAY** be nested. The timing modification is multiplicative.
 
 ```tenuto
@@ -468,8 +469,6 @@ Tuplets define a span of time divided into equal parts contrary to the prevailin
 
 %% Quintuplet: 5 sixteenths in the space of 4
 (c d e f g):5/4
-
-
 ```
 
 ### 5.4 Grace Notes (Atemporal Events)
@@ -508,10 +507,8 @@ A valid pitch token consists of three components in strict order:
 
 1. **Step:** Case-insensitive letter `A` through `G`. These correspond to the diatonic steps of the standard Western 12-Tone Equal Temperament (12-TET) scale.
 2. **Accidental (Optional):** Modifier suffix altering the pitch by chromatic steps.
-
-* **Standard:** `#` (Sharp, +1), `b` (Flat, -1), `x` (Double Sharp, +2), `bb` (Double Flat, -2), `n` (Natural, 0).
-* **Microtonal:** `qs` (Quarter Sharp, +0.5), `qf` (Quarter Flat, -0.5), `tqs` (Three-quarter Sharp, +1.5), `tqf` (Three-quarter Flat, -1.5).
-
+   * **Standard:** `#` (Sharp, +1), `b` (Flat, -1), `x` (Double Sharp, +2), `bb` (Double Flat, -2), `n` (Natural, 0).
+   * **Microtonal:** `qs` (Quarter Sharp, +0.5), `qf` (Quarter Flat, -0.5), `tqs` (Three-quarter Sharp, +1.5), `tqf` (Three-quarter Flat, -1.5).
 3. **Octave (Optional):** Integer `0` through `9`.
 
 ### 6.2 The Reference Standard (Physical Grounding)
@@ -520,11 +517,6 @@ To ensure this specification remains decipherable over millennia, the pitch onto
 
 * **Reference Octave:** The integer `4` (as in `A4`) defines the octave containing the tuning reference.
 * **Reference Frequency:** Unless overridden in `meta`, the token `a4` is normatively defined as **440 Hz**.
-* **Mathematical Derivation:** All other pitches are derived logarithmically relative to this constant:
-
-Where  is the distance in semitones from A4.
-
-* **Archival Note:** While `C4` is culturally termed "Middle C", its physical definition is ~261.63 Hz relative to A4=440.
 
 ### 6.3 Sticky Octaves (State Persistence)
 
@@ -542,8 +534,6 @@ To prevent ambiguity caused by "Measure Rules" (which vary by century and style)
 1. **Explicit Mode:** An accidental in the code (`f#4`) **ALWAYS** sets the pitch to that specific chromatic value.
 2. **Implicit Mode:** A note without an accidental (`f4`) inherits the accidental defined by the current **Key Signature** (Global State).
 3. **Statelessness:** Accidentals do **NOT** persist strictly through the measure in the code logic. Every token is evaluated independently against the Key Signature.
-
-* *Durability Note:* This ensures that if a single measure is extracted or a bar line is moved, the pitch data remains mathematically correct without needing to "scan back" for previous accidentals in the measure.
 
 ### 6.5 Chords (Vertical Polyphony)
 
@@ -563,17 +553,14 @@ Ties extend the duration of a pitch by connecting it to a subsequent note of the
 
 * **Single Note:** `c4:4~ c4:8` (Total duration 1.5 beats).
 * **Chord Tying:** Ties **MAY** be applied to individual notes within a chord structure, allowing for complex polyphonic suspensions within a single voice.
-* *Example:* `[c4~ e4 g4] [c4 f4 a4]` (C is tied; E and G move to F and A).
 
 ### 6.7 Data Integrity Recommendations
 
-For files intended for long-term archival (100+ years), it is **RECOMMENDED** to use **Strict Explicit Mode**, where every note includes an explicit Octave and Duration. This immunizes the data against corruption of the "Sticky State" chain.
+For files intended for long-term archival (100+ years), it is **RECOMMENDED** to use **Strict Explicit Mode**, where every note includes an explicit Octave and Duration.
 
 ```tenuto
 %% Archival Safe
 vln: c4:4 e4:4 g4:4 c5:4
-
-
 ```
 
 ---
@@ -589,9 +576,9 @@ Attributes are appended to the Event token, immediately following the duration (
 **Syntax:** `Event (:Duration)? (.Modifier)*`
 
 * **Chaining:** Multiple modifiers **MAY** be chained on a single event.
-* *Example:* `c4:4.stacc.acc.ff`
+  * *Example:* `c4:4.stacc.acc.ff`
 * **Arguments:** Modifiers **MAY** accept arguments enclosed in parentheses. Arguments generally support Integers, Floats, or String Literals.
-* *Example:* `.text("dolce")`, `.finger(3)`
+  * *Example:* `.text("dolce")`, `.finger(3)`
 * **Commutativity:** The order of modifiers is **Commutative** regarding their semantic effect (`.stacc.acc` is identical to `.acc.stacc`). However, for visual rendering, the order **SHOULD** define the Z-stacking order moving outward from the notehead.
 
 ### 7.2 Category A: Dynamics (Amplitude)
@@ -600,7 +587,6 @@ Dynamics control the energy (loudness) of the event.
 
 * **Tokens:** `pppp`, `ppp`, `pp`, `p`, `mp`, `mf`, `f`, `ff`, `fff`, `ffff`, `sfz`, `fp`, `rfz`.
 * **State Behavior:** Dynamics are **Sticky**. A dynamic token sets the `CurrentAmplitude` state for the Staff. This state persists across bar lines and applies to all subsequent events until a new Dynamic token is encountered.
-* *Logic:* `c4.ff d e` -> `d` and `e` are also `ff`.
 
 ### 7.3 Category B: Articulations (Envelope)
 
@@ -608,21 +594,19 @@ Articulations modify the temporal envelope (Attack, Decay, Sustain, Release) of 
 
 | Token | Name | Audio Semantics | State Behavior |
 | --- | --- | --- | --- |
-| `.stacc` | Staccato | Gate Time  50% | **Transient** |
-| `.stacciss` | Staccatissimo | Gate Time  25% | **Transient** |
+| `.stacc` | Staccato | Gate Time ~ 50% | **Transient** |
+| `.stacciss` | Staccatissimo | Gate Time ~ 25% | **Transient** |
 | `.ten` | Tenuto | Gate Time = 100% (Legato) | **Transient** |
 | `.acc` | Accent | Attack Energy +15% | **Transient** |
 | `.marc` | Marcato | Attack Energy +25%, Fast Decay | **Transient** |
 
 * **Transient Logic:** Unlike dynamics, an articulation applies **ONLY** to the event it decorates. It does not persist.
-* *Logic:* `c4.stacc d e` -> Only `c4` is staccato. `d` and `e` are normal.
 
 #### 7.3.1 The Fermata Exception
 
 The `.fermata` token is unique. While syntactically an articulation, semantically it acts as a **Global Flow Control** instruction.
 
 * **Behavior:** It halts the **Global Clock** (defined in Section 5) for all staves simultaneously.
-* **Duration:** The hold time is undefined (interpretive) unless specified via a `meta` override, but the standard requires the clock to pause, creating a gap in the linear stream.
 
 ### 7.4 Category C: Technique Instructions (Timbre)
 
@@ -630,7 +614,6 @@ Technique attributes modify the physical method of sound production.
 
 * **Tokens:** `.pizz` (Pizzicato), `.arco` (Arco), `.mute` (Con Sordino), `.open` (Senza Sordino), `.harm` (Natural Harmonic), `.harm_art` (Artificial Harmonic).
 * **State Behavior:** Technique instructions are **Sticky**. They represent a physical change in the instrument state (e.g., putting on a mute) that persists until explicitly reversed.
-* *Logic:* `c4.pizz d e` -> The section plays pizzicato until an `.arco` token is seen.
 
 ### 7.5 Category D: Text & Physical Hints
 
@@ -648,9 +631,7 @@ To ensure the specification remains durable as musical styles evolve, Tenuto res
 
 * **Syntax:** `.x_[Identifier]`
 * **Behavior:** Compliant parsers **MUST** ignore unknown attributes prefixed with `x_` during rendering/playback but **MUST** preserve them in the Abstract Syntax Tree (AST). This allows custom tools or future plugins to utilize data without breaking standard compilers.
-* *Example:* `.x_bowScrape`
 
----
 
 ## 8. The Tablature Engine
 
@@ -663,15 +644,12 @@ The fundamental unit of data is the **Tab Coordinate**, representing the interse
 **Syntax:** `Fret-String`
 
 1. **Fret:** Integer `0` through `N`.
-
-* `0`: Open String.
-* `x` or `X`: Dead Note (Percussive mute with indeterminate pitch).
-
+   * `0`: Open String.
+   * `x` or `X`: Dead Note (Percussive mute with indeterminate pitch).
 2. **Hyphen:** Mandatory separator token.
 3. **String:** Integer `1` through `N`.
-
-* **Normative Mapping (The Inverse Rule):** String `1` corresponds to the **Highest Pitched String** (physically thinnest). String `N` corresponds to the **Lowest Pitched String**.
-* **Index Resolution:** In the `tuning` array defined in Section 4 (ordered Low to High), String `1` maps to `tuning[Length - 1]`. String `N` maps to `tuning[0]`.
+   * **Normative Mapping (The Inverse Rule):** String `1` corresponds to the **Highest Pitched String** (physically thinnest). String `N` corresponds to the **Lowest Pitched String**.
+   * **Index Resolution:** In the `tuning` array defined in Section 4 (ordered Low to High), String `1` maps to `tuning[Length - 1]`. String `N` maps to `tuning[0]`.
 
 *Example:* `0-6` represents the Open Low E string on a standard guitar.
 
@@ -679,7 +657,7 @@ The fundamental unit of data is the **Tab Coordinate**, representing the interse
 
 To support audio playback, synthesis, and Standard Notation conversion, the compiler **MUST** be able to derive absolute frequency from tab coordinates.
 
-**Formula:** 
+**Formula:** `Pitch = tuning[Length - String] + Fret + capo`
 
 * **Validation:** If the provided String ID exceeds the number of strings defined in the instrument's `tuning` array, the compiler **MUST** throw a **Range Error (E801)**.
 * **Tuning Integrity:** If the `tuning` array is missing from the `def` block, the compiler **SHOULD** default to Standard Guitar Tuning (`E2` to `E4`) and emit a **Warning**.
@@ -707,9 +685,9 @@ Bends represent continuous mechanical alteration of string tension, resulting in
 
 * **Target Values:** `quarter` (1/4 tone), `half` (1 semitone), `full` (1 tone), `1.5` (Minor 3rd), `2` (Major 3rd).
 * **Envelope Logic:**
-* **Standard Bend:** `10-2:4.bu(full)` starts at the fretted pitch and ramps linearly to the target over the duration.
-* **Pre-Bend:** `10-2:4.pb(full).bd(0)` starts at the target pitch (string tension already increased) and releases to the fretted pitch.
-* **Hold:** `10-2:4.bu(full).hold` maintains the target pitch for the duration.
+  * **Standard Bend:** `10-2:4.bu(full)` starts at the fretted pitch and ramps linearly to the target over the duration.
+  * **Pre-Bend:** `10-2:4.pb(full).bd(0)` starts at the target pitch (string tension already increased) and releases to the fretted pitch.
+  * **Hold:** `10-2:4.bu(full).hold` maintains the target pitch for the duration.
 
 ### 8.5 Strums & Chords
 
@@ -741,12 +719,10 @@ The fundamental unit of data is the **Mapped Key**.
 **Syntax:** `Key (:Duration)? (.Modifier)*`
 
 1. **Key:** An alphanumeric string that **MUST** exist as a key in the instrument's `map` dictionary (defined in Section 4).
-
-* *Validation:* Usage of a key not present in the map is a **Lookup Error (E901)**.
-
+   * *Validation:* Usage of a key not present in the map is a **Lookup Error (E901)**.
 2. **Duration:** Adheres to the standard **Sticky State** logic defined in Section 5.
 
-*Example:* Given a map `{ k: Kick, s: Snare }`, the stream `k:4 s k s` produces a standard rock beat.
+*Example:* Given a map `@{ k: Kick, s: Snare }`, the stream `k:4 s k s` produces a standard rock beat.
 
 ### 9.2 Polyphony (Chords vs. Voices)
 
@@ -768,17 +744,17 @@ Percussion-specific techniques are applied as dot modifiers. These attributes mo
 
 | Token | Name | Audio Semantics | State Behavior |
 | --- | --- | --- | --- |
-| `.ghost` | Ghost Note | Velocity  40%. **Overrides** Sticky Dynamic. | **Transient** |
-| `.flam` | Flam | Single grace note () before impact. | **Transient** |
-| `.drag` | Drag | Double grace note () before impact. | **Transient** |
+| `.ghost` | Ghost Note | Velocity ~ 40%. **Overrides** Sticky Dynamic. | **Transient** |
+| `.flam` | Flam | Single grace note before impact. | **Transient** |
+| `.drag` | Drag | Double grace note before impact. | **Transient** |
 | `.ruff` | Ruff | Triple grace note before impact. | **Transient** |
 | `.roll` | Tremolo | Repeated re-triggering (Buzz/Press). | **Transient** |
-| `.choke` | Choke | Note Off triggered immediately (). | **Transient** |
+| `.choke` | Choke | Note Off triggered immediately. | **Transient** |
 
 * **Roll Specifics:**
-* **Tremolo:** `.roll(3)` indicates an unmeasured press roll (rendered with 3 slashes on stem).
-* **Measured:** `.roll(1)` indicates exact subdivision (8th or 16th depending on context).
-* **Ties:** The Tilde `~` operator **MAY** be used to extend a roll across bar lines. `s:1.roll ~ s:1` results in a continuous roll of 2 measures.
+  * **Tremolo:** `.roll(3)` indicates an unmeasured press roll (rendered with 3 slashes on stem).
+  * **Measured:** `.roll(1)` indicates exact subdivision (8th or 16th depending on context).
+  * **Ties:** The Tilde `~` operator **MAY** be used to extend a roll across bar lines. `s:1.roll ~ s:1` results in a continuous roll of 2 measures.
 
 ### 9.4 Sticking (Hand Assignment)
 
@@ -798,29 +774,27 @@ Many percussion instruments have multiple strike zones (Head vs. Rim). Rather th
 
 ---
 
-## 10. Advanced Polyphony
+## 10. Advanced Polyphony (Updated for 2.1)
 
 Tenuto supports **Multi-Threaded Logic** within a single staff, allowing for independent rhythmic streams (e.g., a Pianist playing a melody and accompaniment in the same hand, or a Drummer playing independent limb patterns). This is achieved through **Voice Groups**.
 
 ### 10.1 Voice Group Syntax
 
-Polyphonic regions are enclosed in curly braces `{}`. Within this block, specific **Voice Identifiers** separate the logic streams.
+Polyphonic regions are enclosed in **Voice Brackets** (`<[` and `]>`). Within this block, specific **Voice Identifiers** separate the logic streams. This compound sigil unambiguously resolves the V2.0 LL(k) conflict with curly braces.
 
 **Syntax:**
 
 ```tenuto
-Staff_ID: {
+Staff_ID: <[
   Voice_ID: Events... |
   Voice_ID: Events... |
-}
-
-
+]>
 ```
 
 * **State Inheritance (Entry):** The Voice Group creates a branching scope.
-* **`v1` (Primary):** Inherits the Sticky State (Octave, Duration) from the event immediately preceding the block.
-* **`v2`...`v4` (Secondary):** Reset to defaults (Octave 4, Quarter Note) upon entry. This isolation prevents the "Melody's" previous duration from accidentally applying to a new "Bass" line entering the texture.
-* **State Inheritance (Exit):** Upon closing the block `}`, the global Sticky State is restored to the state of the last event in **`v1`** (The Primary Voice).
+  * **`v1` (Primary):** Inherits the Sticky State (Octave, Duration) from the event immediately preceding the block.
+  * **`v2`...`v4` (Secondary):** Reset to defaults (Octave 4, Quarter Note) upon entry. This isolation prevents the "Melody's" previous duration from accidentally applying to a new "Bass" line entering the texture.
+* **State Inheritance (Exit):** Upon closing the block `]>`, the global Sticky State is restored to the state of the last event in **`v1`** (The Primary Voice).
 
 ### 10.2 Voice Identifiers & Semantics
 
@@ -840,17 +814,15 @@ To ensure the measure remains mathematically valid, the Tenuto compiler enforces
 * **Rule:** The total duration of events in **every** declared voice within a group **MUST** be identical.
 * **Padding:** If a voice requires silence to fill the measure, explicit Rests (`r`) **MUST** be used.
 * **Validation:**
-* If `v1` contains 1920 ticks (Half Note), `v2` must also contain 1920 ticks.
-* **Error:** Failure to balance durations results in a **Synchronization Error (E1001)**.
+  * If `v1` contains 1920 ticks (Half Note), `v2` must also contain 1920 ticks.
+  * **Error:** Failure to balance durations results in a **Synchronization Error (E1001)**.
 
 ```tenuto
 %% Valid Polyphony (Total: 4 beats)
-vln: {
+vln: <[
   v1: c5:2 d5:2 |
   v2: a4:1      |
-}
-
-
+]>
 ```
 
 ### 10.4 Cross-Staff Notation (Grand Staff)
@@ -869,6 +841,7 @@ When multiple voices occupy the same pitch/time coordinate:
 2. **Offset:** Voices with differing durations (e.g., Half Note vs Quarter Note) are horizontally offset to preserve visual clarity.
 3. **Seconds:** Intervals of a second (e.g., F and G) are automatically offset to prevent overlapping noteheads.
 
+---
 
 ## 11. Structure & Flow Control
 
@@ -880,12 +853,12 @@ Explicit Bar Line tokens denote structural boundaries. While a `measure` block i
 
 | Token | Name | Semantics |
 | --- | --- | --- |
-| ` | ` | Single Bar |
-| ` |  | ` |
-| ` | ] ` | Final Bar |
-| ` | : ` | Start Repeat |
-| ` : | ` | End Repeat |
-| `: | :` | Double Repeat |
+| `\|` | Single Bar |
+| `\|\|` | Double Bar |
+| `\|]` | Final Bar |
+| `\|:` | Start Repeat |
+| `:\|` | End Repeat |
+| `:\|:` | Double Repeat |
 
 * **Global Synchronization:** Structural tokens are **System-Global**. If `vln` defines a Repeat Sign `|:`, the compiler enforces this repeat on **ALL** staves in the system for that tick.
 * **Conflict:** If `vln` defines `|:` and `vlc` defines `|` at the same tick, the compiler **MUST** throw a **Structure Mismatch Error (E1101)**.
@@ -898,17 +871,16 @@ Repeated sections often require different endings on subsequent passes. Tenuto u
 
 * **N:** Integer or list (e.g., `1.` or `1,3.`). Indicates which iteration(s) this block is active for.
 * **Logic:**
-* On Pass , the cursor enters the bracket.
-* On other passes, the cursor **skips** the bracket content entirely.
+  * On Pass `N`, the cursor enters the bracket.
+  * On other passes, the cursor **skips** the bracket content entirely.
 * **Validation:** All staves active in the measure **MUST** define the same Volta brackets to ensure the system stays aligned.
 
 ```tenuto
 measure 5 {
-  meta { volta: "1." }  %% Preferred: Define in Meta for clarity
+  meta @{ volta: "1." }  %% Preferred: Define in Meta for clarity
   vln: g4 a b c :| 
   vlc: g2    c3  :|
 }
-
 ```
 
 ### 11.3 Navigation Markers (Jumps)
@@ -919,8 +891,8 @@ Jumps allow for non-linear movement across the score (e.g., D.S. al Coda).
 
 Anchors mark a specific tick location in the score.
 
-* `.segno`: Renders the Sign () and registers the timestamp as `Target_Segno`.
-* `.coda`: Renders the Coda symbol () and registers the timestamp as `Target_Coda`.
+* `.segno`: Renders the Sign and registers the timestamp as `Target_Segno`.
+* `.coda`: Renders the Coda symbol and registers the timestamp as `Target_Coda`.
 * `.fine`: Marks the potential end of the piece.
 
 #### 11.3.2 Jump Instructions
@@ -944,17 +916,16 @@ Rehearsal marks serve as human-readable checkpoints.
 
 To handle pieces that begin before the first downbeat:
 
-**Syntax:** `meta { pickup: Duration }`
+**Syntax:** `meta @{ pickup: Duration }`
 
 * **Location:** This attribute is valid ONLY in the first `measure` block of a file.
 * **Behavior:** The measure is treated as "Measure 0" for numbering purposes. The compiler validates that the content length equals the pickup duration, not the full Time Signature.
 
 ```tenuto
 measure 0 {
-  meta { time: 4/4, pickup: :8 } %% Pickup is one 8th note
+  meta @{ time: "4/4", pickup: :8 } %% Pickup is one 8th note
   vln: g4:8 |
 }
-
 ```
 
 ---
@@ -970,8 +941,8 @@ Lyrics are assigned using the `.lyric` suffix.
 **Syntax:** `Target_ID.lyric: "Text String"`
 
 * **Targeting:**
-* `vln.lyric`: Implicitly maps to the **Primary Voice (`v1`)** of the staff.
-* `vln:v2.lyric`: Maps specifically to Voice 2.
+  * `vln.lyric`: Implicitly maps to the **Primary Voice (`v1`)** of the staff.
+  * `vln:v2.lyric`: Maps specifically to Voice 2.
 * **Mapping Logic:** The text string is tokenized into syllables based on the grammar defined in 12.2. These tokens are mapped **1-to-1** onto the pitch events of the target voice.
 * **Skip Rules:** Rests (`r`) and Grace Notes (`:grace`) are **skipped** automatically by the engine. The lyrics map only to "Real" rhythmic events with positive duration.
 
@@ -981,25 +952,11 @@ The text string is parsed using specific delimiters to determine syllable bounda
 
 | Token | Name | Mapping Behavior | Visual Result |
 | --- | --- | --- | --- |
-| `          ` (Space) | Word Break | Advance to next note. | Standard word spacing. |
+| ` ` (Space) | Word Break | Advance to next note. | Standard word spacing. |
 | `-` | Hyphen | Advance to next note. | Centered dash between notes. |
 | `_` | Melisma | Advance to next note. | Continuous extension line (underscore). |
 | `~` | Elision | **Stay on current note.** | Lyric slur (undertie) joining two words. |
 | `*` | Skip | Advance to next note. | No text rendered (Empty slot). |
-
-* **Usage Example:**
-* *Code:* `"Glo- ~ ria __ in ex- cel- sis * De- o"`
-* *Mapping:*
-
-1. `Glo` + `ria` (Elision)  Note 1.
-2. `__` (Melisma extension)  Note 2.
-3. `in`  Note 3.
-4. `ex`  Note 4.
-5. `cel`  Note 5.
-6. `sis`  Note 6.
-7. `*` (Skip)  Note 7 (e.g., an instrumental passing tone).
-8. `De`  Note 8.
-9. `o`  Note 9.
 
 ### 12.3 Multiple Stanzas (Verses)
 
@@ -1013,7 +970,6 @@ measure 1 {
   vox.lyric_1: "1. Joy to the world"
   vox.lyric_2: "2. No more let sins"
 }
-
 ```
 
 * **Synchronization:** The compiler **SHOULD** validate that the syllable count of the text string matches the event count of the target voice. Mismatches **SHOULD** generate a **Sync Warning (W1201)** but must not halt compilation (rendering stops at the mismatch).
@@ -1023,7 +979,6 @@ measure 1 {
 Tenuto is UTF-8 native. However, for logographic languages (e.g., Chinese, Japanese) which typically do not use spaces, the **Space Delimiter** is still **REQUIRED** within the source code to define the 1-to-1 mapping.
 
 * *Code:* `"桜 (Sa) 桜 (ku) ra (ra)"`
-* *Rendering:* The engine renders the characters without spacing (based on the Language metadata), but uses the code spaces to align them to the three distinct notes.
 
 ### 12.5 Chorus & Section Labels
 
@@ -1037,16 +992,15 @@ To indicate the start of a structural section (e.g., "Chorus:") inside the lyric
 
 ## 13. Layout Directives
 
-Tenuto documents are **Reflowable**. Like HTML, the final visual presentation depends on the target medium (e.g., A4 Paper, iPad Screen, Scrolling Web View). However, specific engraving scenarios require manual overrides to force structural layouts. These are handled via **Layout Directives** contained within `meta` blocks.
+Tenuto documents are **Reflowable**. Like HTML, the final visual presentation depends on the target medium (e.g., A4 Paper, iPad Screen, Scrolling Web View). However, specific engraving scenarios require manual overrides to force structural layouts. These are handled via **Layout Directives** contained within `meta` blocks using the Map Sigil (`@{}`).
 
 ### 13.1 Break Directives
 
 Breaks serve as "Hard Returns" for the rendering engine. They instruct the compiler on how to flow the measure stream onto the visual canvas.
 
-**Syntax:** `meta { break: "Type" }`
+**Syntax:** `meta @{ break: "Type" }`
 
 * **`break: "system"`**: Forces a new musical system (line) to begin *immediately after* the current measure.
-* *Justification:* The renderer **SHOULD** spread the current system to fill the available width (Full Justification) before breaking.
 * **`break: "page"`**: Forces the content to move to the top of the next page *immediately after* the current measure.
 * **`break: "none"`**: Explicitly forbids a break after this measure (Glue), ensuring the next measure stays on the same system if physically possible.
 
@@ -1054,34 +1008,31 @@ Breaks serve as "Hard Returns" for the rendering engine. They instruct the compi
 
 To adjust the visual density of a specific measure (e.g., to compress a measure full of whole notes or expand a crowded measure):
 
-**Syntax:** `meta { stretch: Float }`
+**Syntax:** `meta @{ stretch: Float }`
 
 * **Default:** `1.0` (Calculated natural width based on the font's glyph metrics).
 * **Behavior:** The engine multiplies the calculated width of the measure content by this factor.
-* `> 1.0`: Expands whitespace (Looser).
-* `< 1.0`: Condenses whitespace (Tighter).
+  * `> 1.0`: Expands whitespace (Looser).
+  * `< 1.0`: Condenses whitespace (Tighter).
 
 ### 13.3 Vertical Spacing & Indentation
 
 These attributes control the positioning of the system *containing* the current measure.
 
-**Syntax:** `meta { key: Float }`
+**Syntax:** `meta @{ key: Float }`
 
 * **`spacer: Float`**: Adds extra vertical whitespace (in Staff Spaces) *below* the current system.
-* *Usage:* Separating distinct exercises or movements on a single page.
 * **`indent: Float`**: Adds horizontal whitespace (in Staff Spaces) to the *start* of the system.
-* *Usage:* Standard practice for the first system of a piece, or to visually offset a Coda section.
 
 ### 13.4 Visibility Controls
 
 Specific elements can be hidden for layout clarity (e.g., Cadenzas, Cutaway Scores).
 
-**Syntax:** `meta { key: Boolean | Float }`
+**Syntax:** `meta @{ key: Boolean | Float }`
 
-* **`hide_empty: Boolean`**: If `true`, staves in this system containing only Multi-Measure Rests are concealed (French Scoring). This is typically set globally but can be toggled per-system.
+* **`hide_empty: Boolean`**: If `true`, staves in this system containing only Multi-Measure Rests are concealed (French Scoring).
 * **`numbering: Boolean`**: If `false`, the measure number is hidden for this measure.
 * **`staff_scale: Float`**: Scales the entire staff size relative to the global staff size.
-* *Example:* `staff_scale: 0.7` is used for **Ossia** staves or **Cue** lines.
 
 ---
 
@@ -1095,16 +1046,10 @@ Mixer parameters are properties of the **Staff State**. They can be set globally
 
 #### 14.1.1 Gain & Panning
 
-* **`vol: Float`**: Normalized Gain.
-* **Range:** `0.0` (Silence) to `1.0` (Unity Gain / Maximum Velocity).
-* *Default:* `1.0`.
-* **`pan: Float`**: Bipolar Stereo position.
-* **Range:** `-1.0` (Hard Left) to `+1.0` (Hard Right). `0.0` is Center.
-* *Default:* `0.0`.
+* **`vol: Float`**: Normalized Gain. Range `0.0` (Silence) to `1.0` (Unity Gain / Maximum Velocity). *Default:* `1.0`.
+* **`pan: Float`**: Bipolar Stereo position. Range `-1.0` (Hard Left) to `+1.0` (Hard Right). `0.0` is Center.
 
 #### 14.1.2 Effects Sends
-
-To support spatialization and timbre modification without defining specific plugin architectures:
 
 * **`reverb: Float`**: Amount of signal sent to the global Reverb/Space bus (`0.0` to `1.0`).
 * **`chorus: Float`**: Amount of signal sent to the Modulation bus (`0.0` to `1.0`).
@@ -1117,14 +1062,13 @@ To support spatialization and timbre modification without defining specific plug
 ```tenuto
 measure 1 {
   %% Fade out violin, pan left, increase reverb over the measure
-  meta { vln.vol: [1.0, 0.0], vln.pan: -0.5, vln.reverb: 0.8 }
+  meta @{ vln.vol: [1.0, 0.0], vln.pan: -0.5, vln.reverb: 0.8 }
 }
-
 ```
 
 ### 14.2 Patch Resolution (Timbre)
 
-The `patch` attribute (from Section 4) accepts a **Uniform Resource Name (URN)** to identify sound sources. This allows the specification to remain agnostic regarding the synthesis technology.
+The `patch` attribute (from Section 4) accepts a **Uniform Resource Name (URN)** to identify sound sources.
 
 * **Standard:** `patch: "gm:Violin"` (General MIDI Mapping).
 * **Precise:** `patch: "msb:0,lsb:0,pc:40"` (MIDI Bank/Program Change).
@@ -1135,40 +1079,30 @@ The `patch` attribute (from Section 4) accepts a **Uniform Resource Name (URN)**
 
 Tempo controls the rate of the "Tick" counter relative to wall-clock time.
 
-**Syntax:** `meta { tempo: Value, curve: "Type" }`
+**Syntax:** `meta @{ tempo: Value, curve: "Type" }`
 
 * **Static Tempo:** `tempo: 120`. Sets the immediate BPM.
 * **Ramped Tempo:** `tempo: [Start, End]`. Defines a transition strictly over the duration of the **Current Measure**.
-* **Curve Types:**
-* `"step"`: Immediate jump (Default).
-* `"linear"`: Constant rate of change ().
-* `"exp"`: Exponential curve (). Recommended for natural-sounding *Accelerando*.
-* `"log"`: Logarithmic curve. Recommended for natural-sounding *Ritardando*.
+* **Curve Types:** `"step"`, `"linear"`, `"exp"`, `"log"`.
 
 ### 14.4 Micro-Timing (Swing)
 
 Swing alters the playback start time of off-beat notes without changing their notated duration or metric position.
 
-**Syntax:** `meta { swing: Percentage }`
+**Syntax:** `meta @{ swing: Percentage }`
 
 * **Definition:** The percentage of the beat allocated to the first subdivision.
-* **Standard Values:**
-* `50`: Straight (No swing). 50/50 split.
-* `66`: Triplet Swing (Standard Jazz). 67/33 split.
-* `75`: Hard Swing (Funk/Dotted). 75/25 split.
-* **Grid Resolution:** The engine **SHOULD** auto-detect the quantization level based on the tempo (typically swinging 8th notes below 100 BPM, and 16th notes below 60 BPM). Explicit overrides are handled via `swing_grid: Duration`.
+* **Standard Values:** `50` (Straight), `66` (Triplet Swing), `75` (Hard Swing).
 
 ### 14.5 Humanization
 
 To prevent the "Machine Gun Effect" inherent in digital playback, the engine supports algorithmic randomization.
 
-**Syntax:** `meta { humanize: Float }`
+**Syntax:** `meta @{ humanize: Float }`
 
 * **Value:** A percentage (`0.0` to `1.0`) of variance.
-* **Behavior:** The engine applies a random offset of  to both **Velocity** and **Tick Start Time** for every event.
-* *Example:* `humanize: 0.05` adds  organic jitter.
+* **Behavior:** The engine applies a random offset to both **Velocity** and **Tick Start Time** for every event.
 
----
 
 ## 15. Macros & Variables
 
@@ -1183,15 +1117,14 @@ Variables store primitive data types (Integers, Floats, Strings, TabCoords) for 
 * **Naming:** Case-sensitive alphanumeric identifier starting with a letter.
 * **Usage:** Prefix with `$`.
 * **Scope:**
-* **Global:** Defined in the Root block or `tenuto` header. Visible to all subsequent blocks.
-* **Local:** Variables are generally **NOT** supported inside `measure` blocks to prevent ambiguity regarding state mutation. They are configuration tools, not dynamic state cursors.
+  * **Global:** Defined in the Root block or `tenuto` header. Visible to all subsequent blocks.
+  * **Local:** Variables are generally **NOT** supported inside `measure` blocks to prevent ambiguity regarding state mutation. They are configuration tools, not dynamic state cursors.
 
 ```tenuto
 var FortePlus = 115
 var ThemeName = "Main Motif"
 
 vln: c4.vel($FortePlus)
-
 ```
 
 ### 15.2 Macros (Event Blocks)
@@ -1205,7 +1138,6 @@ Macros act as reusable containers for musical patterns. They function as **Compi
 ```tenuto
 %% A drum pattern taking a Hi-Hat type and a Velocity
 macro RockBeat(hat, v=90) = { k:4 $hat.vel($v) s:4 $hat }
-
 ```
 
 * **Invocation:**
@@ -1213,7 +1145,6 @@ macro RockBeat(hat, v=90) = { k:4 $hat.vel($v) s:4 $hat }
 ```tenuto
 drm: $RockBeat(h_closed)        %% Uses default v=90
 drm: $RockBeat(h_open, 110)     %% Overrides v with 110
-
 ```
 
 * **Argument Substitution:** The compiler replaces instances of `$ArgName` within the macro body with the provided values.
@@ -1224,7 +1155,7 @@ Macros containing pitch data can be transposed dynamically upon invocation, allo
 
 **Syntax:** `$Name + Semitones` or `$Name - Semitones`
 
-* **Behavior:** The compiler iterates through the expanded token stream. Every **Pitch Literal** found is shifted by  semitones.
+* **Behavior:** The compiler iterates through the expanded token stream. Every **Pitch Literal** found is shifted by `N` semitones.
 * **Exclusions:** Transposition ignores Rests (`r`), Percussion Keys (`k`), and Attributes (`.stacc`).
 * **Tablature Constraint:** Transposition on Tablature macros is **Undefined Behavior** unless the compiler implements specific logic to recalculate string/fret coordinates (which may result in impossible fingerings). The compiler **SHOULD** emit a warning if transposing tab data.
 
@@ -1248,7 +1179,6 @@ measure 1 {
     keys: c2:1.vol(40) %% Sub-bass reinforcement
   }
 }
-
 ```
 
 ---
@@ -1274,15 +1204,15 @@ Unlike imperative programming languages where re-defining a function overwrites 
 * **Principle:** A `measure` block is an "Open Container" indexed by an integer (Time Slice).
 * **Behavior:** If `measure 1` is defined in `strings.ten` and also in `winds.ten`, the compiler **MERGES** the contents into a single internal Measure Object at `Index 1`.
 * **Conflict Resolution:**
-* **Event Data:** Merged additively. Content from `strings` and `winds` will coexist in the final system.
-* **Metadata:** Must be consistent. If `strings.ten` declares `time: 4/4` and `winds.ten` declares `time: 3/4` for the *same measure index*, the compiler **MUST** throw a **Meta Mismatch Error (E1601)**.
+  * **Event Data:** Merged additively. Content from `strings` and `winds` will coexist in the final system.
+  * **Metadata:** Must be consistent. If `strings.ten` declares `meta @{ time: "4/4" }` and `winds.ten` declares `meta @{ time: "3/4" }` for the *same measure index*, the compiler **MUST** throw a **Meta Mismatch Error (E1601)**.
 
 ### 16.3 Scope & Visibility
 
 * **Definitions:** `def` statements inside an imported file populate the **Global Symbol Table**.
-* *Constraint:* The `def` must be processed before any `measure` block attempts to use that Staff ID. Therefore, `import "setup.ten"` should typically appear at the top of the Master Linker.
+  * *Constraint:* The `def` must be processed before any `measure` block attempts to use that Staff ID. Therefore, `import "setup.ten"` should typically appear at the top of the Master Linker.
 * **Variables:** Variables defined in the root of an imported file become **Global**.
-* *Best Practice:* To avoid namespace collisions, reusable libraries **SHOULD** use unique prefixes for their variables (e.g., `$std_drum_vol`).
+  * *Best Practice:* To avoid namespace collisions, reusable libraries **SHOULD** use unique prefixes for their variables (e.g., `$std_drum_vol`).
 
 ### 16.4 Project Structure Standards
 
@@ -1295,8 +1225,8 @@ For interoperability and version control (Git), the following directory structur
 
 ```tenuto
 %% score.ten
-tenuto {
-  meta { title: "Symphony No. 1" }
+tenuto "2.1" {
+  meta @{ title: "Symphony No. 1" }
   
   %% 1. Load Physics
   import "def/orchestra.ten"
@@ -1305,7 +1235,6 @@ tenuto {
   import "src/movement_1.ten"
   import "src/movement_2.ten"
 }
-
 ```
 
 ---
@@ -1327,7 +1256,6 @@ By default, the engine groups beams based on the Time Signature and Metric Grid.
 ```tenuto
 %% Beam across a rest (Rest is included in the beam group)
 c8.bm d8 r8 e8.bme
-
 ```
 
 #### 17.1.1 Feathered Beams (Contemporary)
@@ -1349,8 +1277,8 @@ Stem direction is calculated based on the note's position on the staff and its V
 
 * **Direction:** `.up`, `.down`, `.auto`.
 * **Length:** `.stem_len(Float)`.
-* *Value:* Relative to default length (1.0 = standard 3.5 spaces).
-* *Usage:* Essential for avoiding collisions in dense polyphonic passages or extending stems to meet cross-staff beams.
+  * *Value:* Relative to default length (1.0 = standard 3.5 spaces).
+  * *Usage:* Essential for avoiding collisions in dense polyphonic passages or extending stems to meet cross-staff beams.
 
 ### 17.3 Curve Geometry (Slurs & Ties)
 
@@ -1386,14 +1314,14 @@ Decorators are attributes attached to a single event. They imply a specific alte
 
 | Token | Name | Audio Semantics | Arguments |
 | --- | --- | --- | --- |
-| `.tr` | Trill | Rapid alternation ( 2nd) with upper neighbor. | `.tr(flat)`, `.tr(sharp)` |
-| `.mord` | Upper Mordent | Main  Upper  Main. |  |
-| `.mord_inv` | Lower Mordent | Main  Lower  Main. |  |
-| `.turn` | Turn | Upper  Main  Lower  Main. | `.turn(sharp, flat)` |
-| `.prall` | Pralltriller | Short trill / Snap. |  |
+| `.tr` | Trill | Rapid alternation (Minor/Major 2nd) with upper neighbor. | `.tr(flat)`, `.tr(sharp)` |
+| `.mord` | Upper Mordent | Main → Upper → Main. | |
+| `.mord_inv` | Lower Mordent | Main → Lower → Main. | |
+| `.turn` | Turn | Upper → Main → Lower → Main. | `.turn(sharp, flat)` |
+| `.prall` | Pralltriller | Short trill / Snap. | |
 
 * **Trill Extension:** To draw a wavy extension line (spanner) after the symbol, use `.tr_ext`.
-* *Example:* `c1.tr.tr_ext` implies the trill continues for the full duration of the whole note.
+  * *Example:* `c1.tr.tr_ext` implies the trill continues for the full duration of the whole note.
 
 ### 18.2 Arpeggiation & Tremolo
 
@@ -1402,7 +1330,7 @@ Modifications to the attack envelope or repetition rate of a chord or note.
 * **`.arp`**: Standard wavy vertical line. Notes in the chord are played sequentially (Strum) from bottom to top.
 * **`.arp(down)`**: Arpeggiate top-to-bottom.
 * **`.trem(N)`**: Single-note tremolo. `N` = number of slashes (e.g., 3 for unmeasured/32nd notes).
-* *Audio:* Repeats the note at the specified subdivision rate.
+  * *Audio:* Repeats the note at the specified subdivision rate.
 
 ### 18.3 Connective Spanners (Glissando)
 
@@ -1415,7 +1343,7 @@ Connective spanners are attributes applied to a **Source Event**. The engine aut
 * **`.fall`**: Jazz fall-off. No specific target pitch (Target is implicit silence/release).
 * **`.doit`**: Jazz slide-up. No specific target pitch.
 * **`.fingered_trem`**: Tremolo between two distinct pitches. Applied to the first note.
-* *Example:* `c2.fingered_trem e2` renders as two whole notes with tremolo bars connecting them. The total duration is shared between the two (they are not played sequentially).
+  * *Example:* `c2.fingered_trem e2` renders as two whole notes with tremolo bars connecting them. The total duration is shared between the two (they are not played sequentially).
 
 ### 18.4 State Lines (Ottava & Pedal)
 
@@ -1454,24 +1382,23 @@ For systems based on subdivisions of the tone (Quarter-tones), Tenuto extends th
 
 * **Usage:** `c4qs` (C Quarter-Sharp).
 * **Audio Semantics:** The playback engine maps these symbols to the exact logarithmic midpoint between standard semitones relative to the current tuning system.
-* **Stickiness:** Like standard accidentals, these reset at the barline unless the Key Signature dictates otherwise.
 
 ### 19.2 Cent Deviation (Physics Override)
 
-For precise retuning that does not align with standard symbols (e.g., spectralism, tuning to the 5th partial, or fine-tuning samples), pitch can be modified by specific **Cent** values ( semitone).
+For precise retuning that does not align with standard symbols (e.g., spectralism, tuning to the 5th partial, or fine-tuning samples), pitch can be modified by specific **Cent** values (1/100 semitone).
 
 **Syntax:** `Pitch + Cents` or `Pitch - Cents`
 
 * **Granularity:** Integers or Floats.
 * **Additive Logic:** Deviations are additive to the base pitch *and* its accidental.
-* *Example:* `c#4+10` means "Start at C#, then add 10 cents."
+  * *Example:* `c#4+10` means "Start at C#, then add 10 cents."
 * **Rendering:** The renderer **SHOULD** place the cent deviation value as a small number above the note, or use an arrow if the deviation is small (< 33 cents).
 
 ### 19.3 Tuning Arrows (Helmholtz-Ellis / Just Intonation)
 
 For systems relying on commatic shifts (Syntonic comma, Pythagorean comma):
 
-* **`.arrow_up`**: Raises pitch by one syntonic comma ( cents).
+* **`.arrow_up`**: Raises pitch by one syntonic comma (~21.5 cents).
 * **`.arrow_down`**: Lowers pitch by one syntonic comma.
 * **`.slash_sharp`**: Turkish/Maqam sharp (approx +1/9 tone).
 
@@ -1486,17 +1413,15 @@ For electronic music, acoustics testing, or drone music where "Note Names" are i
 
 ### 19.5 External Tuning Maps (.scl / .kbm)
 
-To support complex arbitrary tuning systems (19-TET, Slendro, Pelog, Partch), Tenuto adopts the industry-standard **Scala** format.
+To support complex arbitrary tuning systems (19-TET, Slendro, Pelog, Partch), Tenuto adopts the industry-standard **Scala** format via the Map Sigil.
 
-**Syntax:** `meta { tuning_file: "Path/To/Scale.scl", tuning_root: Pitch }`
+**Syntax:** `meta @{ tuning_file: "Path/To/Scale.scl", tuning_root: Pitch }`
 
 * **Behavior:** The compiler maps the linear diatonic steps of the staff (C, D, E...) to the steps defined in the SCL file, anchored at `tuning_root`.
 * **Semantic Separation:** When a custom tuning map is active:
-
-1. **Visual:** The notation remains "nominal" (what the player reads/fingers).
-2. **Audio:** The frequency is determined strictly by the map.
-
-* *Note:* This decouples the "Written Note" from the "Sounding Pitch," essential for instruments with fixed but non-standard intonation (e.g., a prepared piano or a specific Gamelan metallophone).
+  1. **Visual:** The notation remains "nominal" (what the player reads/fingers).
+  2. **Audio:** The frequency is determined strictly by the map.
+  * *Note:* This decouples the "Written Note" from the "Sounding Pitch," essential for instruments with fixed but non-standard intonation.
 
 ---
 
@@ -1506,9 +1431,9 @@ Tenuto strictly enforces the separation of **Musical Data** (Pitch/Rhythm) from 
 
 ### 20.1 Theme Profiles
 
-Global visual settings are applied via the `theme` key in the `meta` block.
+Global visual settings are applied via the `theme` key in the `meta` block using the Map Sigil.
 
-**Syntax:** `meta { theme: "ProfileID" }`
+**Syntax:** `meta @{ theme: "ProfileID" }`
 
 * **`"standard"`**: Traditional engraving (e.g., Bravura-style). High contrast, serif fonts, straight beams.
 * **`"jazz"`**: Handwritten appearance (e.g., Petaluma-style). Ink-pen aesthetic, "hand" font for text, slightly irregular line widths.
@@ -1544,13 +1469,9 @@ The notehead shape conveys performance semantics (e.g., percussion technique, ha
 
 To ensure portability across operating systems and eras, Tenuto uses **Generic Font Families** rather than specific file references.
 
-**Syntax:** `meta { font_face: "Family" }`
+**Syntax:** `meta @{ font_face: "Family" }`
 
-* **Families:**
-* `"serif"`: Formal, traditional (e.g., Times New Roman).
-* `"sans"`: Modern, clean (e.g., Helvetica).
-* `"mono"`: Fixed-width (e.g., Courier).
-* `"hand"`: Handwritten style (e.g., JazzText).
+* **Families:** `"serif"`, `"sans"`, `"mono"`, `"hand"`.
 * **Behavior:** The renderer is responsible for mapping these generics to the best available font on the host system.
 
 ### 20.5 Visibility & Cue Notes
@@ -1558,13 +1479,13 @@ To ensure portability across operating systems and eras, Tenuto uses **Generic F
 Attributes to control the rendering presence and scale of objects.
 
 * **`.hidden`**: The object is effectively invisible (Opacity 0) but still occupies layout space.
-* *Usage:* "Fill in the blank" worksheets or aligning lyrics to a rhythm that shouldn't be seen.
 * **`.cue`**: Renders the event at a reduced size (normatively **70%** of the global staff size).
-* *Usage:* Cue notes, Ossia bars, or grace notes that are measured (not timeless).
+
+---
 
 ## 21. Advanced MIDI & Automation
 
-For high-fidelity playback, Tenuto exposes raw control over the synthesis engine. While `vol` and `pan` (Section 14) are high-level abstractions, this section deals with the low-level protocols (MIDI 1.0, MIDI 2.0, or OSC) used to drive virtual instruments. This allows for the precise manipulation of timbre, expression, and synthesizer parameters directly from the score logic.
+For high-fidelity playback, Tenuto exposes raw control over the synthesis engine. While `vol` and `pan` (Section 14) are high-level abstractions, this section deals with the low-level protocols (MIDI 1.0, MIDI 2.0, or OSC) used to drive virtual instruments.
 
 ### 21.1 Control Change (CC) Messages
 
@@ -1582,34 +1503,27 @@ To create smooth changes (e.g., a crescendo swell via Expression) over the durat
 
 **Syntax:** `Event.cc(Number, [Start, End], CurveType?)`
 
-* **CurveType:**
-* `"linear"` (Default): Constant rate of change.
-* `"exp"`: Exponential. Recommended for Volume/Expression swells to match human hearing (Decibels).
-* `"log"`: Logarithmic.
+* **CurveType:** `"linear"` (Default), `"exp"`, `"log"`.
 * **Duration:** The ramp lasts for the exact duration of the host event.
 * **Density:** The resolution of the generated data is implementation-dependent (Recommended: 1 event per 10ms).
 
 ```tenuto
 %% Expression (CC 11) swells exponentially from 0 to 100
 c4:1.cc(11, [0, 100], "exp")
-
-
 ```
 
 ### 21.3 Keyswitches (Articulation Mapping)
 
-Keyswitches are silent notes used to trigger specific sample layers in libraries (e.g., Kontakt, VSL). To keep the score clean, these are defined in the Instrument Definition.
+Keyswitches are silent notes used to trigger specific sample layers in libraries (e.g., Kontakt, VSL). To keep the score clean, these are defined in the Instrument Definition using the Map Sigil (`@{}`).
 
 **1. Definition:**
 In the `def` block, map a custom attribute name to a MIDI Note Number.
 
 ```tenuto
-def vln "Violin" keyswitch={
+def vln "Violin" keyswitch=@{
   arco: 24,  %% C0
   pizz: 25   %% C#0
 }
-
-
 ```
 
 **2. Usage:**
@@ -1617,8 +1531,6 @@ The defined keys become valid attributes for that staff.
 
 ```tenuto
 vln: c4:4.pizz  %% Triggers Note 25, then plays C4
-
-
 ```
 
 ### 21.4 Pitch Bend & Aftertouch
@@ -1626,8 +1538,6 @@ vln: c4:4.pizz  %% Triggers Note 25, then plays C4
 To control pitch and pressure dynamically:
 
 * **`.bend(Cents)`**: Sends Pitch Bend data.
-* *Range:* `+/-` Cents (e.g., `.bend(200)` is +2 semitones).
-* *Ramp:* `.bend([0, 200])` bends up over the note's duration.
 * **`.press(Value)`**: Channel Pressure (Aftertouch). Affects the whole channel.
 * **`.polypress(Value)`**: Polyphonic Aftertouch. Affects only this specific note (if supported by the synth/MPE).
 
@@ -1637,7 +1547,6 @@ To switch instrument patches mid-stream:
 
 **Syntax:** `Event.pc(ProgramNumber)` or `Event.bank(MSB, LSB).pc(ProgramNumber)`
 
-* *Example:* `c4.pc(10)` switches to the 10th patch before playing C4.
 * *Note:* For large orchestral templates, it is **RECOMMENDED** to use Keyswitches (21.3) or separate Staves rather than Program Changes, as PC messages can cause audio glitches in some samplers.
 
 ---
@@ -1650,31 +1559,30 @@ These directives control how the Tenuto compiler processes the source text, vali
 
 To ensure "Deep Time" durability, a file **MUST** declare the version of the specification it adheres to. This prevents future compilers from misinterpreting syntax that may be deprecated or redefined in later epochs.
 
-**Syntax:** `meta { tenuto_version: "Major.Minor" }`
+**Syntax:** `meta @{ tenuto_version: "Major.Minor" }`
 
 * **Location:** This attribute **SHOULD** appear in the first `meta` block of the root scope.
-* **Validation:** If the compiler supports version 3.0 but encounters `tenuto_version: "2.0"`, it **MUST** activate its "Legacy 2.x Parser" mode or emit a fatal incompatibility error if backward compatibility is not supported.
+* **Validation:** If the compiler supports version 3.0 but encounters `tenuto_version: "2.1"`, it **MUST** activate its "Legacy 2.x Parser" mode or emit a fatal incompatibility error if backward compatibility is not supported.
 
 ### 22.2 Strict Mode
 
-By default, Tenuto is **Lenient**. It attempts to auto-correct common mistakes (e.g., auto-closing beams at barlines, inferring missing durations). However, for archival quality or library development, **Strict Mode** forces explicit definitions.
+By default, Tenuto is **Lenient**. It attempts to auto-correct common mistakes. However, for archival quality or library development, **Strict Mode** forces explicit definitions.
 
-**Syntax:** `meta { strict: true }`
+**Syntax:** `meta @{ strict: true }`
 
 * **Constraints Enforced:**
-
-1. **Beaming:** Beams must be explicitly closed (`.bme`) before barlines.
-2. **Stickiness:** "Sticky" attributes (Duration, Octave) do **NOT** persist across measure boundaries. Every measure must initialize its state explicitly.
-3. **Sync:** Voice Group durations must match exactly (no auto-padding with rests).
+  1. **Beaming:** Beams must be explicitly closed (`.bme`) before barlines.
+  2. **Stickiness:** "Sticky" attributes (Duration, Octave) do **NOT** persist across measure boundaries. Every measure must initialize its state explicitly.
+  3. **Sync:** Voice Group durations must match exactly (no auto-padding with rests).
 
 ### 22.3 Warning Control
 
 Specific compiler warnings can be suppressed for intentional deviations (e.g., a deliberate rhythm clash or lyric mismatch).
 
-**Syntax:** `meta { suppress: ["Code1", "Code2"] }`
+**Syntax:** `meta @{ suppress: ["Code1", "Code2"] }`
 
 * **Scope:** Lexical. Applies to the current block and its children.
-* **Usage:** `meta { suppress: ["W1201"] }` silences Lyric Mismatch warnings for a specific measure.
+* **Usage:** `meta @{ suppress: ["W1201"] }` silences Lyric Mismatch warnings for a specific measure.
 
 ### 22.4 Conditional Compilation
 
@@ -1683,9 +1591,9 @@ To support multi-target rendering (e.g., generating a Conductor's Score vs. a Vi
 **Syntax:** `if (Condition) { ... }`
 
 * **Environment Variables:** The compiler provides standard variables for inspection:
-* `target`: `"score"` (PDF), `"audio"` (MIDI/WAV), `"part"` (Individual Part).
-* `part_id`: The ID of the staff currently being rendered (e.g., `"vln"`).
-* `debug`: Boolean.
+  * `target`: `"score"` (PDF), `"audio"` (MIDI/WAV), `"part"` (Individual Part).
+  * `part_id`: The ID of the staff currently being rendered (e.g., `"vln"`).
+  * `debug`: Boolean.
 
 ```tenuto
 measure 1 {
@@ -1696,8 +1604,6 @@ measure 1 {
     vln: c2:1.vol(0.5).hidden | 
   }
 }
-
-
 ```
 
 ### 22.5 Debugging Tools
@@ -1705,10 +1611,9 @@ measure 1 {
 For analyzing compiler state during logic development.
 
 * **`.trace`**: Attribute. Dumps the current **State Vector** (Tick, Octave, Duration, Velocity) of the event to the compiler log/console.
-* *Example:* `c4.trace` prints `[Tick: 1920, Pitch: C4, Dur: :4, Vel: 100]`.
-* **`meta { error: "Message" }`**: Halts compilation immediately with a custom user message. Useful for validating macro arguments.
+  * *Example:* `c4.trace` prints `[Tick: 1920, Pitch: C4, Dur: :4, Vel: 100]`.
+* **`meta @{ error: "Message" }`**: Halts compilation immediately with a custom user message. Useful for validating macro arguments.
 
----
 
 ## 23. The Standard Library
 
@@ -1788,7 +1693,7 @@ The Tenuto compiler emits specific codes to aid debugging. Implementations **MUS
 ### 24.2 1000-Series: Lexical & Meta Errors
 
 * **E1001: Malformed Token.** The parser encountered a character sequence that violates the grammar (e.g., illegal symbols inside a pitch token).
-* **E1002: Unbalanced Delimiter.** A block `{`, `[`, or `(` was opened but never closed.
+* **E1002: Unbalanced Delimiter.** A block `{`, `[`, `@{`, `<[`, or `(` was opened but never closed.
 * **E1004: Version Incompatible.** The file requests a specification version (`tenuto_version`) higher than the compiler supports.
 * **E1005: Encoding Error.** The source file is not valid UTF-8.
 
@@ -1803,17 +1708,17 @@ The Tenuto compiler emits specific codes to aid debugging. Implementations **MUS
 
 * **E3001: Time Overflow.** The total duration of events in a voice exceeds the capacity of the Time Signature.
 * **E3002: Voice Sync Failure.** The total duration of voices within a Voice Group (`v1`, `v2`) do not match.
-* **E3003: Tuplet Ratio Error.** The contents of a tuplet block cannot mathematically fit into the declared ratio (e.g., trying to fit 5 quarters into a `3:2` bracket of 8th notes).
-* **E3004: Structure Mismatch.** Different staves define conflicting structural markers (e.g., `vln` has `|:` while `vlc` has `|`) at the same absolute tick.
+* **E3003: Tuplet Ratio Error.** The contents of a tuplet block cannot mathematically fit into the declared ratio.
+* **E3004: Structure Mismatch.** Different staves define conflicting structural markers at the same absolute tick.
 * **W3005: Pickup Mismatch.** The duration of the anacrusis measure does not match the declared `pickup` metadata.
-* **W3006: Lyric Count Mismatch.** The number of lyric syllables defined in the `lyrics` block does not match the number of valid note events in the target measure.
+* **W3006: Lyric Count Mismatch.** The number of lyric syllables does not match the number of valid note events.
 
 ### 24.5 4000-Series: Attribute & Value Errors
 
-* **W4001: Open Beam.** A beam started with `.bm` was not closed before a barline. (Compiler auto-closes it).
-* **E4002: Invalid Type Cast.** Passing an incompatible type (e.g., String) to a numeric parameter.
-* **W4003: Value Out of Range.** A value exceeded its allowed bounds (e.g., `vol: 1.5` or `midi: 128`) and was clamped.
-* **E4004: Invalid Percussion Key.** Using a key character (e.g., `x`) that is not defined in the instrument's `map`.
+* **W4001: Open Beam.** A beam started with `.bm` was not closed before a barline.
+* **E4002: Invalid Type Cast.** Passing an incompatible type to a numeric parameter.
+* **W4003: Value Out of Range.** A value exceeded its allowed bounds and was clamped.
+* **E4004: Invalid Percussion Key.** Using a key character that is not defined in the instrument's `map`.
 
 ### 24.6 5000-Series: Macro & Pre-Processor Errors
 
@@ -1839,11 +1744,11 @@ To ensure that valid Tenuto files produce identical logical and auditory output 
 
 * **Extension:** Source files **SHOULD** use the `.ten` extension.
 * **Encoding:** Files **MUST** be encoded in **UTF-8**.
-* **Normalization:** The compiler **MUST** normalize all identifiers and string literals to **Unicode NFC** (Normalization Form C) before parsing. This prevents "Variable Not Found" errors caused by visually identical but byte-distinct characters (e.g., on macOS vs. Windows filesystems).
+* **Normalization:** The compiler **MUST** normalize all identifiers and string literals to **Unicode NFC** before parsing.
 
 ### 25.2 Pitch Standards (The "Middle C" Rule)
 
-To resolve the historical ambiguity between hardware manufacturers (e.g., Yamaha C3 vs. Roland C4):
+To resolve the historical ambiguity between hardware manufacturers:
 
 * **Standard:** **C4** is Normatively Defined as **MIDI Note Number 60** (approx. 261.63 Hz).
 * **Reference:** **A4** is Normatively Defined as **MIDI Note Number 69** (440.0 Hz default).
@@ -1851,26 +1756,24 @@ To resolve the historical ambiguity between hardware manufacturers (e.g., Yamaha
 
 ### 25.3 Temporal Logic (Rational Arithmetic)
 
-Musical time relies on precise subdivisions (e.g., Triplets = 1/3) that cannot be accurately represented by standard IEEE 754 binary floating-point numbers (where 1/3  0.333333...).
+Musical time relies on precise subdivisions (e.g., Triplets = 1/3) that cannot be accurately represented by standard IEEE 754 binary floating-point numbers.
 
 * **Requirement:** The compiler **MUST** use **Rational Arithmetic** (Fraction structures storing explicit Numerator/Denominator integers) for all internal time, duration, and position calculations.
-* **Rendering:** Conversion to Floating Point (for Audio buffers) or Integer Ticks (for MIDI export) **MUST** occur only at the final **Rendering Stage** to minimize cumulative rounding errors.
 
 ### 25.4 Forward Compatibility (Graceful Degradation)
 
 To ensure that older compilers can robustly handle files created by newer versions of the specification:
 
-* **Unknown Attributes:** If the parser encounters an event attribute it does not recognize (e.g., `.future_feature`), it **SHOULD** ignore the attribute, emit a **Warning**, and continue processing the host event. It **MUST NOT** treat this as a Fatal Syntax Error.
-* **Unknown Metadata:** Unknown keys in `meta` blocks **SHOULD** be ignored (read-only) or preserved (read-write).
+* **Unknown Attributes:** If the parser encounters an event attribute it does not recognize (e.g., `.future_feature`), it **SHOULD** ignore the attribute, emit a **Warning**, and continue processing.
 
 ### 25.5 The Compilation Pipeline
 
 A compliant compiler **SHOULD** follow this logical execution flow:
 
-1. **Lexing:** Convert UTF-8 Stream  Token Stream.
-2. **Expansion (Pre-Process):** Execute `import` directives and expand `macro` calls. (Recursion limits enforced here).
+1. **Lexing:** Convert UTF-8 Stream → Token Stream.
+2. **Expansion (Pre-Process):** Execute `import` directives and expand `macro` calls.
 3. **Definition (Context):** Scan `def` and `var` blocks to populate the Global Symbol Table.
-4. **Linearization:** Convert the hierarchical `measure` / `repeat` structures into a linear timeline of absolute events.
+4. **Linearization:** Convert the hierarchical `measure` structures into a linear timeline of absolute events.
 5. **Validation:** Check for Voice Sync (E3002), Range Constraints, and Logic consistency.
 6. **Rendering:** Transpile the validated linear stream to the target format (PDF, MIDI, MusicXML).
 
@@ -1878,11 +1781,9 @@ A compliant compiler **SHOULD** follow this logical execution flow:
 
 ## 26. Formal Grammar (EBNF)
 
-This section provides the **Normative Syntax** of Tenuto v2.0 using Extended Backus-Naur Form (EBNF). In the event of a contradiction between the prose description in previous sections and this grammar, this grammar takes precedence as the authority for parser implementation.
+This section provides the **Normative Syntax** of Tenuto v2.1 using Extended Backus-Naur Form (EBNF). In the event of a contradiction between the prose description in previous sections and this grammar, this grammar takes precedence as the authority for parser implementation. The updates here resolve the LL(k) ambiguity conflicts inherent in version 2.0.
 
 ### 26.1 Lexical Tokens (Terminals)
-
-These patterns define the primitive tokens generated by the Lexer.
 
 ```ebnf
 /* Primitives */
@@ -1892,8 +1793,7 @@ FLOAT       ::= [0-9]+ "." [0-9]+
 STRING      ::= '"' [^"]* '"'
 
 /* Music Literals */
-/* Matches c4, c#4, cqs4 (quarter sharp), etc. */
-PITCH_LIT   ::= [a-g] [qs|qf|tqs|tqf|#|b]* [0-9]?  
+PITCH_LIT   ::= [a-gA-G] [qs|qf|tqs|tqf|#|b|x|n]* [0-9]?  
 
 /* Matches :4 (quarter), :8. (dotted eighth) */
 DURATION    ::= ":" [0-9]+ ("." [0-9]+)?           
@@ -1901,8 +1801,6 @@ DURATION    ::= ":" [0-9]+ ("." [0-9]+)?
 /* Ignored Tokens */
 WHITESPACE  ::= [ \t\r\n]+
 COMMENT     ::= "%%" [^\r\n]*
-
-
 ```
 
 ### 26.2 High-Level Structure
@@ -1935,22 +1833,23 @@ Measure     ::= "measure" (INTEGER | IDENTIFIER)? AttributeList? "{" Logic* "}"
 Repeat      ::= "repeat" INTEGER? "{" Logic* "}"
 
 Volta       ::= "volta" Range "{" Logic* "}"
-
-
 ```
 
-### 26.3 Logic & Events
+### 26.3 Logic & Events (Updated for 2.1)
 
 ```ebnf
-Logic       ::= Assignment
-              | MetaBlock
-              | Conditional
+Logic         ::= Assignment
+                | MetaBlock
+                | Conditional
 
-/* Assignment: vln: c4 d e | */
-Assignment  ::= IDENTIFIER ":" VoiceGroup
+/* Assignment: Identifier followed by either a single VoiceGroup or a MultiVoiceBlock */
+Assignment    ::= IDENTIFIER ":" (VoiceGroup | MultiVoiceBlock)
 
-/* Voice Group must end with a pipe to confirm sync */
-VoiceGroup  ::= Voice ("|" Voice)* "|"
+/* Single voice assignment without branching */
+VoiceGroup    ::= Voice ("|" Voice)* "|"
+
+/* Multi-Voice Block: Uses unique <[ ]> delimiters for polyphony */
+MultiVoiceBlock ::= "<[" Voice ("|" Voice)* "]" ">"
 
 Voice       ::= (Event | Tuplet | MacroCall)*
 
@@ -1968,17 +1867,16 @@ Tuplet      ::= "tuplet" "(" INTEGER ":" INTEGER ")" "{" Voice "}"
 MacroCall   ::= "$" IDENTIFIER ("(" ArgList ")")? Transposition?
 
 Transposition ::= ("+" | "-") INTEGER
-
-
 ```
 
-### 26.4 Attributes & Data Types
+### 26.4 Attributes & Data Types (Updated for 2.1)
 
 ```ebnf
 /* Attribute: .vol(80) or .stacc */
 Attribute   ::= "." IDENTIFIER ("(" ArgList ")")?
 
-MetaBlock   ::= "meta" "{" KeyValueList "}"
+/* MetaBlock now explicitly uses the @{ Map Sigil } */
+MetaBlock   ::= "meta" "@{" KeyValueList "}"
 
 Conditional ::= "if" "(" Expression ")" "{" Logic* "}"
 
@@ -1986,90 +1884,57 @@ Conditional ::= "if" "(" Expression ")" "{" Logic* "}"
 ArgList     ::= Value ("," Value)*
 KeyValueList::= (IDENTIFIER ":" Value ","?)*
 
-Value       ::= INTEGER | FLOAT | STRING | IDENTIFIER | Array | Map
+/* Maps now require the @ sigil to differentiate from Structural Blocks */
+Map           ::= "@{" KeyValueList "}"
 
 Array       ::= "[" Value ("," Value)* "]"
-Map         ::= "{" KeyValueList "}"
 
-
+Value       ::= INTEGER | FLOAT | STRING | IDENTIFIER | Array | Map
 ```
 
 ---
 
 ## 27. Interoperability & Exchange
 
-Tenuto is designed to sit in the center of the modern music toolchain, serving as a high-level abstraction that can be compiled down to presentation formats (PDF/SVG) or interchange formats (MusicXML, MIDI). This section defines the **Normative Mapping** rules to ensure consistent export behavior across different compilers.
+Tenuto is designed to sit in the center of the modern music toolchain. This section defines the **Normative Mapping** rules to ensure consistent export behavior across different compilers.
 
 ### 27.1 MusicXML 4.0 Mapping
 
-When exporting to MusicXML, the compiler **MUST** map Tenuto structures as follows to ensure visual fidelity in notation software (e.g., Dorico, Finale, MuseScore).
+When exporting to MusicXML:
 
-1. **Root Structure:**
-
-* The `tenuto` block maps to the root `<score-partwise>` element.
-* Metadata (`title`, `composer`) maps to `<work><work-title>` and `<identification><creator>`.
-
-2. **Definitions:**
-
-* Each `def` statement maps to a `<score-part>` element in the `<part-list>`.
-* `group` blocks map to `<part-group type="start">` and `<part-group type="stop">`.
-
-3. **Logic & Time:**
-
-* `measure` blocks map to sequential `<measure>` elements.
-* **Voices:** Tenuto voice IDs (`v1`, `v2`) map to MusicXML `<voice>` integers (1, 2).
-
-4. **Event Data:**
-
-* `style=standard` events map to `<note><pitch>`.
-* `style=tab` events map to `<note><notation><technical><fret>` and `<string>`.
-* `microtonality` (`qs`, `qf`) maps to `<pitch><alter>` (decimal values, e.g., 0.5) and `<accidental>` tags.
+1. **Root Structure:** The `tenuto` block maps to the root `<score-partwise>` element.
+2. **Definitions:** Each `def` statement maps to a `<score-part>` element in the `<part-list>`.
+3. **Logic & Time:** `measure` blocks map to sequential `<measure>` elements.
+4. **Event Data:** `style=standard` events map to `<note><pitch>`. `style=tab` maps to `<technical><fret>`.
 
 ### 27.2 MIDI 1.0 / 2.0 Mapping
 
-When exporting to Standard MIDI Files (SMF), the compiler **MUST** adhere to these resolutions to ensure consistent playback.
+When exporting to Standard MIDI Files (SMF):
 
-1. **Timing & Resolution:**
-
-* Files **SHOULD** use a resolution of **480 PPQ** (or higher) to accurately capture complex tuplets.
-* Duration Multipliers (`:1 * 4`) must be unrolled into actual time.
-
-2. **Track Layout:**
-
-* Each `def` becomes a dedicated MIDI Track.
-* `style=grid` (Percussion) **MUST** default to MIDI Channel 10 unless the `channel` attribute is explicitly defined.
-
-3. **Articulation Mapping (Gate Times):**
-
-* To ensure articulation is audible:
-* `.stacc`  Reduce Note-On duration to 50% of the notated value.
-* `.ten`  Maintain 100% duration (Legato).
-* *Default:* 90% duration (to simulate natural phrasing/breath).
-
-4. **Dynamics:**
-
-* Maps `pppp` (Velocity 16) through `ffff` (Velocity 127). Standard `mf` should map to 80.
+1. **Timing & Resolution:** Files **SHOULD** use a resolution of **480 PPQ** (or higher).
+2. **Track Layout:** Each `def` becomes a dedicated MIDI Track.
+3. **Articulation Mapping (Gate Times):** `.stacc` = 50% note length. `.ten` = 100%. Default = 90%.
 
 ---
 
-## 28. Reference Example (The "Kitchen Sink")
+## 28. Reference Example (The "Kitchen Sink" v2.1)
 
-The following example demonstrates the integration of the V2 engines (Standard, Tab, Percussion, Macros, and Logic) into a single valid document. It serves as a validation test for compliant compilers.
+The following example demonstrates the integration of the V2.1 engines, specifically showing the new compound sigils (`@{}` and `<[]>`):
 
 ```tenuto
-tenuto {
-  meta { 
-    title: "Tenuto V2 Reference", 
+tenuto "2.1" {
+  meta @{ 
+    title: "Tenuto V2.1 Reference", 
     tempo: 130, 
-    style: "jazz",
-    tenuto_version: "2.0"
+    style: "jazz"
   }
 
   %% 1. DEFINITIONS (The Physics)
   group "Rhythm Section" symbol=bracket {
-    def sax "Tenor Sax" style=standard clef=treble transpose=-14 keyswitch={ growl: 30 }
+    %% Note the @{} sigil for the keyswitch and map attributes
+    def sax "Tenor Sax" style=standard clef=treble transpose=-14 keyswitch=@{ growl: 30 }
     def gtr "Guitar"    style=tab      tuning=guitar_std
-    def drm "Drum Kit"  style=grid     map=gm_kit
+    def drm "Drum Kit"  style=grid     map=@{ k: [0, 36], s: [2, 38], h: [4, 42] }
   }
 
   %% 2. MACROS (The Pre-Processor)
@@ -2078,7 +1943,7 @@ tenuto {
 
   %% 3. LOGIC (The Flow)
   measure 1 {
-    meta { time: 4/4 }
+    meta @{ time: "4/4" }
     
     %% SAX: Sticky duration + Articulation + Microtonality
     sax: c4:4.acc dqs e c5.stacc |
@@ -2091,11 +1956,11 @@ tenuto {
   }
 
   measure 2 {
-    %% SAX: Polyphonic split
-    sax: {
+    %% SAX: Polyphonic split using V2.1 `<[ ]>` brackets
+    sax: <[
       v1: $LickA(c5) c5:2.fermata |
       v2: g4:1.fermata            |
-    }
+    ]>
     
     %% GUITAR: Pitch bend technique (Quarter tone bend)
     gtr: 10-2:2.bu(quarter) 10-2.bd(0) |
@@ -2104,259 +1969,98 @@ tenuto {
     drm: s:16 s s s t1 t1 t2 t2 c:1 |
   }
 }
-
-
 ```
 
 # Addendum A: Advanced Implementation & Extensions
 
-**Version:** 1.1 (Extension to Tenuto 2.0)
-
+**Version:** 1.1 (Extension to Tenuto 2.1)
 **Status:** Normative
-
 **Scope:** Real-Time Protocols, Binary Serialization, Cryptography, and Collaboration.
 
 ---
 
 ## A.1 Live Execution Model (REPL & Daemon)
 
-To support live coding and interactive performance, Tenuto defines a standard runtime environment that persists state between compilation events.
-
 ### A.1.1 The Runtime Daemon (`tenutod`)
-
-Implementations **SHOULD** provide a daemon process that exposes two primary interfaces:
-
-1. **REPL Socket:** Accepts Tenuto code chunks (text or binary) via WebSocket or Unix Socket.
-2. **Control API:** REST/OSC interface for querying state (e.g., `GET /v1/state/tempo`) without injecting logic.
+Implementations **SHOULD** provide a daemon process that exposes a REPL Socket and a REST/OSC Control API.
 
 ### A.1.2 State Mutation & Timing
-
 The `@sync` directive is expanded to the `@at` directive for precise scheduling.
 
-**Syntax:** `@at(TimeSpec) Block`
-
-* **Relative Timing:** `@at(+2beats)` queues execution for 2 beats from the current cursor.
-* **Absolute Timing:** `@at(measure 12)` queues execution for the downbeat of Measure 12.
-* **Timecode:** `@at(01:30.500)` queues execution for a specific SMPTE/Wall-clock time.
-
 ```tenuto
-%% Queue a key change at the start of the next phrase
-@at(measure 17) meta { key: "D" }
-
-
+%% Queue a key change at the start of the next phrase using V2.1 Meta Syntax
+@at(measure 17) meta @{ key: "D" }
 ```
 
 ### A.1.3 Delta Updates
-
-For efficient network transmission, the daemon accepts **Change Sets** rather than full file re-uploads.
-
-```json
-{
-  "type": "delta",
-  "target": "measure 5",
-  "logic": "vln: c4 d e f |",
-  "version": 3,
-  "parent_hash": "a1b2c3..."
-}
-
-
-```
+For efficient network transmission, the daemon accepts JSON **Change Sets**.
 
 ---
 
 ## A.2 Binary Format (.tenb)
-
-For high-performance parsing and network transmission, Tenuto defines a canonical **Binary Encoding**.
 
 * **Extension:** `.tenb`
 * **MIME:** `application/x-tenuto-binary`
 * **Endianness:** Little-Endian
 
 ### A.2.1 Chunk Types
-
-The body consists of Type-Length-Value chunks.
-
-| Hex ID | Name | Description |
-| --- | --- | --- |
-| `0x01` | **META** | JSON metadata (UTF-8). |
-| `0x02` | **DEFS** | Binary instrument definitions struct. |
-| `0x03` | **LOGIC** | Compressed Event Stream (See A.2.2). |
-| `0x04` | **MACROS** | Macro definitions tree. |
-| `0x05` | **THEME** | Embedded theme/font data. |
-| `0x06` | **SAMPLE** | Embedded audio snippets (Optional). |
-| `0x07` | **HASH** | Cryptographic integrity signatures. |
+The body consists of Type-Length-Value chunks including `0x01` META, `0x02` DEFS, and `0x03` LOGIC.
 
 ### A.2.2 Logic Chunk Structure
-
-The logic stream is highly optimized for sequential reading.
-
-**Header (12 bytes):**
-
-* `Start Tick` (uint64)
-* `End Tick` (uint64)
-* `Staff ID` (uint16)
-
-**Event Array:**
-Each event is packed: `[Type][Flags][TickOffset][Data...]`
-
-* **TickOffset:** Varint delta from the previous event (enables highly efficient packing).
-* **Compression:** Logic chunks **MUST** be compressed using **Zstandard (zstd)** with a standard dictionary trained on the Tenuto corpus.
+The logic stream is highly optimized for sequential reading, packed via Varint deltas, and compressed using **Zstandard (zstd)**.
 
 ---
 
 ## A.3 Cryptographic Integrity & Archival
 
-To serve as a "Deep Time" format, files must be verifiable against bit-rot and tampering.
-
 ### A.3.1 The Canonical Form Algorithm
-
-Before hashing, the source must be normalized to ensure consistent signatures regardless of formatting.
-
 1. **Strip:** Comments and whitespace (reduce to single spaces).
 2. **Normalize:** Lowercase all identifiers; sort `meta` keys alphabetically.
 3. **Expand:** Inline all imports and macros.
-4. **Convert:** All durations to fractional representation (`:4.`  `:3/8`).
+4. **Convert:** All durations to fractional representation (`:4.` → `:3/8`).
 
 ### A.3.2 The Integrity Block
-
-Files **MAY** include a hash of the canonical form.
+Files **MAY** include a hash of the canonical form inside the root `meta` block:
 
 ```tenuto
-meta {
-  integrity: {
+meta @{
+  integrity: @{
     algorithm: "sha256",
     hash: "e3b0c44298fc1c149afbf4c8996fb924...",
-    canonical_version: "2.0",
+    canonical_version: "2.1",
     signature: "gpg-signature-string"
   }
 }
-
-
 ```
 
 ### A.3.3 Merkle Tree Structure
-
-For large works (e.g., Operas), the integrity block **SHOULD** implement a Merkle Tree where each Measure or Movement is hashed individually. This allows a parser to identify exactly *where* corruption occurred without discarding the entire file.
+For large works (e.g., Operas), the integrity block **SHOULD** implement a Merkle Tree where each Measure or Movement is hashed individually.
 
 ---
 
 ## A.4 Feature Degradation Matrix
 
-Renderers have varying capabilities (e.g., a simple MIDI player vs. a pro notation suite). Implementations **MUST** declare their Tier and adhere to the normative fallback rules.
-
-| Tier | Capability | Fallback Behavior |
-| --- | --- | --- |
-| **Tier 1 (Basic)** | MIDI/Text Only | **Microtonality:** Round to nearest semitone.<br>
-
- |
-
-
-
-**Noteheads:** All map to `normal`.
-
-
-
-
-
-**Techniques:** Ignored. |
-| **Tier 2 (Standard)** | Notation Editors | **Microtonality:** Pitch Bend or Accidentals.
-
-
-
-
-
-**Noteheads:** Support `x`, `diamond`, `triangle`.
-
-
-
-
-
-**Techniques:** Text labels. |
-| **Tier 3 (Reference)** | Full Engine | **Microtonality:** Exact frequency synthesis.
-
-
-
-
-
-**Noteheads:** Full SVG shape support.
-
-
-
-
-
-**Techniques:** Sample switching / Modeling. |
+Renderers have varying capabilities. Implementations **MUST** declare their Tier (1 - Basic, 2 - Standard, 3 - Reference) and adhere to normative fallback rules for items like Microtonality, Noteheads, and Techniques.
 
 ---
 
 ## A.5 Error Correction (Leniency)
 
-To ensure consistent behavior across "Lenient" compilers, auto-correction follows a defined **Leniency Ladder**.
-
-### A.5.1 Severity Levels
-
-* **Level 0 (Strict):** No correction. Fatal errors only.
-* **Level 1 (Soft):** Auto-close beams at barlines; infer missing Octave 4 on initialization.
-* **Level 2 (Aggressive):** Fix obvious typos (e.g., `:5` interpreted as `:4` if time sig is 4/4).
-* **Level 3 (Creative):** Algorithmic gap-filling (e.g., Markov generation for empty measures). *Experimental.*
-
-### A.5.2 The Correction Log
-
-When a compiler applies a correction, it **MUST** generate a machine-readable log entry:
-
-```json
-{
-  "level": "warning",
-  "rule": "infer_duration_sync",
-  "location": { "measure": 5, "tick": 960 },
-  "original": "c4 d e |",
-  "corrected": "c4:4 d:4 e:4 |",
-  "confidence": 0.85
-}
-
-
-```
+To ensure consistent behavior across "Lenient" compilers, auto-correction follows a defined **Leniency Ladder** (Level 0 Strict up to Level 3 Creative). When a compiler applies a correction, it **MUST** generate a machine-readable JSON log entry.
 
 ---
 
 ## A.6 Real-Time Collaboration Protocol
 
-For multi-user editing, Tenuto defines the **OmniScore Synchronization Protocol (OSP)**.
-
-### A.6.1 CRDT Model
-
-The document state is managed as a **Conflict-Free Replicated Data Type (CRDT)**.
-
-* **Registers:** Each Measure is a discrete register.
-* **Lists:** Voices within measures are ordered lists with unique UUIDs.
-* **Clocks:** State changes are ordered via Vector Clocks.
-
-### A.6.2 Protocol Buffers Definition
-
-```protobuf
-message OSPMessage {
-  enum Type {
-    PATCH = 0;
-    CURSOR_UPDATE = 1;
-    STATE_SYNC = 2;
-    CONFLICT_RESOLUTION = 3;
-  }
-  
-  string client_id = 1;
-  uint64 timestamp = 2;
-  VectorClock vector_clock = 3;
-  repeated Operation operations = 4;
-}
-
-
-```
+For multi-user editing, Tenuto defines the **OmniScore Synchronization Protocol (OSP)**. The document state is managed as a **Conflict-Free Replicated Data Type (CRDT)** using discrete Measure registers and Vector Clocks for order.
 
 ---
 
 ## A.7 Implementation Checklist
 
-To claim full compliance with Tenuto 2.0 + Addendum A, an implementation must:
+To claim full compliance with Tenuto 2.1.0 + Addendum A, an implementation must:
 
-* [ ] Parse and Generate valid `.ten` text and `.tenb` binary files.
+* [ ] Parse and Generate valid `.ten` text and `.tenb` binary files adhering to the V2.1 compound sigil rules.
 * [ ] Validate Cryptographic Hashes (SHA-256) on load.
 * [ ] Implement the `@at` scheduling directive.
 * [ ] Expose the Correction Log via API or Console.
