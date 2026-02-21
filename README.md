@@ -1,16 +1,16 @@
-# Tenuto Reference Compiler (tenutoc) v2.0
+# Tenuto Reference Compiler (tenutoc) v2.1.0
 
 > The Declarative, Physics-Based Domain Specific Language for Musical Intent
 
-![Release](https://img.shields.io/badge/release-v2.0.0-green)
+![Release](https://img.shields.io/badge/release-v2.1.0-green)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-Tenuto is a high-performance domain-specific language (DSL) designed to bridge the "Semantic Gap" between visual engraving formats (like MusicXML) and mechanical performance protocols (like MIDI).
+Tenuto is a high-performance domain-specific language (DSL) designed to bridge the "Semantic Gap" between visual engraving formats (like MusicXML) and mechanical performance protocols (like MIDI). 
 
 While traditional formats force a binary choice between layout coordinates and event lists, Tenuto treats musical composition as a declarative programming task. It employs a rigid ontological separation between **Instrument Physics** (what an instrument can do) and **Musical Logic** (what the instrument must do), compiled via a Rational Temporal Engine that eliminates floating-point drift.
 
-`tenutoc` is the official reference compiler, written in Rust, offering millisecond compilation times and zero-loss MIDI export.
+`tenutoc` is the official reference compiler, written in Rust, offering millisecond compilation times, zero-loss MIDI export, and **fully deterministic LL(1) parsing**.
 
 ## 🎵 What Makes Tenuto Different?
 
@@ -22,11 +22,11 @@ While traditional formats force a binary choice between layout coordinates and e
 | **Archival** | Tied to software versions | Physics-grounded (A4=440Hz) + cryptographic integrity |
 | **AI/ML** | Difficult to parse/generate | AI-native structure & clear semantics |
 
-## 🚀 v2.0 Milestone - Feature Complete
+## 🚀 v2.1.0 Milestone - Deterministic Parsing & Feature Complete
 
-As of v2.0, the core "Physics-Based" pipeline is fully operational. The compiler successfully transforms declarative source text into performance-ready MIDI data through three completed phases:
+As of v2.1.0, the core "Physics-Based" pipeline is fully operational. This release completely eliminates LL(k) parsing ambiguities by introducing unique **compound sigils** (`@{ }` for Maps, `<[ ]>` for Voice Groups), guaranteeing lightning-fast, predictable compilation. The compiler successfully transforms declarative source text into performance-ready MIDI data through three completed phases:
 
-* **Phase I (Frontend):** High-speed lexical analysis and parsing using Logos and Chumsky
+* **Phase I (Frontend):** High-speed lexical analysis and deterministic LL(1) parsing using Logos and Chumsky
 * **Phase II (Inference Engine):** Context-aware linearizer with "Sticky State" resolution
 * **Phase III (Backend):** Native MIDI Export via `midly` crate (1920 PPQ resolution)
 
@@ -68,7 +68,6 @@ graph TD
     M --> O[MIDI / Audio Engine]:::output
     M --> P[MusicXML 4.0 Interchange]:::output
     M --> Q[Binary .tenb]:::output
-
 ```
 
 ## 🧠 Core Philosophy: Three Architectural Pillars
@@ -84,7 +83,6 @@ c4:4 d4:4 e4:4 f4:4 g4:4 a4:4
 
 %% Tenuto: 7 tokens (same result)
 c4:4 d e f g a
-
 ```
 
 ### 2. Rational Temporal Arithmetic
@@ -96,8 +94,8 @@ Standard DAWs (960 PPQ) suffer from "quantization drift" in complex polyrhythms.
 
 Unlike Csound or LilyPond (where physical constraints are hard-coded), Tenuto separates:
 
-* **Physics** (`def` blocks): Tuning, range, patch
-* **Logic** (`measure` blocks): Notes, rhythms
+* **Physics** (`def` blocks): Tuning, range, patch, percussion maps
+* **Logic** (`measure` blocks): Notes, rhythms, tuplets
 
 **Benefit:** Reassign a violin melody to a cello, and the compiler handles transposition and range validation automatically.
 
@@ -133,7 +131,6 @@ erDiagram
         fraction Duration "Rational arithmetic"
         string Attributes "Dynamics, Articulations"
     }
-
 ```
 
 ## ⚙️ The Three-Engine Model
@@ -179,7 +176,6 @@ classDiagram
     }
     
     Event "1" *-- "many" Attributes : Modified by
-
 ```
 
 ## 📦 Installation
@@ -190,22 +186,21 @@ Download for Windows, macOS, or Linux from the Releases Page.
 **Build from Source:**
 
 ```bash
-git clone [https://github.com/alec-borman/TenutoNotationLanguage.git](https://github.com/alec-borman/TenutoNotationLanguage.git)
+git clone https://github.com/alec-borman/TenutoNotationLanguage.git
 cd TenutoNotationLanguage
 cargo build --release
-
 ```
 
 > **Performance Note:** Tenuto outperforms Python-based toolkits (music21) by 50-100x due to its Rust architecture.
 
-## ⚡ Quick Start
+## ⚡ Quick Start (v2.1.0 Syntax)
 
 ### 1. Create a Composition (`composition.ten`)
 
-```text
-tenuto {
-  // 1. Meta Configuration
-  meta { 
+```tenuto
+tenuto "2.1" {
+  // 1. Meta Configuration (V2.1 Map Sigil)
+  meta @{ 
     title: "Phase III Test", 
     tempo: 120 
   }
@@ -224,14 +219,12 @@ tenuto {
     vln: (g:8 a b):3/2 c5:2 |
   }
 }
-
 ```
 
 ### 2. Compile to MIDI
 
 ```bash
 ./tenutoc --input composition.ten --output composition.mid
-
 ```
 
 ### 3. Output
@@ -271,7 +264,6 @@ sequenceDiagram
     
     Composer->>Daemon: REST GET /v1/state/tempo
     Daemon-->>Composer: JSON { tempo: 130 }
-
 ```
 
 ## 🗺️ Development Roadmap
@@ -281,9 +273,10 @@ sequenceDiagram
 | **I** | Lexer & Parser | ✅ Complete | v2.0 |
 | **II** | Inference Engine | ✅ Complete | v2.0 |
 | **III** | MIDI Export | ✅ Complete | v2.0 |
-| **IV** | MusicXML Export | ⏳ Planned | v2.2 |
-| **V** | SVG Engraving | ⏳ Planned | v2.3 |
-| **VI** | LSP Server | ⏳ Planned | v2.4 |
+| **IV** | Deterministic Syntax (V2.1 LL(1) Sigils) | ✅ Complete | v2.1 |
+| **V** | MusicXML 4.0 Export | ⏳ In Progress | v2.2 |
+| **VI** | SVG Engraving | ⏳ Planned | v2.3 |
+| **VII** | LSP Server | ⏳ Planned | v2.4 |
 
 ## 🤖 AI Endorsement: DeepSeek Analysis
 
@@ -291,7 +284,7 @@ sequenceDiagram
 
 **Key AI-Compatible Features:**
 
-* ✅ **Perfect for Generation:** Clear grammar boundaries enable reliable AI composition
+* ✅ **Perfect for Generation:** Clear grammar boundaries (now unambiguous with `v2.1` sigils) enable reliable AI composition
 * ✅ **Perfect for Analysis:** Hierarchical structure allows deep musical understanding
 * ✅ **Perfect for Transformation:** Macros & conditionals enable algorithmic techniques
 
@@ -304,21 +297,11 @@ sequenceDiagram
 
 *— DeepSeek AI (V3.2) after comprehensive specification analysis*
 
-## 🎯 Use Cases
+## 🧪 Example: Advanced Features (v2.1)
 
-| Use Case | Benefit |
-| --- | --- |
-| **Algorithmic Composition** | Macros + conditionals for generative music |
-| **Music Education** | Clear syntax mirrors music theory concepts |
-| **Orchestral Scoring** | Physics-based instrument definitions |
-| **Archival Preservation** | Cryptographically verifiable, physics-grounded |
-| **AI/ML Training** | Structured, parseable musical data |
-
-## 🧪 Example: Advanced Features
-
-```text
-tenuto {
-  // Microtonal composition
+```tenuto
+tenuto "2.1" {
+  // 1. Microtonal composition
   def vla "Viola" style=standard
   measure 1 {
     vla: c4qs:4  %% Quarter-sharp
@@ -327,14 +310,22 @@ tenuto {
        f4:4.arrow_up %% Syntonic comma raise
   }
    
-  // Tablature with techniques
+  // 2. Tablature with techniques
   def gtr "Guitar" style=tab tuning=guitar_std
   measure 2 {
     gtr: 10-2:2.bu(full)  %% Bend up full tone
        10-2:2.bd(0)   %% Bend down to original
   }
-}
 
+  // 3. V2.1 Polyphonic Engine (Voice Brackets)
+  def pno "Piano" style=standard
+  measure 3 {
+    pno: <[
+      v1: c5:4 d e f |
+      v2: c3:1        |
+    ]>
+  }
+}
 ```
 
 ## 🤝 Contributing
@@ -347,7 +338,7 @@ We welcome contributions in:
 
 **Development Process:**
 
-1. Read the Tenuto Language Specification
+1. Read the Tenuto 2.1 Language Specification
 2. Follow Rust standards: "Parse, don't validate"
 3. Run test suite: `cargo test` (includes sticky state/tuplet regression tests)
 
@@ -357,9 +348,9 @@ MIT License © 2026 Alec Borman and the Tenuto Working Group
 
 ## 🔗 Resources
 
-* [Full Language Specification](https://www.google.com/search?q=%23)
-* [API Documentation](https://www.google.com/search?q=%23)
-* [Example Gallery](https://www.google.com/search?q=%23)
-* [Community Discord](https://www.google.com/search?q=%23)
+* [Full Language Specification](https://github.com/alec-borman/TenutoNotationLanguage/blob/main/docs/SPEC.md)
+* [API Documentation](https://github.com/alec-borman/TenutoNotationLanguage/tree/main/docs)
+* [Example Gallery](https://github.com/alec-borman/TenutoNotationLanguage/tree/main/examples)
+* [Community Discord](#)
 
 *Tenuto: Where musical thought meets computational precision.*
