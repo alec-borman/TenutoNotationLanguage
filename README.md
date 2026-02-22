@@ -354,3 +354,4 @@ MIT License © 2026 Alec Borman and the Tenuto Working Group
 * [Community Discord](#)
 
 *Tenuto: Where musical thought meets computational precision.*
+```
