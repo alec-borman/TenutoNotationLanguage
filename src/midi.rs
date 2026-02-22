@@ -1,36 +1,51 @@
 use crate::ir::{Timeline, EventKind};
-use midly::{Smf, Header, Format, Timing, Track, TrackEvent, TrackEventKind, MidiMessage, MetaMessage};
-use midly::num::u28;
+use midly::{Smf, Header, Format, Timing, TrackEvent, TrackEventKind, MidiMessage, MetaMessage};
+use midly::num::{u28, u14, u15}; // FIXED: Added u15 to the imports
+
+// ============================================================================
+// 1. TEMPORAL SORTING STRUCTURE
+// ============================================================================
+#[derive(Debug, Clone)]
+struct AbsEvent<'a> {
+    pub tick: u64,
+    pub priority: u8, // 0=Meta, 1=PitchBend, 2=NoteOff, 3=NoteOn, 4=BendReset
+    pub kind: TrackEventKind<'a>,
+}
+
+// ============================================================================
+// 2. THE MIDI ENCODER ENGINE (Tenuto 2.1.0 Compliant)
+// ============================================================================
 
 pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    // 1. Create MIDI Header
-    // Tenuto uses 1920 PPQ internally. We map this directly to MIDI PPQ.
+    // Spec 27.2: Files SHOULD use a resolution of 480 PPQ or higher.
+    // Tenuto native IR uses 1920 PPQ for perfect rational tuplet alignment.
+    
+    // FIXED: Safely cast the u32 PPQ to u16 so midly's u15 wrapper accepts it
+    let safe_ppq = u15::from_int_lossy(timeline.ppq as u16);
+    
     let header = Header::new(
-        Format::Parallel, // Type 1: Multiple tracks played simultaneously
-        Timing::Metrical(1920.into()), 
+        Format::Parallel,
+        Timing::Metrical(safe_ppq), 
     );
 
     let mut smf = Smf::new(header);
 
-    // 2. Create Conductor Track (Track 0)
-    // Contains Tempo, Time Signature, and Title
+    // ------------------------------------------------------------------------
+    // TRACK 0: The Conductor Track (Tempo & Global Meta)
+    // ------------------------------------------------------------------------
     let mut conductor_track = Vec::new();
     
-    // Title
     conductor_track.push(TrackEvent {
         delta: 0.into(),
         kind: TrackEventKind::Meta(MetaMessage::TrackName(timeline.title.as_bytes())),
     });
 
-    // Tempo: Convert BPM to Microseconds per Quarter Note
-    // Formula: 60,000,000 / BPM
-    let mpq = 60_000_000 / timeline.tempo;
+    let mpq = 60_000_000 / timeline.tempo.max(1);
     conductor_track.push(TrackEvent {
         delta: 0.into(),
         kind: TrackEventKind::Meta(MetaMessage::Tempo(mpq.into())),
     });
 
-    // End of Track
     conductor_track.push(TrackEvent {
         delta: 0.into(),
         kind: TrackEventKind::Meta(MetaMessage::EndOfTrack),
@@ -38,84 +53,137 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
 
     smf.tracks.push(conductor_track);
 
-    // 3. Process Instrument Tracks
-    // Sort keys to ensure deterministic output
+    // ------------------------------------------------------------------------
+    // TRACKS 1..N: Instrument Tracks
+    // ------------------------------------------------------------------------
     let mut sorted_keys: Vec<_> = timeline.tracks.keys().collect();
-    sorted_keys.sort();
+    sorted_keys.sort(); 
 
-    for (idx, key) in sorted_keys.iter().enumerate() {
-        let tenuto_track = &timeline.tracks[*key];
-        let mut midi_events = Vec::new();
+    let mut channel_allocator = 0;
+
+    for key in sorted_keys {
+        let track_data = &timeline.tracks[key];
+        let mut abs_events = Vec::new();
         
-        // Channel logic: 0-15. Percussion usually 9 (10 in 1-based).
-        // Simple auto-assignment loop, skipping 9 unless explicitly percussion.
-        let channel = (idx % 16) as u8; 
+        // Spec 27.2 & 23.3: Percussion maps MUST default to MIDI Channel 10 (Index 9)
+        let is_drum = track_data.patch.to_lowercase().contains("drum") 
+                   || track_data.patch.to_lowercase().contains("kit")
+                   || track_data.patch == "gm_kit";
 
-        // A. Set Instrument Patch (Program Change)
-        // Simple mapping: default to Grand Piano (0) if parsing fails
-        let program = parse_patch_name(&tenuto_track.patch);
-        midi_events.push(TempEvent {
+        let channel = if is_drum {
+            9 // Channel 10 in 0-indexed MIDI
+        } else {
+            // Prevent melodic instruments from overwriting the percussion channel
+            if channel_allocator == 9 { 
+                channel_allocator = 10; 
+            }
+            let ch = channel_allocator;
+            channel_allocator = (channel_allocator + 1) % 16;
+            ch
+        };
+
+        // 1. Program Change Resolution (Spec 23.5)
+        let program = parse_patch_name(&track_data.patch);
+        abs_events.push(AbsEvent {
             tick: 0,
+            priority: 0,
             kind: TrackEventKind::Midi {
                 channel: channel.into(),
                 message: MidiMessage::ProgramChange { program: program.into() },
             }
         });
 
-        // B. Explode Note Durations into On/Off pairs
-        for event in &tenuto_track.events {
+        // Track Name Meta
+        abs_events.push(AbsEvent {
+            tick: 0,
+            priority: 0,
+            kind: TrackEventKind::Meta(MetaMessage::TrackName(track_data.label.as_bytes())),
+        });
+
+        // 2. Unroll IR Events into MIDI strikes
+        for event in &track_data.events {
             match event.kind {
-                EventKind::Note { pitch, velocity } => {
-                    // Note On
-                    midi_events.push(TempEvent {
+                EventKind::Note { pitch_midi, cents, velocity } => {
+                    let key = pitch_midi.min(127).into();
+                    let vel = velocity.min(127).into();
+
+                    // V2.1 Spec 19: Microtonal Pitch Bend
+                    // Assumes synth Pitch Bend Range is set to standard +/- 2 Semitones (200 cents)
+                    if cents != 0 {
+                        let bend_val = 8192 + (cents as f32 * 8192.0 / 200.0) as i32;
+                        let clamped_bend = bend_val.clamp(0, 16383) as u16;
+                        abs_events.push(AbsEvent {
+                            tick: event.tick,
+                            priority: 1, // Before NoteOn
+                            kind: TrackEventKind::Midi {
+                                channel: channel.into(),
+                                message: MidiMessage::PitchBend { 
+                                    bend: midly::PitchBend(u14::from_int_lossy(clamped_bend)) 
+                                },
+                            },
+                        });
+                    }
+
+                    // Note On (Keyswitches, Grace notes, and Standard Notes all hit here)
+                    abs_events.push(AbsEvent {
                         tick: event.tick,
+                        priority: 3,
                         kind: TrackEventKind::Midi {
                             channel: channel.into(),
-                            message: MidiMessage::NoteOn { 
-                                key: pitch.into(), 
-                                vel: velocity.into() 
-                            },
-                        }
+                            message: MidiMessage::NoteOn { key, vel },
+                        },
                     });
 
-                    // Note Off (at start + duration)
-                    midi_events.push(TempEvent {
-                        tick: event.tick + event.duration_ticks,
+                    // Note Off (Physical duration dictated by articulation gate_ticks)
+                    let off_tick = event.tick + event.gate_ticks;
+                    abs_events.push(AbsEvent {
+                        tick: off_tick,
+                        priority: 2,
                         kind: TrackEventKind::Midi {
                             channel: channel.into(),
-                            message: MidiMessage::NoteOff { 
-                                key: pitch.into(), 
-                                vel: 0.into() 
-                            },
-                        }
+                            message: MidiMessage::NoteOff { key, vel: 0.into() },
+                        },
                     });
+
+                    // Pitch Bend Reset (Immediately following NoteOff to prevent smearing)
+                    if cents != 0 {
+                        abs_events.push(AbsEvent {
+                            tick: off_tick,
+                            priority: 4,
+                            kind: TrackEventKind::Midi {
+                                channel: channel.into(),
+                                message: MidiMessage::PitchBend { 
+                                    bend: midly::PitchBend(u14::from_int_lossy(8192)) 
+                                },
+                            },
+                        });
+                    }
                 },
-                _ => {} // Rests are implicit in MIDI (gap between events)
+                EventKind::Frequency { .. } => { 
+                    /* Spec 19.4: Future Native MPE implementation for exact Hz assignment */ 
+                },
+                EventKind::Rest => {
+                    /* Rests are logically preserved in IR but emit no explicit MIDI payload */
+                },
             }
         }
 
-        // C. Sort by absolute tick to prepare for Delta calculation
-        midi_events.sort_by(|a, b| a.tick.cmp(&b.tick));
+        // 3. Sort chronologically, relying on priority for identical tick resolution
+        abs_events.sort_by(|a, b| a.tick.cmp(&b.tick).then_with(|| a.priority.cmp(&b.priority)));
 
-        // D. Convert to Delta Time
+        // 4. Calculate Sequential Delta-Times
         let mut final_track = Vec::new();
         let mut current_tick = 0;
 
-        for e in midi_events {
-            let delta = e.tick - current_tick;
-            
-            // midly uses u28 for deltas. Ensure we don't overflow (unlikely in music).
-            let delta_u28 = u28::from_int_lossy(delta as u32);
-
+        for e in abs_events {
+            let delta = (e.tick - current_tick) as u32;
             final_track.push(TrackEvent {
-                delta: delta_u28,
+                delta: u28::from_int_lossy(delta),
                 kind: e.kind,
             });
-
             current_tick = e.tick;
         }
 
-        // End of Track
         final_track.push(TrackEvent {
             delta: 0.into(),
             kind: TrackEventKind::Meta(MetaMessage::EndOfTrack),
@@ -124,28 +192,40 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
         smf.tracks.push(final_track);
     }
 
-    // 4. Serialize to Bytes
     let mut buffer = Vec::new();
     smf.write(&mut buffer)?;
     Ok(buffer)
 }
 
-// Temporary struct for sorting before calculating Deltas
-struct TempEvent<'a> {
-    tick: u64,
-    kind: TrackEventKind<'a>,
-}
-
-// Helper to map string names to MIDI Program Numbers (0-127)
+/// Resolves standard text definitions to 0-127 General MIDI patches
+/// Maps directly to the V2.1 Spec Section 23.5 Standard Constants.
 fn parse_patch_name(name: &str) -> u8 {
     let n = name.to_lowercase();
-    if n.contains("piano") { return 0; }
-    if n.contains("violin") { return 40; }
-    if n.contains("viola") { return 41; }
-    if n.contains("cello") { return 42; }
-    if n.contains("guitar") { return 24; }
-    if n.contains("bass") { return 32; }
-    if n.contains("flute") { return 73; }
-    if n.contains("drum") || n.contains("kit") { return 0; } // Drums use Channel 10, prog doesn't matter much
-    0 // Default
+    
+    // Exact V2.1 Spec Constants
+    if n == "gm_piano" { return 0; }
+    if n == "gm_epiano" { return 4; }
+    if n == "gm_organ" { return 16; }
+    if n == "gm_guitar" { return 24; }
+    if n == "gm_bass" { return 32; }
+    if n == "gm_violin" { return 40; }
+    if n == "gm_strings" { return 48; }
+    if n == "gm_choir" { return 52; }
+    if n == "gm_trumpet" { return 56; }
+    if n == "gm_sax" { return 65; }
+    if n == "gm_flute" { return 73; }
+    if n == "gm_kit" { return 0; } // Channel 10 default handles the mapping natively
+
+    // Graceful fuzzy fallback for generic string declarations
+    if n.contains("piano") { 0 }
+    else if n.contains("epiano") { 4 }
+    else if n.contains("organ") { 16 }
+    else if n.contains("guitar") { 24 }
+    else if n.contains("bass") { 32 }
+    else if n.contains("violin") { 40 }
+    else if n.contains("strings") { 48 }
+    else if n.contains("trumpet") { 56 }
+    else if n.contains("sax") { 65 }
+    else if n.contains("flute") { 73 }
+    else { 0 } // Default Acoustic Grand
 }

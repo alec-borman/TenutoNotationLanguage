@@ -1,235 +1,384 @@
-use crate::parser::{Score, TopLevel, Statement, Event as AstEvent, Value, Voice};
-use crate::Rational;
 use std::collections::HashMap;
+use crate::ast::*;
+
+// ============================================================================
+// 1. DATA STRUCTURES & MATH (All marked PUB)
+// ============================================================================
 
 #[derive(Debug, Clone)]
-pub struct Timeline {
-    pub title: String,
-    pub tempo: u32,
-    pub tracks: HashMap<String, Track>,
+pub struct AtomicEvent {
+    pub tick: u64,
+    pub duration_ticks: u64,
+    pub gate_ticks: u64,
+    pub kind: EventKind,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum EventKind {
+    Note { pitch_midi: u8, cents: i32, velocity: u8 },
+    Frequency { hz: f64, velocity: u8 },
+    Rest,
 }
 
 #[derive(Debug, Clone)]
 pub struct Track {
     pub label: String,
     pub patch: String,
+    pub tuning: Vec<u8>,
+    pub keyswitches: HashMap<String, u8>,
+    pub perc_map: HashMap<String, u8>,
     pub events: Vec<AtomicEvent>,
 }
 
 #[derive(Debug, Clone)]
-pub struct AtomicEvent {
-    pub tick: u64,          
-    pub duration_ticks: u64,
-    pub kind: EventKind,
+pub struct Timeline {
+    pub title: String,
+    pub tempo: u32,
+    pub ppq: u32,
+    pub tracks: HashMap<String, Track>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum EventKind {
-    Note { pitch: u8, velocity: u8 }, 
-    Rest,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Rational {
+    pub num: u64,
+    pub den: u64,
 }
 
+impl Rational {
+    pub fn new(num: u64, den: u64) -> Self {
+        if den == 0 { panic!("F9002: Division by Zero in Time Engine"); }
+        let common = gcd(num, den);
+        Self { num: num / common, den: den / common }
+    }
+    pub fn to_ticks(&self, ppq: u32) -> u64 {
+        (self.num * 4 * ppq as u64) / self.den
+    }
+}
+
+fn gcd(mut a: u64, mut b: u64) -> u64 {
+    while b != 0 { a %= b; std::mem::swap(&mut a, &mut b); }
+    a
+}
+
+// ============================================================================
+// 2. THE STICKY STATE CURSOR (Internal)
+// ============================================================================
+
+#[derive(Debug, Clone)]
 struct Cursor {
     current_tick: u64,
-    last_duration: Rational, 
+    last_duration: Rational,
     last_octave: u8,
-    // Time Scalar for Tuplets. Standard = 1/1. Triplet = 2/3.
+    last_velocity: u8,
     time_scalar: Rational,
-    ppq: u32, 
+    ppq: u32,
+    tied_pitches: Vec<u8>,
 }
 
 impl Cursor {
-    fn new(ppq: u32) -> Self {
+    fn new(start_tick: u64, ppq: u32) -> Self {
         Self {
-            current_tick: 0,
-            last_duration: Rational::new(1, 4), 
-            last_octave: 4,  
+            current_tick: start_tick,
+            last_duration: Rational::new(1, 4),
+            last_octave: 4,
+            last_velocity: 100,
             time_scalar: Rational::new(1, 1),
             ppq,
+            tied_pitches: Vec::new(),
         }
     }
 
-    fn parse_duration(&mut self, d_str: Option<&String>) -> u64 {
+    fn parse_duration(&mut self, d_str: Option<&String>, dots: u8, multiplier: Option<u32>) -> (u64, u64) {
         let base_rat = if let Some(s) = d_str {
-            let raw = &s[1..];
-            let dots = raw.chars().filter(|&c| c == '.').count();
-            let base_str: String = raw.chars().take_while(|&c| c != '.').collect();
-            let denominator: u64 = base_str.parse().unwrap_or(4);
-            
+            let denominator: u64 = s.trim_start_matches(':').parse().unwrap_or(4);
             let mut rat = Rational::new(1, denominator);
             if dots == 1 { rat = Rational::new(3, denominator * 2); }
             else if dots == 2 { rat = Rational::new(7, denominator * 4); }
-            
             self.last_duration = rat;
             rat
         } else {
             self.last_duration
         };
 
-        // Apply Time Scalar (for Tuplets)
-        // Duration = Base * Scalar
-        // e.g. 1/8 * (2/3) = 1/12 (Triplet eighth)
-        let final_rat = Rational::new(
+        let mut final_rat = Rational::new(
             base_rat.num * self.time_scalar.num,
             base_rat.den * self.time_scalar.den
         );
 
-        final_rat.to_ticks(self.ppq)
+        if let Some(m) = multiplier { final_rat.num *= m as u64; }
+        let ticks = final_rat.to_ticks(self.ppq);
+        (ticks, ticks)
     }
 
     fn parse_pitch(&mut self, p_str: &str) -> u8 {
         let chars: Vec<char> = p_str.chars().collect();
         if chars.is_empty() { return 60; }
-        let step = chars[0].to_ascii_lowercase();
-        let mut base = match step {
+        let mut base = match chars[0].to_ascii_lowercase() {
             'c' => 0, 'd' => 2, 'e' => 4, 'f' => 5, 'g' => 7, 'a' => 9, 'b' => 11, _ => 0
         };
-        let mut octave = self.last_octave; 
-        let mut has_explicit_octave = false;
-        let mut i = 1;
-        while i < chars.len() {
+        let mut octave = self.last_octave;
+        let mut has_octave = false;
+
+        for i in 1..chars.len() {
             match chars[i] {
-                '#' => base += 1, 'b' => base -= 1, 
-                c if c.is_digit(10) => {
-                    if !has_explicit_octave {
-                        octave = c.to_digit(10).unwrap() as u8;
-                        has_explicit_octave = true;
-                    }
+                '#' => base += 1, 'b' => base -= 1,
+                c if c.is_ascii_digit() => {
+                    octave = c.to_digit(10).unwrap() as u8;
+                    has_octave = true;
                 }
                 _ => {}
             }
-            i += 1;
         }
-        if has_explicit_octave { self.last_octave = octave; }
+        if has_octave { self.last_octave = octave; }
         (octave + 1) * 12 + base
     }
 }
 
-pub fn compile(score: Score) -> Result<Timeline, String> {
+// ============================================================================
+// 3. THE COMPILER PIPELINE (Marked PUB)
+// ============================================================================
+
+pub fn compile(score: Score, strict_mode: bool) -> Result<Timeline, String> {
+    let ppq = 1920;
     let mut timeline = Timeline {
-        title: "Untitled".into(),
-        tempo: 120,
-        tracks: HashMap::new(),
+        title: "Untitled".into(), tempo: 120, ppq, tracks: HashMap::new(),
     };
 
-    // 1. Context Building
-    for item in &score.items {
-        match item {
-            TopLevel::Meta(kvs) => {
-                for (k, v) in kvs {
-                    if k == "title" { if let Value::Str(s) = v { timeline.title = s.clone(); } }
-                    else if k == "tempo" { if let Value::Num(n) = v { timeline.tempo = *n as u32; } }
-                }
-            },
-            TopLevel::Def { id, label, attributes } => {
-                let mut patch = "Grand Piano".to_string();
-                for (attr, val) in attributes {
-                    if attr == "patch" { if let Value::Str(s) = val { patch = s.clone(); } }
-                }
-                timeline.tracks.insert(id.clone(), Track {
-                    label: label.clone(),
-                    patch,
-                    events: Vec::new(),
-                });
-            },
-            _ => {}
-        }
-    }
+    // FIXED: Recursive context builder extracts definitions from inside groups
+    fn build_context(items: &[TopLevel], timeline: &mut Timeline) {
+        for item in items {
+            match item {
+                TopLevel::Meta(kvs) => {
+                    if let Some(Value::Str(t)) = kvs.get("title") { timeline.title = t.clone(); }
+                    if let Some(Value::Num(t)) = kvs.get("tempo") { timeline.tempo = *t as u32; }
+                },
+                TopLevel::Def { id, label, attributes } => {
+                    let patch = attributes.get("patch").and_then(|v| if let Value::Str(s) = v { Some(s.clone()) } else { None }).unwrap_or("piano".into());
 
-    // 2. Linearization
-    let ppq = 1920;
-    // Map of StaffID -> [Cursor for Voice 1, Cursor for Voice 2...]
-    let mut cursors: HashMap<String, Vec<Cursor>> = HashMap::new();
+                    let mut keyswitches = HashMap::new();
+                    if let Some(Value::Map(ks_map)) = attributes.get("keyswitch") {
+                        for (k, v) in ks_map {
+                            if let Value::Num(n) = v { keyswitches.insert(k.clone(), *n as u8); }
+                        }
+                    }
 
-    for id in timeline.tracks.keys() {
-        // Start with 4 voices per track as default, can expand dynamically
-        cursors.insert(id.clone(), vec![
-            Cursor::new(ppq), Cursor::new(ppq), Cursor::new(ppq), Cursor::new(ppq)
-        ]);
-    }
-
-    for item in &score.items {
-        if let TopLevel::Measure { content, .. } = item {
-            for stmt in content {
-                match stmt {
-                    Statement::Assignment { staff_id, voices } => {
-                        if let Some(track) = timeline.tracks.get_mut(staff_id) {
-                            let track_cursors = cursors.get_mut(staff_id).unwrap();
-                            
-                            // Process each voice in parallel
-                            for (v_idx, voice) in voices.iter().enumerate() {
-                                if v_idx >= track_cursors.len() {
-                                    track_cursors.push(Cursor::new(ppq));
+                    let mut perc_map = HashMap::new();
+                    if let Some(Value::Map(pm)) = attributes.get("map") {
+                        for (k, v) in pm {
+                            if let Value::Array(arr) = v {
+                                if arr.len() > 1 {
+                                    if let Value::Num(midi) = arr[1] { perc_map.insert(k.clone(), midi as u8); }
                                 }
-                                let cursor = &mut track_cursors[v_idx];
-                                process_voice(voice, cursor, track);
                             }
                         }
-                    },
-                    _ => {}
-                }
+                    }
+
+                    timeline.tracks.insert(id.clone(), Track {
+                        label: label.clone().unwrap_or_else(|| id.clone()),
+                        patch,
+                        tuning: vec![40, 45, 50, 55, 59, 64], 
+                        keyswitches,
+                        perc_map,
+                        events: Vec::new(),
+                    });
+                },
+                TopLevel::Group { items: inner_items, .. } => build_context(inner_items, timeline),
+                _ => {}
             }
         }
     }
 
-    // Sort events by tick (since multi-voice processing implies out-of-order insertion)
-    for track in timeline.tracks.values_mut() {
-        track.events.sort_by_key(|e| e.tick);
+    build_context(&score.items, &mut timeline);
+
+    let mut current_measure_start: u64 = 0;
+    let mut active_cursors: HashMap<String, Cursor> = HashMap::new();
+
+    // FIXED: Recursive measure linearization
+    fn process_logic_stream(
+        items: Vec<TopLevel>, 
+        timeline: &mut Timeline, 
+        cursors: &mut HashMap<String, Cursor>, 
+        measure_start: &mut u64, 
+        ppq: u32, 
+        strict: bool
+    ) -> Result<(), String> {
+        for item in items {
+            match item {
+                TopLevel::Measure { content, .. } => {
+                    *measure_start += measure_pass(content, timeline, cursors, *measure_start, ppq, strict)?;
+                },
+                TopLevel::Group { items: inner_items, .. } => {
+                    process_logic_stream(inner_items, timeline, cursors, measure_start, ppq, strict)?;
+                },
+                _ => {}
+            }
+        }
+        Ok(())
     }
 
+    process_logic_stream(score.items, &mut timeline, &mut active_cursors, &mut current_measure_start, ppq, strict_mode)?;
+
+    for track in timeline.tracks.values_mut() { track.events.sort_by_key(|e| e.tick); }
     Ok(timeline)
 }
 
-/// Recursively processes events (supports Tuplets)
-fn process_voice(voice: &Voice, cursor: &mut Cursor, track: &mut Track) {
+fn measure_pass(content: Vec<Logic>, timeline: &mut Timeline, active_cursors: &mut HashMap<String, Cursor>, start_tick: u64, ppq: u32, strict_mode: bool) -> Result<u64, String> {
+    let mut max_measure_duration: u64 = 0;
+
+    for logic in content {
+        if let Logic::Assignment { staff_id, voices } = logic {
+            let track = timeline.tracks.get_mut(&staff_id).ok_or_else(|| format!("E2001: Undefined staff '{}'", staff_id))?;
+            let mut voice_end_ticks = Vec::new();
+
+            for (idx, voice) in voices.iter().enumerate() {
+
+                let mut cursor = if idx == 0 {
+                    let mut c = active_cursors.remove(&staff_id).unwrap_or_else(|| Cursor::new(start_tick, ppq));
+
+                    if strict_mode {
+                        c.last_duration = Rational::new(1, 4);
+                        c.last_octave = 4;
+                    }
+                    c.current_tick = start_tick;
+                    c
+                } else {
+                    Cursor::new(start_tick, ppq)
+                };
+
+                process_voice_events(voice, &mut cursor, track)?;
+                let duration_consumed = cursor.current_tick - start_tick;
+                voice_end_ticks.push(duration_consumed);
+                max_measure_duration = max_measure_duration.max(duration_consumed);
+
+                if idx == 0 {
+                    active_cursors.insert(staff_id.clone(), cursor);
+                }
+            }
+
+            if strict_mode && voice_end_ticks.len() > 1 && !voice_end_ticks.iter().all(|&d| d == voice_end_ticks[0]) {
+                return Err(format!("E3002: Voice Sync Failure in polyphonic block for staff '{}'", staff_id));
+            }
+        }
+    }
+    Ok(max_measure_duration)
+}
+
+fn emit_keyswitches(attributes: &[Attribute], track: &mut Track, tick: u64) {
+    for attr in attributes {
+        if let Some(&ks_midi) = track.keyswitches.get(&attr.name) {
+            track.events.push(AtomicEvent {
+                tick,
+                duration_ticks: 1, 
+                gate_ticks: 1,
+                kind: EventKind::Note { pitch_midi: ks_midi, cents: 0, velocity: 1 }
+            });
+        }
+    }
+}
+
+fn process_voice_events(voice: &Voice, cursor: &mut Cursor, track: &mut Track) -> Result<(), String> {
     for event in &voice.events {
         match event {
-            AstEvent::Note { pitch, duration, .. } => {
-                let ticks = cursor.parse_duration(duration.as_ref());
-                let midi = cursor.parse_pitch(pitch);
-                track.events.push(AtomicEvent {
-                    tick: cursor.current_tick,
-                    duration_ticks: ticks,
-                    kind: EventKind::Note { pitch: midi, velocity: 100 },
-                });
-                cursor.current_tick += ticks;
-            },
-            AstEvent::Chord { notes, duration, .. } => {
-                let ticks = cursor.parse_duration(duration.as_ref());
-                // Chords: Multiple notes at SAME cursor tick
-                for note in notes {
-                    let midi = cursor.parse_pitch(note);
+            Event::Note { pitch, cents, duration, dots, multiplier, is_tied, attributes } => {
+                let (log, mut gate) = cursor.parse_duration(duration.as_ref(), *dots, *multiplier);
+
+                let midi = if let Some(&mapped) = track.perc_map.get(pitch) {
+                    mapped
+                } else {
+                    cursor.parse_pitch(pitch)
+                };
+
+                for attr in attributes { if attr.name == "stacc" { gate /= 2; } }
+                emit_keyswitches(attributes, track, cursor.current_tick);
+
+                if cursor.tied_pitches.contains(&midi) {
+                    handle_tie(track, midi, log)?;
+                    cursor.tied_pitches.retain(|&p| p != midi); 
+                    if *is_tied { cursor.tied_pitches.push(midi); }
+                } else {
                     track.events.push(AtomicEvent {
-                        tick: cursor.current_tick,
-                        duration_ticks: ticks,
-                        kind: EventKind::Note { pitch: midi, velocity: 100 },
+                        tick: cursor.current_tick, duration_ticks: log, gate_ticks: gate,
+                        kind: EventKind::Note { pitch_midi: midi, cents: cents.unwrap_or(0), velocity: cursor.last_velocity }
                     });
+                    if *is_tied { cursor.tied_pitches.push(midi); }
                 }
-                // Only advance cursor once per chord
-                cursor.current_tick += ticks;
+                cursor.current_tick += log;
             },
-            AstEvent::Rest { duration } => {
-                let ticks = cursor.parse_duration(duration.as_ref());
-                cursor.current_tick += ticks;
+            Event::Chord { notes, duration, dots, multiplier, is_tied: _is_tied, attributes: _attributes } => {
+                let (log, gate) = cursor.parse_duration(duration.as_ref(), *dots, *multiplier);
+                for note_event in notes {
+                    if let Event::Note { pitch, cents, attributes: note_attrs, .. } = note_event {
+                        let midi = cursor.parse_pitch(pitch);
+                        let mut local_gate = gate;
+
+                        for attr in note_attrs { if attr.name == "stacc" { local_gate /= 2; } }
+                        emit_keyswitches(note_attrs, track, cursor.current_tick);
+
+                        track.events.push(AtomicEvent {
+                            tick: cursor.current_tick, duration_ticks: log, gate_ticks: local_gate,
+                            kind: EventKind::Note { pitch_midi: midi, cents: cents.unwrap_or(0), velocity: cursor.last_velocity }
+                        });
+                    }
+                }
+                cursor.current_tick += log;
             },
-            AstEvent::Tuplet { content, p, q } => {
-                // Spec 5.3: "Play P notes in the time of Q"
-                // Scalar = Q / P
+            Event::Frequency { hz, duration, dots, multiplier, .. } => {
+                let (log, gate) = cursor.parse_duration(duration.as_ref(), *dots, *multiplier);
+                let freq: f64 = hz.parse().unwrap_or(440.0);
+                track.events.push(AtomicEvent {
+                    tick: cursor.current_tick, duration_ticks: log, gate_ticks: gate,
+                    kind: EventKind::Frequency { hz: freq, velocity: cursor.last_velocity }
+                });
+                cursor.current_tick += log;
+            },
+            Event::Rest { duration, dots, multiplier } => {
+                let (log, _) = cursor.parse_duration(duration.as_ref(), *dots, *multiplier);
+                cursor.current_tick += log;
+            },
+            Event::Tuplet { content, p, q } => {
                 let old_scalar = cursor.time_scalar;
-                let scale_factor = Rational::new(*q, *p);
-                
-                // Update scalar: New = Old * (Q/P)
-                cursor.time_scalar = Rational::new(
-                    old_scalar.num * scale_factor.num,
-                    old_scalar.den * scale_factor.den
-                );
-
-                process_voice(content, cursor, track);
-
-                // Restore scalar
+                cursor.time_scalar = Rational::new(old_scalar.num * *q, old_scalar.den * *p);
+                process_voice_events(content, cursor, track)?;
                 cursor.time_scalar = old_scalar;
             },
-            _ => {} // Tab/Percussion placeholders for now
+            Event::Tab { fret, string, duration, dots, multiplier, .. } => {
+                let (log, gate) = cursor.parse_duration(duration.as_ref(), *dots, *multiplier);
+
+                let str_idx = track.tuning.len().saturating_sub(*string as usize);
+                let base_pitch = track.tuning.get(str_idx).cloned().unwrap_or(60);
+                let pitch = base_pitch + fret.parse::<u8>().unwrap_or(0);
+
+                track.events.push(AtomicEvent {
+                    tick: cursor.current_tick, duration_ticks: log, gate_ticks: gate,
+                    kind: EventKind::Note { pitch_midi: pitch, cents: 0, velocity: cursor.last_velocity }
+                });
+                cursor.current_tick += log;
+            },
+            Event::Percussion { key, duration, dots, multiplier, attributes } => {
+                let (log, gate) = cursor.parse_duration(duration.as_ref(), *dots, *multiplier);
+
+                let pitch = track.perc_map.get(key).copied().unwrap_or(60);
+
+                emit_keyswitches(attributes, track, cursor.current_tick);
+
+                track.events.push(AtomicEvent {
+                    tick: cursor.current_tick, duration_ticks: log, gate_ticks: gate,
+                    kind: EventKind::Note { pitch_midi: pitch, cents: 0, velocity: cursor.last_velocity }
+                });
+                cursor.current_tick += log;
+            },
+            _ => {}
         }
+    }
+    Ok(())
+}
+
+fn handle_tie(track: &mut Track, target: u8, extra: u64) -> Result<(), String> {
+    if let Some(ev) = track.events.iter_mut().rev().find(|e| matches!(e.kind, EventKind::Note { pitch_midi, .. } if pitch_midi == target)) {
+        ev.duration_ticks += extra;
+        ev.gate_ticks += extra;
+        Ok(())
+    } else {
+        Err(format!("E4005: Tie target not found for pitch {}", target))
     }
 }
