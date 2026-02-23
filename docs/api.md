@@ -1,18 +1,19 @@
 # Tenuto API Reference
 
-**Version:** 2.0.0 | **Crate:** `tenutoc`
+**Version:** 2.1.0 | **Crate:** `tenutoc` | **Status:** Deterministic LL(1)
 
 ---
 
 ## 📦 Crate Overview
 
-The `tenutoc` crate serves as the reference implementation for the Tenuto v2.0 language. It is designed as a **modular pipeline**, allowing developers to hook into different stages of compilation:
+The `tenutoc` crate serves as the reference implementation for the Tenuto v2.1.0 language. It is designed as a **modular, multi-stage pipeline**, allowing developers to hook into different stages of compilation:
 
 | Module | Purpose | Transformation |
 |--------|---------|----------------|
 | `lexer` | High-performance tokenization | Source string → Token stream |
-| `parser` | Fault-tolerant AST generation | Token stream → Score struct |
-| `ir` | The Inference Engine | Score → Timeline |
+| `parser` | Deterministic LL(1) AST generation | Token stream → Score (AST) |
+| `preprocessor` | Macro & Variable expansion | Score → Expanded Score |
+| `ir` | The Inference Engine (Rational Time) | Expanded Score → Timeline |
 | `midi` | Backend export | Timeline → MIDI Bytes |
 
 ---
@@ -30,7 +31,7 @@ tenutoc = { git = "https://github.com/alec-borman/TenutoNotationLanguage" }
 
 ## 🔡 Module: `tenutoc::lexer`
 
-The Lexer module is the entry point for the compiler. It utilizes the **`logos`** crate to generate a high-speed, regex-based state machine for tokenization.
+The Lexer module is the entry point for the compiler. It utilizes the **`logos`** crate to generate a high-speed, regex-based state machine for tokenization. In V2.1.0, the lexer handles compound sigils natively, enabling downstream deterministic parsing.
 
 ### Usage Example
 
@@ -38,11 +39,12 @@ The Lexer module is the entry point for the compiler. It utilizes the **`logos`*
 use tenutoc::lexer::Token;
 use logos::Logos;
 
-let source = "vln: c4:4";
+let source = "pno: <[ v1: c4:4 ]>";
 let mut lexer = Token::lexer(source);
 
-assert_eq!(lexer.next(), Some(Ok(Token::Identifier("vln".into()))));
+assert_eq!(lexer.next(), Some(Ok(Token::Identifier("pno".into()))));
 assert_eq!(lexer.next(), Some(Ok(Token::Colon)));
+assert_eq!(lexer.next(), Some(Ok(Token::VoiceBracketStart)));
 // ...
 ```
 
@@ -61,42 +63,41 @@ Represents the smallest semantic units of the Tenuto language.
 | `KwDef` | `def` | Instrument definition keyword |
 | `KwMeasure` | `measure` | Measure block keyword |
 | `KwGroup` | `group` | Staff grouping keyword |
-| `KwImport` | `import` | File import directive |
 | `KwMacro` | `macro` | Macro definition |
 | `KwVar` | `var` | Variable declaration |
-| `KwIf` | `if` | Conditional compilation |
-| `KwElse` | `else` | Conditional branch |
 
-##### 2. Structure & Punctuation
+##### 2. Structure & Punctuation (V2.1 Upgrades)
 
 | Variant | Symbol | Description |
 |---------|--------|-------------|
-| `LBrace` | `{` | Scope delimiter (start) |
-| `RBrace` | `}` | Scope delimiter (end) |
-| `LBracket` | `[` | Chord delimiter (start) |
-| `RBracket` | `]` | Chord delimiter (end) |
-| `LParen` | `(` | Tuplet grouping / Arguments (start) |
-| `RParen` | `)` | Tuplet grouping / Arguments (end) |
+| `MapStart` | `@{` | **[V2.1]** Map Sigil (Data structures) |
+| `VoiceBracketStart`| `<[` | **[V2.1]** Polyphonic block start |
+| `VoiceBracketEnd` | `]>` | **[V2.1]** Polyphonic block end |
+| `LBrace` / `RBrace`| `{` `}` | Structural scope delimiters |
+| `LBracket` / `RBracket`| `[` `]` | Chord delimiters |
+| `LParen` / `RParen`| `(` `)` | Tuplet grouping / Arguments |
 | `Colon` | `:` | Assignment / Duration separator |
 | `Pipe` | `|` | Bar line / Voice separator |
-| `Slash` | `/` | Ratio separator (Time Signatures/Tuplets) |
 | `Dot` | `.` | Attribute chaining (e.g., `.stacc`) |
+| `Dollar` | `$` | Macro/Variable invocation prefix |
 
 ##### 3. Literals
 
 | Variant | Type | Example | Notes |
 |---------|------|---------|-------|
 | `Integer` | `i64` | `120` | Whole numbers for BPM, counts |
-| `Float` | `String` | `1.5` | Stored as string to preserve precision |
+| `Float` | `String` | `1.5` | Stored as string to preserve Hash/Eq traits |
 | `StringLit` | `String` | `"Violin I"` | Double-quoted text with escape sequences |
 
-##### 4. Musical Primitives
+##### 4. Domain-Specific Primitives (Prioritized)
 
-| Variant | Type | Example | Regex Pattern |
+| Variant | Type | Example | Regex Priority Notes |
 |---------|------|---------|---------------|
-| `PitchLit` | `String` | `c4`, `F#5`, `Ab2` | `(?i)[a-g](qs\|qf\|tqs\|tqf\|bb\|x\|#\|b\|n)?[0-9]?` |
-| `DurationLit` | `String` | `:4`, `:8.` | `:[0-9]+(\.)*` |
-| `TabLit` | `String` | `0-6`, `12-2` | `[0-9]+-[0-9]+` |
+| `FreqLit` | `String` | `hz(440)` | Absolute frequency mapping |
+| `PitchLit` | `String` | `c4`, `F#5`, `Abqs2`| Resolves standard and microtonal accidentals |
+| `DurationLit` | `String` | `:4`, `:grace` | Excludes trailing dots (handled via `Token::Dot`) |
+| `TabLit` | `String` | `0-6`, `12-2` | Resolves string-fret coordinates |
+| `AttributeLit`| `String` | `.stacc`, `.8va` | Leading dot bypasses standard Identifier regex |
 
 ### Error Handling
 
@@ -106,27 +107,19 @@ The lexer is **fault-tolerant** regarding comments:
 Token::InvalidComment
 ```
 
-This special token variant traps C-style comments (`//`) which are invalid in Tenuto (which uses `%%`). This allows the parser to emit helpful error messages rather than panicking when encountering unsupported comment syntax.
+This special token variant traps C-style comments (`//`) which are explicitly invalid in Tenuto (which uses `%%`). This allows the parser to emit a highly specific "Invalid Comment Syntax" Ariadne diagnostic rather than failing on an unknown character.
 
 ---
 
 ## 📋 Lexer Public API
 
 ```rust
-// Primary entry point
-pub fn tokenize(source: &str) -> Result<Vec<Token>, LexerError>
+// Stream-based processing via Logos trait implementation
+pub struct Lexer<'source, Token>;
 
-// Stream-based processing
-pub struct TokenStream<'a> {
-    pub source: &'a str,
-    pub tokens: Vec<(Token, Span)>
-}
-
-impl<'a> TokenStream<'a> {
-    pub fn new(source: &'a str) -> Self;
-    pub fn peek(&self) -> Option<&Token>;
-    pub fn next(&mut self) -> Option<Token>;
-    pub fn span(&self) -> Span;
+impl<'source> Lexer<'source, Token> {
+    pub fn spanned(&self) -> SpannedIter<'source, Token>;
+    pub fn slice(&self) -> &'source str;
 }
 ```
 
@@ -135,84 +128,17 @@ impl<'a> TokenStream<'a> {
 | Operation | Time Complexity | Memory Usage |
 |-----------|----------------|--------------|
 | Tokenization | O(n) | ~1.5x source size |
-| Peak Throughput | ~50MB/s | <10MB working memory |
+| Compound Sigils | O(1) via DFA | Zero-backtracking |
 | Error Recovery | O(1) per error | Minimal overhead |
 
----
 
-## 🔍 Token Examples
+## 🌲 Module: `tenutoc::parser`
 
-### Valid Token Sequences
-
-```rust
-// Instrument definition
-[
-    Token::KwDef,
-    Token::Identifier("vln".into()),
-    Token::StringLit("Violin I".into()),
-    Token::LBrace,
-    // ...
-]
-
-// Musical logic
-[
-    Token::Identifier("vln".into()),
-    Token::Colon,
-    Token::PitchLit("c4".into()),
-    Token::DurationLit(":4".into()),
-    Token::Dot,
-    Token::Identifier("stacc".into()),
-    Token::Pipe,
-]
-```
-
-### Error Recovery Example
-
-```rust
-let source = "vln: c4:4 // This comment is invalid";
-let tokens = tokenize(source);
-
-// Returns:
-// [
-//   Ok(Token::Identifier("vln".into())),
-//   Ok(Token::Colon),
-//   Ok(Token::PitchLit("c4".into())),
-//   Ok(Token::DurationLit(":4".into())),
-//   Err(LexerError::InvalidComment("// This comment is invalid"))
-// ]
-```
-
----
-
-## 📚 Related Modules
-
-- **`tenutoc::parser`** → Builds AST from token stream
-- **`tenutoc::span`** → Source location tracking
-- **`tenutoc::error`** → Comprehensive error types
-
----
-
-## 🧪 Testing the Lexer
-
-```bash
-# Run lexer-specific tests
-cargo test lexer
-
-# Test with sample files
-cargo test --test lexer_integration
-
-# Benchmark performance
-cargo bench lexer_benchmarks
-```
-
-
-## 🌲 The Parser & AST
-
-The Parser module converts a flat stream of Tokens (from the Lexer) into a hierarchical **Abstract Syntax Tree (AST)**. It utilizes the **Chumsky** library to provide robust, error-recovering recursive descent parsing.
+The Parser module converts a flat stream of Tokens into a hierarchical **Abstract Syntax Tree (AST)**. In V2.1.0, the parser is implemented using the **Chumsky** crate as a strictly **Deterministic LL(1)** parser, eliminating the infinite loops and deep backtracking overhead found in V2.0.
 
 ### Usage
 
-The parser expects a `Stream` of tokens and returns a `Score` object (the root of the AST) with a list of parsing errors (if any).
+The parser expects a Chumsky `Stream` of tokens and returns a `Score` object with a list of parsing errors (if any). It leverages Chumsky's robust error recovery to ensure the compiler can report multiple syntax errors at once.
 
 ```rust
 use chumsky::prelude::*;
@@ -221,71 +147,82 @@ use tenutoc::lexer::Token;
 use tenutoc::parser::parser;
 
 // Assume 'tokens' is a Vec<(Token, Span)> from the Lexer
-let len = source_len; // Total length of source string
+let len = source_len;
 let stream = Stream::from_iter(len..len + 1, tokens.into_iter());
 
-let (ast, errors) = parser().parse_recovery(stream);
+let (ast_opt, parse_errs) = parser().parse_recovery(stream);
 
-if let Some(score) = ast {
-    println!("Successfully parsed {} items", score.items.len());
+if let Some(score) = ast_opt {
+    println!("Parsed {} top-level blocks", score.items.len());
 }
 ```
 
+### Deterministic Features & Recovery (V2.1)
+
+*   **Compound Sigil Resolution:** The parser relies on `Token::MapStart` (`@{`) and `Token::VoiceBracketStart` (`<[`) to unambiguously distinguish data maps and polyphonic blocks from standard code blocks.
+*   **Peek Guards:** Uses Chumsky's `not().rewind()` to implement lookahead guards, ensuring that block terminators (`}`, `]>`) are not accidentally swallowed by error recovery systems (`skip_then_retry_until`).
+
 ---
 
-## 🏗 Abstract Syntax Tree (AST)
+## 🏗️ Module: `tenutoc::ast`
 
-The AST represents the grammatical structure of a Tenuto file.
+The Abstract Syntax Tree represents the logical structure of a Tenuto file. In V2.1.0, the AST has been updated to natively map the new compound sigils into Rust `HashMap`s.
 
 ### 1. Root: `Score`
 The top-level container for a single compilation unit.
 
 ```rust
 pub struct Score {
-    pub header: Option<String>, // e.g., "tenuto" version string
-    pub items: Vec<TopLevel>,   // The sequence of blocks
+    pub header_version: Option<String>, // e.g., "2.1"
+    pub items: Vec<TopLevel>,           // The sequence of blocks
 }
 ```
 
 ### 2. High-Level Blocks: `TopLevel`
-Represents the major sections of the file.
+Represents the major sections of the file. Note the heavy use of `HashMap<String, Value>` to store data parsed from the V2.1 `@{}` map sigils.
 
 ```rust
 pub enum TopLevel {
-    /// Global Metadata: `meta { key: val }`
-    Meta(Vec<(String, Value)>),
+    /// Global Metadata: `meta @{ key: val }`
+    Meta(HashMap<String, Value>),
 
-    /// Instrument Definition: `def vln "Violin" ...`
+    /// Instrument Definition: `def vln "Violin" attributes=@{...}`
     Def {
         id: String,
-        label: String,
-        attributes: Vec<(String, Value)>,
+        label: Option<String>,
+        attributes: HashMap<String, Value>,
     },
 
     /// Musical Content: `measure 1 { ... }`
     Measure {
-        id: Option<i64>, // Explicit measure number
-        content: Vec<Statement>,
+        range: MeasureRange,
+        attributes: HashMap<String, Value>, // Stores local @{} meta
+        content: Vec<Logic>,
     },
 
-    /// External File: `import "lib/drums.ten"`
-    Import(String),
+    /// Variable/Constant: `var my_vol = 80`
+    VariableDecl {
+        name: String,
+        value: Value,
+    },
+    
+    // ... Macros, Groups, Imports, Conditionals
 }
 ```
 
-### 3. Logic Flow: `Statement`
+### 3. Logic Flow: `Logic`
 Instructions inside a measure block.
 
 ```rust
-pub enum Statement {
-    /// Voice Assignment: `vln: c4 d e |`
+pub enum Logic {
+    /// Voice Assignment: `vln: <[ v1: ... ]>` or `vln: c4 |`
     Assignment {
         staff_id: String,
         voices: Vec<Voice>,
     },
     
-    /// Local Metadata: `meta { ... }` inside a measure
-    LocalMeta(Vec<(String, Value)>),
+    /// Local Metadata: `meta @{ ... }` inside a measure
+    LocalMeta(HashMap<String, Value>),
 }
 ```
 
@@ -294,6 +231,7 @@ The atomic units of musical data.
 
 ```rust
 pub struct Voice {
+    pub voice_id: Option<String>, // e.g., "v1"
     pub events: Vec<Event>,
 }
 
@@ -301,20 +239,12 @@ pub enum Event {
     /// Standard Note: `c4:4.stacc`
     Note {
         pitch: String,
+        cents: Option<i32>,
         duration: Option<String>,
+        dots: u8,
+        multiplier: Option<u32>,
+        is_tied: bool,
         attributes: Vec<Attribute>,
-    },
-
-    /// Chord: `[c4 e4 g4]:2`
-    Chord {
-        notes: Vec<String>,
-        duration: Option<String>,
-        attributes: Vec<Attribute>,
-    },
-
-    /// Rest: `r:4`
-    Rest {
-        duration: Option<String>,
     },
 
     /// Tuplet (Recursive): `(c d e):3/2`
@@ -324,42 +254,34 @@ pub enum Event {
         q: u64, // "...in the time of Q"
     },
 
-    /// Tablature: `0-6`
-    Tab {
-        fret: u8,
-        string: u8,
+    /// Macro Invocation: `$Lick(c4)+2:16.stacc`
+    MacroCall {
+        name: String,
+        args: Vec<Value>,
+        transpose: Option<i32>,
         duration: Option<String>,
+        dots: u8,
+        multiplier: Option<u32>,
         attributes: Vec<Attribute>,
     },
-
-    /// Percussion/Grid: `k` or `sd`
-    Percussion {
-        key: String,
-        duration: Option<String>,
-        attributes: Vec<Attribute>,
-    },
+    
+    // ... Chords, Tabs, Percussion, Rests, Frequencies, Barlines
 }
 ```
 
 ### 5. Primitive Types: `Value` & `Attribute`
-
-#### `Value`
-A polymorphic wrapper for literal data found in attributes or metadata.
 
 ```rust
 pub enum Value {
     Str(String),
     Num(i64),
     Float(f64),
-    Id(String), // Identifiers used as values, e.g., style=standard
+    Bool(bool),
+    Id(String),
     Array(Vec<Value>),
+    Map(HashMap<String, Value>), // Maps the V2.1 `@{}` structure
 }
-```
 
-#### `Attribute`
-Decorators attached to events (e.g., `.stacc`, `.vol(100)`).
-
-```rust
 pub struct Attribute {
     pub name: String,
     pub args: Vec<Value>,
@@ -368,174 +290,60 @@ pub struct Attribute {
 
 ---
 
-## 🧩 The Parser Combinator
+## 🛠️ Module: `tenutoc::preprocessor`
 
-The `parser()` function returns a Chumsky parser composed of smaller, reusable parsers.
-
-### Key Design Features
-
-#### Recursion
-The `Event` parser is defined recursively to handle nested structures:
-- Tuplets within tuplets: `( ( c d e ):3/2 ):3/2`
-- Chords with attributes: `[c4.stacc e4.acc]:2`
-- Complex polyphonic structures
-
-#### Error Recovery
-The parser continues processing even when encountering malformed tokens, ensuring users get a comprehensive error list rather than stopping at the first issue.
-
-### Parser Composition Example
-
-```rust
-fn event_parser() -> impl Parser<Token, Event, Error = Simple<Token>> + Clone {
-    recursive(|event| {
-        // Base events (notes, rests)
-        let note = filter_map(|span, tok| match tok {
-            Token::PitchLit(p) => Ok(Event::Note { 
-                pitch: p, 
-                duration: None, 
-                attributes: vec!() 
-            }),
-            _ => Err(Simple::expected_input_found(span, Vec::new(), Some(tok))),
-        });
-        
-        // Tuplet parser (recursive)
-        let tuplet = just(Token::LParen)
-            .ignore_then(event.repeated())
-            .then_ignore(just(Token::RParen))
-            .then(tuplet_ratio_parser())
-            .map(|(events, (p, q))| Event::Tuplet {
-                content: Voice { events },
-                p,
-                q,
-            });
-        
-        choice((note, tuplet))
-    })
-}
-```
-
----
-
-## 📊 AST Node Reference
-
-### `TopLevel` Variants
-
-| Variant | Syntax Example | Purpose |
-|---------|---------------|---------|
-| `Meta` | `meta { tempo: 120 }` | Global score metadata |
-| `Def` | `def vln "Violin" style=standard` | Instrument registration |
-| `Measure` | `measure 1 { vln: c4 \| }` | Container for musical events |
-| `Import` | `import "strings.ten"` | File inclusion directive |
-
-### `Event` Variants
-
-| Variant | Syntax Example | Fields |
-|---------|---------------|--------|
-| `Note` | `c4:4.stacc` | `pitch`, `duration`, `attributes` |
-| `Chord` | `[c4 e4 g4]:2` | `notes`, `duration`, `attributes` |
-| `Rest` | `r:4` | `duration` |
-| `Tuplet` | `(c d e):3/2` | `content`, `p`, `q` |
-| `Tab` | `0-6:8.h` | `fret`, `string`, `duration`, `attributes` |
-| `Percussion` | `k:4.ghost` | `key`, `duration`, `attributes` |
-
-### Value Types in Attributes
-
-| Type | Example | Use Case |
-|------|---------|----------|
-| `Str` | `"Violin I"` | Labels, text annotations |
-| `Num` | `120` | BPM, MIDI values, counts |
-| `Float` | `1.5` | Multipliers, ratios |
-| `Id` | `standard` | Enum-style identifiers |
-| `Array` | `[1, 2, 3]` | Lists, parameter curves |
-
----
-
-## 🔧 Advanced Parser Features
-
-### 1. Attribute Parsing
-Attributes support both simple flags (`.stacc`) and parameterized forms (`.vol(100)`):
-
-```rust
-/// Parses: .stacc.vol(100).text("dolce")
-fn attribute_parser() -> impl Parser<Token, Attribute, Error = Simple<Token>> {
-    just(Token::Dot)
-        .ignore_then(identifier_parser())
-        .then(
-            just(Token::LParen)
-                .ignore_then(value_parser().separated_by(just(Token::Comma)))
-                .then_ignore(just(Token::RParen))
-                .or_not()
-        )
-        .map(|(name, args)| Attribute {
-            name,
-            args: args.unwrap_or_default(),
-        })
-}
-```
-
-### 2. Error Recovery Strategies
-The parser implements multiple recovery points:
-
-| Strategy | When Used | Example |
-|----------|-----------|---------|
-| **Skip Until** | Missing delimiter | Skip to next `}` on unmatched `{` |
-| **Insert Missing** | Optional tokens | Insert missing `:` in durations |
-| **Replace** | Invalid tokens | Replace `//` with `%%` comments |
-
-### 3. Span Tracking
-Every AST node includes source location information for precise error reporting:
-
-```rust
-pub struct Spanned<T> {
-    pub node: T,
-    pub span: Span, // (start_byte, end_byte)
-}
-```
-
----
-
-## 🧪 Testing the Parser
-
-```bash
-# Run parser tests
-cargo test parser
-
-# Test specific grammar features
-cargo test --test tuplet_parsing
-cargo test --test attribute_parsing
-
-# Generate parse trees for debugging
-cargo run --bin debug-parse -- examples/test.ten
-```
-
----
-
-## 📈 Performance Metrics
-
-| Operation | Time (μs) | Memory (KB) |
-|-----------|-----------|-------------|
-| Parse small file (1KB) | ~120 | ~50 |
-| Parse orchestra score (100KB) | ~8,500 | ~4,000 |
-| Error recovery overhead | +15% | +5% |
-| Max recursion depth | 64 | - |
-
-
-
-## 🧠 The Inference Engine (IR)
-
-The Inference Engine is the core logic processor of Tenuto. It transforms the hierarchical, relative structure of the AST (`Score`) into a flat, absolute-time structure called the **Timeline**.
-
-This process is called **Linearization** and is where the "Sticky State" logic (contextual duration/octave inference) and Rational Arithmetic (tuplet calculations) are resolved.
+The Preprocessor (introduced formally in V2.1) sits between the Parser and the Inference Engine. It traverses the AST to expand macros, resolve variables, and execute conditional compilation flags.
 
 ### Usage
 
-The engine exposes a single public entry point: `compile()`.
+```rust
+use tenutoc::preprocessor::Preprocessor;
+use std::collections::HashMap;
+
+// Initialize with environment variables (e.g., target="audio")
+let mut initial_env = HashMap::new();
+let mut preprocessor = Preprocessor::new(initial_env);
+
+// Expand the AST
+let expanded_score = preprocessor.expand(raw_ast)?;
+```
+
+### Core Responsibilities
+
+#### 1. Variable Resolution
+The preprocessor recursively scans down into `Value::Map` and `Value::Array` structures, as well as `Event` attributes, replacing `Value::Id("$var_name")` with the actual stored value.
+
+*Example AST Transformation:*
+`c4.vol($my_var)` → `c4.vol(80)`
+
+#### 2. Macro Expansion
+When encountering an `Event::MacroCall`, the engine injects the contents of the `TopLevel::MacroDef` body into the voice stream.
+*   **Context Passing:** Attributes (`.stacc`), durations (`:16`), and dots attached to the macro call are uniformly applied to *all* resulting events generated by the macro.
+*   **Transposition:** If a transposition integer (`+2`) is provided, all `Event::Note` and `Event::Chord` pitches inside the macro are shifted accordingly using the `shift_spn` algorithm.
+
+#### 3. Recursion Safety
+The preprocessor tracks expansion depth to prevent malicious or accidental infinite loops (e.g., Macro A calls Macro B calls Macro A).
+*   `MAX_RECURSION_DEPTH` is strictly enforced at **64**. Exceeding this triggers an `E5002` fatal error.
+
+
+
+## 🧠 Module: `tenutoc::ir` (The Inference Engine)
+
+The Inference Engine is the core logic processor of Tenuto. It performs **Linearization**: transforming the hierarchical, relative structure of the AST into a flat, absolute-time structure called the **Timeline**. 
+
+This is where the "Sticky State" logic (contextual duration/octave inference), Rational Arithmetic (tuplet calculations), and multi-engine abstractions (Tablature, Percussion Maps) are permanently resolved into explicit MIDI Note properties.
+
+### Usage
+
+The engine exposes a single public entry point: `compile()`. It requires the fully expanded AST from the Preprocessor and a boolean flag for Strict Mode.
 
 ```rust
 use tenutoc::ir::{self, Timeline};
 
-// Assume 'ast' is a valid Score object from the Parser
-match ir::compile(ast) {
+// Assume 'expanded_ast' is a Score object processed by the Preprocessor
+let strict_mode = false;
+
+match ir::compile(expanded_ast, strict_mode) {
     Ok(timeline) => {
         println!("Compiled successfully!");
         println!("Title: {}", timeline.title);
@@ -547,30 +355,33 @@ match ir::compile(ast) {
 
 ---
 
-## 🎞 The Timeline Structure
+## 🎞️ The Timeline Structure
 
-The Timeline is the "Resolved" state of the music—ideal for rendering, playback, or analysis because all context has been baked into explicit values.
+The Timeline is the "Resolved" state of the music—ideal for rendering, playback, or analysis because all contextual ambiguity has been baked into explicit integer values.
 
 ### 1. Root: `Timeline`
 
 ```rust
 pub struct Timeline {
     pub title: String,
-    pub tempo: u32,                    // Global BPM (e.g., 120)
+    pub tempo: u32,                     // Global BPM
+    pub ppq: u32,                       // Pulses Per Quarter Note (1920)
     pub tracks: HashMap<String, Track>, // Map of Staff ID → Track Data
 }
 ```
 
 ### 2. Instrument Stream: `Track`
 
-Represents a single instrument or sound source.
+Represents a single instrument's physical capabilities and its sequential events. **[V2.1]** Introduces native `keyswitches` and `perc_map` dictionaries extracted from the `@{}` AST nodes.
 
 ```rust
 pub struct Track {
-    pub label: String,    // Display Name (e.g., "Violin I")
-    pub patch: String,    // MIDI Patch Name (e.g., "Violin")
-    pub channel: u8,      // Logic Channel (0-15)
-    pub events: Vec<AtomicEvent>, // Sorted list of events
+    pub label: String,
+    pub patch: String,
+    pub tuning: Vec<u8>,                  // Open strings for Tablature
+    pub keyswitches: HashMap<String, u8>, // Attribute → MIDI trigger
+    pub perc_map: HashMap<String, u8>,    // String Key → MIDI note
+    pub events: Vec<AtomicEvent>,         // Chronologically sorted events
 }
 ```
 
@@ -578,26 +389,24 @@ pub struct Track {
 
 An event positioned in absolute time.
 
-- **Ticks**: Time measured in Ticks (standard resolution: 1920 PPQ)
-- **Duration**: Also measured in Ticks
-
 ```rust
 pub struct AtomicEvent {
-    /// Absolute start time in ticks
-    pub tick: u64,          
-    
-    /// Duration in ticks
-    pub duration_ticks: u64,
-    
-    /// The specific action
+    pub tick: u64,           // Absolute start time
+    pub duration_ticks: u64, // Logical duration (for visual spacing)
+    pub gate_ticks: u64,     // Physical duration (for audio playback length)
     pub kind: EventKind,
 }
 
 pub enum EventKind {
     Note { 
-        pitch: u8,    // MIDI Note Number (0-127). Middle C = 60.
-        velocity: u8  // Dynamics (0-127). Default = 100.
-    }, 
+        pitch_midi: u8, // MIDI Note Number (Middle C = 60)
+        cents: i32,     // Microtonal Pitch Bend
+        velocity: u8    // Dynamics 
+    },
+    Frequency { 
+        hz: f64,        // Absolute frequency literal
+        velocity: u8 
+    },
     Rest,
 }
 ```
@@ -606,165 +415,83 @@ pub enum EventKind {
 
 ## 🧮 Logic & Math
 
-### The Cursor Model
+### Rational Time (Eliminating Drift)
 
-The engine uses a **Cursor** to traverse the AST. The cursor maintains the **Current State**:
-
-| State Variable | Purpose | Example |
-|----------------|---------|---------|
-| `current_tick` | Current position in time | 1920 (1 beat into piece) |
-| `last_duration` | "Sticky" duration for next event | `":4"` (quarter note) |
-| `last_octave` | "Sticky" octave for next pitch | `4` (middle C octave) |
-| `time_scalar` | Current time dilation factor (for Tuplets) | `2/3` (triplet scaling) |
-
-### Rational Arithmetic
-
-To prevent floating-point drift (where `1/3 + 1/3 + 1/3 = 0.99999`), the engine uses **Rational Numbers** (fractions) for all duration calculations until final conversion to integer ticks.
+To prevent floating-point drift in complex polyrhythms (where `1/3 + 1/3 + 1/3 = 0.99999`), the engine uses **Rational Numbers** (fractions) for all duration and tuplet calculations until the final conversion to integer ticks.
 
 ```rust
-/// Rational number type used for exact duration math
 pub struct Rational {
-    pub numerator: u64,
-    pub denominator: u64,
+    pub num: u64,
+    pub den: u64,
 }
 
 impl Rational {
-    pub fn new(n: u64, d: u64) -> Self;
-    pub fn reduce(&self) -> Self;
-    pub fn to_ticks(&self, ppq: u64) -> u64;
+    /// Reduces the fraction automatically via Greatest Common Divisor (GCD)
+    pub fn new(num: u64, den: u64) -> Self;
+    
+    /// Converts the fraction into absolute PPQ ticks
+    pub fn to_ticks(&self, ppq: u32) -> u64;
 }
 ```
 
-### Tuplet Logic
+### Tuplet Scalar Logic
 
-When entering a tuplet `(events):P/Q` (play $P$ notes in the time of $Q$), the engine updates the `time_scalar`:
+When entering a tuplet `(events):P/Q` (e.g., play 3 notes in the time of 2), the engine multiplies the active `time_scalar` by the ratio `Q / P`.
 
-$$
-\text{NewScalar} = \text{OldScalar} \times \frac{Q}{P}
-$$
+*   **Standard 8th Note:** 960 ticks
+*   **Inside a 3:2 Tuplet:** `960 * (2/3) = 640 ticks` per note.
 
-This ensures a triplet quarter note is mathematically exactly $2/3$ the length of a standard quarter note.
+---
 
-**Example:** `(c d e):3/2` in a 1920 PPQ timeline:
-- Base duration: 8th note = 960 ticks
-- Triplet scalar: $2/3$
-- Result: $960 \times 2/3 = 640$ ticks per note
+## 🕹️ The Cursor Model (Sticky State)
 
-### Polyphony Processing
-
-The engine processes voices in parallel:
-
-1. **Voice Separation**: When a staff has multiple voices (`vln: { v1: ... | v2: ... }`), the engine spawns separate Cursors for each voice.
-2. **Independent Advancement**: Each Cursor starts at the same tick but advances independently based on its events.
-3. **Merging**: All events are merged into the Track and sorted by time.
+The engine uses an internal `Cursor` to traverse the logic blocks. The cursor maintains the state of the active staff, automatically filling in missing information.
 
 ```rust
-// Internal processing for voice groups
-struct VoiceCursor {
-    tick: u64,
+struct Cursor {
+    current_tick: u64,
     last_duration: Rational,
     last_octave: u8,
+    last_velocity: u8,
     time_scalar: Rational,
-}
-
-impl VoiceCursor {
-    fn process_voice(&mut self, voice: &Voice) -> Vec<AtomicEvent>;
+    ppq: u32,
+    tied_pitches: Vec<u8>, // [V2.1] Forward-looking tie queue
 }
 ```
 
----
+### V2.1 Sticky State Rules
 
-## 🔍 Resolution Process
+1.  **True Cross-Measure Stickiness:** The engine maintains a `HashMap<String, Cursor>`. When `measure 2` begins, the primary voice (`v1`) automatically inherits the exact `last_octave` and `last_duration` from the end of `measure 1`.
+2.  **Strict Mode Isolation:** If `--strict` mode is enabled, `last_duration` and `last_octave` are forcefully reset to defaults (`:4` and `Octave 4`) at every barline, enforcing explicit coding practices.
+3.  **Polyphonic Isolation:** Inside a Voice Bracket (`<[ ]>`), Voice 1 inherits the global staff cursor, while Voices 2–4 generate fresh, isolated cursors to prevent the melody's state from corrupting the bassline.
 
-### Phase 1: State Initialization
+### V2.1 Forward-Looking Ties (`~`)
 
-```rust
-fn initialize_cursors(score: &Score) -> HashMap<String, StaffState> {
-    // For each staff, create initial cursor state
-    // Set default durations, octaves, and time signatures
-}
-```
-
-### Phase 2: Measure Linearization
-
-```rust
-fn linearize_measure(
-    measure: &Measure,
-    cursors: &mut HashMap<String, StaffState>
-) -> Result<Vec<AtomicEvent>, CompileError> {
-    // Process each statement in the measure
-    // Apply "sticky state" inference
-    // Handle time signature changes
-}
-```
-
-### Phase 3: Post-Processing
-
-```rust
-fn finalize_timeline(
-    events_by_staff: HashMap<String, Vec<AtomicEvent>>
-) -> Timeline {
-    // Sort events by tick
-    // Merge polyphonic voices
-    // Validate measure completeness
-    // Apply swing quantization if specified
-}
-```
+In V2.1.0, the tie operator (`c4~`) adds the MIDI pitch `60` to the `tied_pitches` queue. When the next `c4` event is parsed, the engine detects it in the queue, finds the original event in the Track history, and *extends* its `duration_ticks` and `gate_ticks` seamlessly, instead of emitting a second NoteOn event.
 
 ---
 
-## ⚠️ Error Conditions
+## 🔄 Multi-Engine Abstractions
 
-| Error Type | Condition | Example |
-|------------|-----------|---------|
-| `E3001: Time Overflow` | Voice duration > measure capacity | `vln: c4:1 d4:1` in 3/4 time |
-| `E3002: Voice Sync Failure` | Polyphonic voices have different durations | `v1: c4:2 | v2: d4:1` |
-| `E3003: Tuplet Ratio Error` | Tuplet content doesn't fit ratio | `(c4:1 d4:1):3/2` |
-| `W3005: Pickup Mismatch` | Anacrusis ≠ declared pickup duration | Pickup of `:8` but content is `:4` |
+The `ir.rs` module dynamically translates different notation styles into a unified MIDI structure.
 
----
-
-## 📊 Performance Characteristics
-
-| Operation | Complexity | Notes |
-|-----------|------------|-------|
-| Linearization | O(n) events | Scales linearly with note count |
-| Tuplet recursion | O(depth) | Max depth = 64 |
-| Voice merging | O(m log m) | m = events per staff |
-| Rational math | O(1) per op | GCD reductions cached |
-
----
-
-## 🧪 Testing the Engine
-
-```bash
-# Run inference engine tests
-cargo test ir
-
-# Test specific inference rules
-cargo test --test sticky_state
-cargo test --test tuplet_math
-
-# Generate timeline for debugging
-cargo run --bin debug-timeline -- examples/test.ten
-```
+1.  **Standard Engine (`parse_pitch`):**
+    Translates strings like `c#5` or `dbqs4` into a base MIDI integer and a microtonal cent deviation.
+2.  **Tablature Engine (`style=tab`):**
+    Parses `0-6` using the **Inverse Rule**. It takes `String 6`, references the track's `tuning` array from bottom to top, finds the open pitch (e.g., E2 / Midi 40), and adds the fret integer (`0`) to output Midi `40`.
+3.  **Percussion Engine (`style=grid`):**
+    Bypasses standard pitch parsing entirely. It references the `perc_map` (e.g., `k: [0, 36]`) and directly emits Midi `36` when the token `k` is encountered.
 
 
-## 📤 The Backend Layer
+## 📤 Module: `tenutoc::midi` (The Backend Layer)
 
-Once the Inference Engine has produced a deterministic `Timeline`, the final stage of the compiler is to **Export** that data into a standard format.
+Once the Inference Engine has produced a deterministic `Timeline`, the final stage of the compiler is to **Export** that data into a standard binary format. 
 
-The current reference implementation includes a native **MIDI Export Engine**.
-
----
-
-## 🎹 MIDI Export Engine
-
-The MIDI module translates Tenuto's internal **Absolute Time** model into MIDI's **Delta Time** model. It handles the low-level serialization of bytes compliant with the **Standard MIDI File (SMF)** specification.
+The V2.1.0 reference implementation includes a native **Standard MIDI File (SMF) Export Engine** built on top of the highly-optimized `midly` crate.
 
 ### Usage
 
-The engine exposes a simple export function that takes a reference to the timeline and returns a vector of bytes (`Vec<u8>`).
+The engine exposes a simple export function that takes a reference to the `Timeline` and returns a vector of bytes (`Vec<u8>`).
 
 ```rust
 use tenutoc::midi;
@@ -780,182 +507,115 @@ match midi::export(&timeline) {
 }
 ```
 
-### Dependencies
-
-This module relies on the **`midly`** crate for safe, strongly-typed MIDI serialization.
-
 ---
 
-## 🔄 Transformation Logic
+## 🔄 MIDI Transformation Logic (V2.1)
 
-The export process performs three critical transformations:
+The export process performs four critical transformations to map Tenuto's internal logic to the MIDI 1.0 specification.
 
-### 1. Duration Explosion (NoteOn / NoteOff)
+### 1. Absolute → Delta Time Conversion
+Tenuto uses **Absolute Ticks** (e.g., Event A at tick 0, Event B at tick 480). MIDI uses **Delta Ticks** (time elapsed since the previous event). The exporter collects all events for a track, sorts them chronologically, and calculates the exact delta sequence.
 
-Tenuto represents notes as atomic events with a duration property (`Note { duration: 960 }`). MIDI represents notes as two distinct events in the stream.
+*Note on V2.1 PPQ:* To avoid compilation panics with `midly`, the 1920 PPQ integer is safely cast using `midly::num::u15::from_int_lossy(timeline.ppq as u16)`.
 
-The compiler splits every `AtomicEvent` into:
+### 2. Duration Explosion (NoteOn / NoteOff)
+Tenuto represents notes as single atomic events. The exporter splits these into pairs based on the `gate_ticks` (influenced by articulations like `.stacc`).
 
 | Event | Created At | Purpose |
 |-------|------------|---------|
-| **Note On** | `event.tick` | Start the note |
-| **Note Off** | `event.tick + event.duration_ticks` | End the note |
+| **Note On** | `event.tick` | Strike the note (Velocity > 0) |
+| **Note Off** | `event.tick + event.gate_ticks` | Release the note (Velocity = 0) |
 
-**Example:**
-- Tenuto: `AtomicEvent { tick: 0, duration_ticks: 960, ... }`
-- MIDI: `[NoteOn @ tick=0], [NoteOff @ tick=960]`
+### 3. Native Channel 10 Percussion Routing
+In V2.1, the engine inspects the track's patch name. If it matches `gm_kit` or contains the word `"drum"`, the exporter **forces the track onto MIDI Channel 10** (Index 9). The melodic channel allocator automatically skips Channel 10 to prevent accidental piano notes playing as drum hits.
 
-### 2. Time Conversion (Absolute → Delta)
-
-Tenuto uses **Absolute Ticks** (e.g., Event A at tick 0, Event B at tick 480). MIDI uses **Delta Ticks** (time elapsed since the previous event).
-
-**Algorithm:**
-1. Collect all Note On/Off messages for a track
-2. Sort them strictly by absolute tick
-3. Iterate through the sorted list, calculating `delta = current_tick - previous_tick`
-
-### 3. Channel Mapping
-
-The compiler automatically assigns MIDI channels (0-15) to Tenuto Staves based on the track index.
-
-**Note:** Future roadmap includes explicit channel assignment via `def vln channel=1`.
+### 4. Microtonal Pitch Bends
+If a `Note` event has a non-zero `cents` value (e.g., parsed from `c4qs`), the exporter emits a 14-bit `PitchBend` message *immediately before* the `NoteOn` event, and a `PitchBend` reset message (Center = 8192) *immediately after* the `NoteOff` event to prevent smearing into the next note.
 
 ---
 
-## 🖥️ CLI Integration (`main.rs`)
+## 🖥️ The CLI Orchestrator (`main.rs`)
 
-The `main.rs` binary serves as the orchestrator of the entire pipeline. It utilizes the **Command Pattern** to chain the modules together.
+The `main.rs` binary serves as the orchestrator of the entire pipeline. It utilizes the **Command Pattern** (via `clap`) to chain the modules together and `ariadne` to print beautiful, contextual error messages.
 
 ### The Pipeline Flow
 
 ```rust
-// 1. Input
-let source = fs::read_to_string(args.input)?;
+// 1. Lexing (Generates Token Stream)
+let lexer = Token::lexer(&source_code);
 
-// 2. Lexing
-let tokens = Token::lexer(&source);
+// 2. Parsing (Deterministic LL(1) AST Generation)
+let stream = Stream::from_iter(eoi_span, token_stream.into_iter());
+let (ast_opt, parse_errs) = parser().parse_recovery(stream);
 
-// 3. Parsing
-let ast = parser().parse(tokens)?;
+// 3. Preprocessing (Variable & Macro Expansion)
+let mut preprocessor = Preprocessor::new(HashMap::new());
+let expanded_score = preprocessor.expand(ast_opt.unwrap())?;
 
-// 4. Inference (IR)
-let timeline = ir::compile(ast)?;
+// 4. Inference (IR - Sticky State & Rational Time)
+let timeline = ir::compile(expanded_score, cli.strict)?;
 
-// 5. Backend Selection
-if let Some(path) = args.output {
-    if path.extension() == Some("mid".as_ref()) {
-        // 6. Export
-        let bytes = midi::export(&timeline)?;
-        fs::write(path, bytes)?;
-    }
-}
+// 5. Backend Export (MIDI Serialization)
+let midi_bytes = midi::export(&timeline)?;
+std::fs::write(&cli.output, midi_bytes)?;
 ```
 
 ### CLI Usage
 
 ```bash
 # Basic compilation to MIDI
-tenutoc --input composition.ten --output composition.mid
+tenutoc --input my_song.ten --output render.mid
 
-# Verbose mode (shows compilation phases)
-tenutoc -v -i composition.ten -o composition.mid
-
-# Debug mode (dumps intermediate representations)
-tenutoc --debug --input composition.ten
+# Strict Mode (Halts on parser warnings or synchronization errors)
+tenutoc --input my_song.ten --strict
 ```
 
 ---
 
-## 🔮 Future Backends
+## 🛑 Error Taxonomy (`tenutoc::TenutoError`)
 
-The modular architecture allows new backends to be added without modifying the Core Logic (Lexer/Parser/IR).
+V2.1.0 standardizes compiler errors into specific error codes (Spec Section 24). This ensures errors are searchable and machine-parsable for IDE integrations.
 
-| Backend | Module | Status | Key Challenge |
-|---------|--------|--------|---------------|
-| **MusicXML** | `tenutoc::xml` | Planned v2.2 | Re-barring algorithm (linear timeline → measures) |
-| **SVG Engraving** | `tenutoc::engrave` | Planned v2.3 | Layout algorithms, SMuFL font integration |
-| **WAV/Audio** | `tenutoc::audio` | Future | Real-time synthesis or sampler integration |
-| **PDF** | `tenutoc::pdf` | Future | Page layout, high-quality typography |
-
-### MusicXML Backend (`tenutoc::xml`)
-
-Will map `Timeline` events to `<note>`, `<measure>`, and `<part>` XML tags. Requires a "Re-Barring" algorithm to split the linear timeline back into measures based on Time Signatures.
-
-### Scalable Vector Graphics (`tenutoc::engrave`)
-
-A direct rendering engine to draw sheet music. Will use the `Timeline` for positioning and `Def` attributes for visual style.
-
----
-
-## 📊 MIDI Export Details
-
-### File Structure
-
-| Section | MIDI Chunk | Contents |
-|---------|------------|----------|
-| **Header** | `MThd` | Format 1, 2 tracks, 1920 PPQ |
-| **Conductor Track** | `MTrk` (Track 0) | Tempo changes, time signatures, key signatures |
-| **Instrument Track** | `MTrk` (Track 1+) | Note events, program changes, controller messages |
-
-### Event Resolution
-
-| Tenuto Concept | MIDI Implementation |
-|----------------|---------------------|
-| Tempo (`meta { tempo: 120 }`) | `SetTempo` meta event (500,000 μs/quarter) |
-| Time Signature (`meta { time: "4/4" }`) | `TimeSignature` meta event (4/4) |
-| Key Signature (`meta { key: "C" }`) | `KeySignature` meta event (0 sharps/flats) |
-| Note Velocity | `NoteOn` velocity byte (derived from dynamics) |
-| Articulation | Gate time adjustment (`.stacc` = 50% duration) |
-
-### Controller Messages
-
-| Attribute | MIDI CC | Range | Default |
-|-----------|---------|-------|---------|
-| `vol` | CC7 (Volume) | 0-127 | 100 |
-| `pan` | CC10 (Pan) | 0-127 | 64 (center) |
-| `expression` | CC11 (Expression) | 0-127 | 127 |
-| `reverb` | CC91 (Reverb) | 0-127 | 0 |
-
----
-
-## 🧪 Testing the MIDI Export
-
-```bash
-# Run MIDI export tests
-cargo test midi
-
-# Generate and verify MIDI files
-cargo test --test midi_roundtrip
-
-# Benchmark export performance
-cargo bench midi_export
+```rust
+pub enum TenutoError {
+    // --- 1000-Series: Lexical & Meta Errors ---
+    #[error("E1001: Malformed Token at position {0}")] 
+    MalformedToken(usize),
+    
+    #[error("E1002: Syntax Error - {0}")] 
+    SyntaxError(String),
+    
+    #[error("E1004: Version Incompatible - Requested {0}")] 
+    VersionIncompatible(String),
+    
+    // --- 2000-Series: Definition & Import Errors ---
+    #[error("E2001: Undefined Identifier - '{0}'")] 
+    UndefinedIdentifier(String),
+    
+    #[error("E2002: Duplicate Definition - '{0}'")] 
+    DuplicateDefinition(String),
+    
+    // --- 3000-Series: Time & Structure Errors ---
+    #[error("E3002: Voice Sync Failure in staff '{0}'. Lengths: {1:?}")] 
+    VoiceSyncFailure(String, Vec<u64>),
+    
+    // --- 5000-Series: Macro & Pre-Processor Errors ---
+    #[error("E5001: Circular Reference detected in macro '{0}'")] 
+    CircularReference(String),
+    
+    #[error("E5002: Recursion Limit Exceeded (>{1}) in macro '{0}'")] 
+    RecursionLimitExceeded(String, usize),
+    
+    #[error("E5003: Argument Mismatch in '{0}' - {1}")] 
+    ArgumentMismatch(String, String),
+    
+    // --- 9000-Series: System Errors ---
+    #[error("F9001: IO Error - {0}")] 
+    IoError(#[from] std::io::Error),
+}
 ```
 
-### Example Output Structure
+### Strict Mode (`--strict`) vs. Lenient Mode
 
-```
-output.mid (Standard MIDI File)
-├── MThd (Header)
-│   ├── Format: 1
-│   ├── Tracks: 2
-│   └── Division: 1920 PPQ
-├── MTrk (Conductor Track)
-│   ├── SetTempo: 500,000 μs/qnote (120 BPM)
-│   └── TimeSignature: 4/4
-└── MTrk (Violin I)
-    ├── ProgramChange: 40 (Violin)
-    ├── NoteOn: C4 (tick=0, velocity=90)
-    ├── NoteOff: C4 (tick=960)
-    └── ...
-```
-
----
-
-## ⚠️ Limitations & Notes
-
-1. **MIDI 1.0 Only**: Current implementation targets MIDI 1.0 specification
-2. **Channel Pressure**: Polyphonic aftertouch not yet implemented
-3. **System Exclusive**: Manufacturer-specific messages not supported
-4. **RPN/NRPN**: Registered/Non-registered parameters not yet mapped
-
----
+*   **Lenient Mode (Default):** The compiler will attempt to auto-recover from missing semicolons, missing brackets, or slightly desynced polyphonic voices. It will emit the generated MIDI based on its "best guess" AST.
+*   **Strict Mode:** If the `parse_recovery()` returns *any* errors, or if Voice 1 is `3840` ticks long but Voice 2 is only `1920` ticks long (`E3002: Voice Sync Failure`), the compiler instantly aborts. This is required for creating archival-grade `.ten` files.
