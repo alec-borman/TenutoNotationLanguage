@@ -124,3 +124,66 @@ fn test_stage_4_multivoice_polyphony() {
 // ========================================================================
 // STAGE 4: MACROS & ATTRIBUTES
 // =========================================================
+// ========================================================================
+// STAGE 5: THE SPELLING & ACCIDENTAL ENGINE
+// ========================================================================
+use tenutoc::spelling::{AccidentalDisplay, Step};
+
+#[test]
+fn test_spelling_engine_integration() {
+    let src = r#"
+    tenuto "2.1" {
+        meta @{ key: "D" } // D Major: F# and C# are active
+        
+        def vln "Violin" style=standard
+        def gtr "Guitar" style=tab tuning=[40, 45, 50, 55, 59, 64]
+        
+        measure 1 {
+            // Note 0: 'f4' should trigger an Explicit Natural sign!
+            // Note 1: 'c#4' should be Implicit (matches key signature)
+            vln: f4:4 c#4:4 |
+            
+            // Note 2: Fret 2, String 1 (High E) = F#4. 
+            // Engine should algoritmically derive F#4, and display Implicit!
+            gtr: 2-1:2 |
+        }
+        
+        measure 2 {
+            // Barline resets memory.
+            // Note 3: 'f4' -> Explicit Natural again!
+            vln: f4:1 |
+        }
+    }
+    "#;
+    
+    let timeline = compile_source(src, false).unwrap();
+    let vln_track = timeline.tracks.get("vln").unwrap();
+    let gtr_track = timeline.tracks.get("gtr").unwrap();
+
+    // 1. Check 'f4' in Measure 1 (Cancellation Rule)
+    if let EventKind::Note { spelling, .. } = &vln_track.events[0].kind {
+        assert_eq!(spelling.step, Step::F);
+        assert_eq!(spelling.alter, 0);
+        assert_eq!(spelling.display, AccidentalDisplay::Explicit); // Needs natural sign!
+    } else { panic!("Expected Note"); }
+
+    // 2. Check 'c#4' in Measure 1 (Implicit Rule)
+    if let EventKind::Note { spelling, .. } = &vln_track.events[1].kind {
+        assert_eq!(spelling.step, Step::C);
+        assert_eq!(spelling.alter, 1);
+        assert_eq!(spelling.display, AccidentalDisplay::Implicit); // Hidden by Key Sig
+    }
+
+    // 3. Check Tablature Derivation (Algorithmic Line of Fifths)
+    if let EventKind::Note { spelling, pitch_midi, .. } = &gtr_track.events[0].kind {
+        assert_eq!(*pitch_midi, 66); // 64 (E4) + 2 frets
+        assert_eq!(spelling.step, Step::F);
+        assert_eq!(spelling.alter, 1);
+        assert_eq!(spelling.display, AccidentalDisplay::Implicit); // Derived F# hides inside Key Sig
+    }
+
+    // 4. Check Barline Reset
+    if let EventKind::Note { spelling, .. } = &vln_track.events[2].kind {
+        assert_eq!(spelling.display, AccidentalDisplay::Explicit); // Memory wiped, draws natural again
+    }
+}

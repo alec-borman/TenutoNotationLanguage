@@ -12,8 +12,11 @@ pub mod ast;          // Defines the 2.1 Logical Structure (Score, TopLevel, Eve
 pub mod lexer;        // Emits V2.1 Tokens (MapStart, VoiceBracketStart, etc.)
 pub mod parser;       // Deterministic Chumsky Parser
 pub mod preprocessor; // Macro and Variable Resolution Engine
+pub mod spelling;     // FIXED: Added the Spelling Engine to the module tree!
 pub mod ir;           // Rational Temporal Engine (Sticky State)
 pub mod midi;         // Standard MIDI File 1.0/2.0 Exporter
+pub mod rebar;
+pub mod xml;
 
 pub use crate::ast::*; 
 
