@@ -158,9 +158,10 @@ graph TD
 
 ---
 
-## 🗺️ Project Roadmap
 
-The Tenuto Core Engine is feature-complete and backed by a comprehensive unit and integration test suite. Active development is now focused on the rendering ecosystem and developer tooling.
+## 🗺️ Project Roadmap & The Future of Tenuto
+
+With the v2.1 Core Engine now feature-complete and backed by a comprehensive test suite, the foundation of the language is locked in. Active development is now pivoting to expanding the ecosystem, tooling, and native rendering pipelines.
 
 | Phase | Component | Status |
 | :--- | :--- | :--- |
@@ -168,11 +169,32 @@ The Tenuto Core Engine is feature-complete and backed by a comprehensive unit an
 | **II** | Rational Inference Engine (Sticky State) | ✅ Completed (v2.1.0) |
 | **III** | MIDI 1.0 / Synthesis Backend | ✅ Completed (v2.1.0) |
 | **IV** | MusicXML 4.0 Export & Rebarring Algorithm | ✅ Completed (v2.1.1) |
-| **V** | The Language Server Protocol (LSP) | ⏳ Planned |
+| **V** | The Language Server Protocol (LSP) & DX | ⏳ Planned |
 | **VI** | Real-Time Collaboration Daemon (`tenutod`) | ⏳ Planned |
 | **VII**| Direct SVG Engraving (SMuFL Integration) | ⏳ Future |
 
----
+### Phase V: The Developer Experience (LSP & Formatting)
+To elevate Tenuto to a first-class programming language, we are bringing it natively into IDEs like VS Code and Neovim.
+*   **`tenuto-lsp`:** A background Language Server that runs our fault-tolerant Chumsky parser as you type. It will provide real-time red squiggly lines for syntax errors, hover-definitions for `$macros`, and auto-completion for instrument definitions and variables.
+*   **`tenuto-fmt`:** An opinionated code formatter (akin to `rustfmt` or `Prettier`) that automatically aligns barline pipes (`|`) across multi-staff systems, ensuring scores are instantly beautiful and readable in plain text.
+
+### Phase VI: Real-Time Performance Daemon (`tenutod`)
+Tenuto is designed to be the ultimate format for live-coding and algorithmic DJs.
+*   **The WebSocket Daemon:** A background process that holds the AST in memory. As the composer types and saves, the daemon accepts JSON diffs, hot-swaps the logic, and updates the MIDI playback without dropping a beat.
+*   **CRDT Integration:** Support for Conflict-Free Replicated Data Types, allowing multiple users to compose in the same `.ten` file simultaneously over a network.
+
+### Phase VII: Direct SVG Engraving (SMuFL Integration)
+*The Visionary Route.* Ultimately, Tenuto aims to bypass interchange formats like MusicXML entirely and render its own mathematically perfect sheet music in milliseconds, operating as the **"Typst of Music."** This requires implementing a pure-Rust, high-performance 2D layout engine:
+*   **SMuFL Ingestion:** Parsing Standard Music Font Layout (e.g., *Bravura*) JSON metadata to derive exact vector bounding boxes, stem attachment anchors, and optical cut-outs.
+*   **Spring-Mass Justification:** Implementing Gourlay's dynamic programming algorithms to handle horizontal spacing. Notes act as "masses" and the space between them as "springs," dynamically compressing and expanding to perfectly justify lines of music.
+*   **Skyline Collision Avoidance:** Adapting LilyPond's famous skyline algorithms to calculate the top and bottom bounding polygons of a staff. This allows the engine to utilize Bezier curve math (`kurbo` crate) to route slurs and ties gracefully around noteheads and accidentals without wasting vertical page space.
+
+### Ongoing: Language Expansion (The Full Orchestra)
+In parallel with ecosystem development, the core compiler will continue to implement the remaining expressive features of the v2.1 specification:
+*   **The Lyric Engine:** Mapping `.lyric` string syllables perfectly to note events and XML tags.
+*   **Dynamics & Articulations:** Routing attributes (`.ff`, `.stacc`, `.slur`) into both MIDI velocities and MusicXML `<notations>` tags.
+*   **Project Linking (`import`):** Allowing composers to split massive symphonies into modular files (e.g., `import "strings.ten"`).
+
 
 ## 🤝 Contributing
 
