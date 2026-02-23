@@ -20,7 +20,7 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
     // Spec 27.2: Files SHOULD use a resolution of 480 PPQ or higher.
     // Tenuto native IR uses 1920 PPQ for perfect rational tuplet alignment.
     
-    // FIXED: Safely cast the u32 PPQ to u16 so midly's u15 wrapper accepts it
+    // Safely cast the u32 PPQ to u16 so midly's u15 wrapper accepts it
     let safe_ppq = u15::from_int_lossy(timeline.ppq as u16);
     
     let header = Header::new(
@@ -102,15 +102,17 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
 
         // 2. Unroll IR Events into MIDI strikes
         for event in &track_data.events {
-            match event.kind {
-                EventKind::Note { pitch_midi, cents, velocity } => {
-                    let key = pitch_midi.min(127).into();
-                    let vel = velocity.min(127).into();
+            match &event.kind {
+                // FIXED: Added `spelling: _` to gracefully ignore the visual spelling data during MIDI export
+                EventKind::Note { pitch_midi, cents, velocity, spelling: _ } => {
+                    let key = (*pitch_midi).min(127).into();
+                    let vel = (*velocity).min(127).into();
+                    let cents_val = *cents;
 
                     // V2.1 Spec 19: Microtonal Pitch Bend
                     // Assumes synth Pitch Bend Range is set to standard +/- 2 Semitones (200 cents)
-                    if cents != 0 {
-                        let bend_val = 8192 + (cents as f32 * 8192.0 / 200.0) as i32;
+                    if cents_val != 0 {
+                        let bend_val = 8192 + (cents_val as f32 * 8192.0 / 200.0) as i32;
                         let clamped_bend = bend_val.clamp(0, 16383) as u16;
                         abs_events.push(AbsEvent {
                             tick: event.tick,
@@ -146,7 +148,7 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
                     });
 
                     // Pitch Bend Reset (Immediately following NoteOff to prevent smearing)
-                    if cents != 0 {
+                    if cents_val != 0 {
                         abs_events.push(AbsEvent {
                             tick: off_tick,
                             priority: 4,
