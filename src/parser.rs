@@ -82,7 +82,8 @@ fn event_parser() -> impl Parser<Token, Event, Error = Simple<Token>> + Clone {
                 }
             });
 
-        let perc = select! { Token::Identifier(s) if s != "r" && s != "s" => s }
+        // FIXED: Removed && s != "s". Now 's' can be used as a percussion key!
+        let perc = select! { Token::Identifier(s) if s != "r" => s }
             .then_ignore(just(Token::Colon).not().rewind()) 
             .then(duration.clone()).then(dots.clone()).then(multiplier.clone())
             .then(attribute.clone().repeated())
@@ -98,11 +99,11 @@ fn event_parser() -> impl Parser<Token, Event, Error = Simple<Token>> + Clone {
                 Event::Frequency { hz: num, duration, dots, multiplier, attributes }
             });
 
-        let rest = select! { Token::Identifier(s) if s == "r" || s == "s" => s }
+        // FIXED: Only pure 'r' triggers a Rest now.
+        let rest = select! { Token::Identifier(s) if s == "r" => s }
             .then(duration.clone()).then(dots.clone()).then(multiplier.clone())
-            .map(|(((kind, duration), dots), multiplier)| {
-                if kind == "r" { Event::Rest { duration, dots, multiplier } }
-                else { Event::Space { duration, dots, multiplier } }
+            .map(|(((_kind, duration), dots), multiplier)| {
+                Event::Rest { duration, dots, multiplier }
             });
 
         let barline = choice((

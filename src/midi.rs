@@ -1,6 +1,6 @@
-use crate::ir::{Timeline, EventKind};
+use crate::ir::{Timeline, EventKind, TabArticulation};
 use midly::{Smf, Header, Format, Timing, TrackEvent, TrackEventKind, MidiMessage, MetaMessage};
-use midly::num::{u28, u14, u15}; // FIXED: Added u15 to the imports
+use midly::num::{u28, u14, u15};
 
 // ============================================================================
 // 1. TEMPORAL SORTING STRUCTURE
@@ -8,7 +8,7 @@ use midly::num::{u28, u14, u15}; // FIXED: Added u15 to the imports
 #[derive(Debug, Clone)]
 struct AbsEvent<'a> {
     pub tick: u64,
-    pub priority: u8, // 0=Meta, 1=PitchBend, 2=NoteOff, 3=NoteOn, 4=BendReset
+    pub priority: u8, // 0=Meta, 1=CC/Bend, 2=NoteOff, 3=NoteOn, 4=BendReset
     pub kind: TrackEventKind<'a>,
 }
 
@@ -17,40 +17,19 @@ struct AbsEvent<'a> {
 // ============================================================================
 
 pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    // Spec 27.2: Files SHOULD use a resolution of 480 PPQ or higher.
-    // Tenuto native IR uses 1920 PPQ for perfect rational tuplet alignment.
-    
-    // Safely cast the u32 PPQ to u16 so midly's u15 wrapper accepts it
     let safe_ppq = u15::from_int_lossy(timeline.ppq as u16);
-    
-    let header = Header::new(
-        Format::Parallel,
-        Timing::Metrical(safe_ppq), 
-    );
-
+    let header = Header::new(Format::Parallel, Timing::Metrical(safe_ppq));
     let mut smf = Smf::new(header);
 
     // ------------------------------------------------------------------------
-    // TRACK 0: The Conductor Track (Tempo & Global Meta)
+    // TRACK 0: The Conductor Track
     // ------------------------------------------------------------------------
     let mut conductor_track = Vec::new();
+    conductor_track.push(TrackEvent { delta: 0.into(), kind: TrackEventKind::Meta(MetaMessage::TrackName(timeline.title.as_bytes())) });
     
-    conductor_track.push(TrackEvent {
-        delta: 0.into(),
-        kind: TrackEventKind::Meta(MetaMessage::TrackName(timeline.title.as_bytes())),
-    });
-
     let mpq = 60_000_000 / timeline.tempo.max(1);
-    conductor_track.push(TrackEvent {
-        delta: 0.into(),
-        kind: TrackEventKind::Meta(MetaMessage::Tempo(mpq.into())),
-    });
-
-    conductor_track.push(TrackEvent {
-        delta: 0.into(),
-        kind: TrackEventKind::Meta(MetaMessage::EndOfTrack),
-    });
-
+    conductor_track.push(TrackEvent { delta: 0.into(), kind: TrackEventKind::Meta(MetaMessage::Tempo(mpq.into())) });
+    conductor_track.push(TrackEvent { delta: 0.into(), kind: TrackEventKind::Meta(MetaMessage::EndOfTrack) });
     smf.tracks.push(conductor_track);
 
     // ------------------------------------------------------------------------
@@ -58,119 +37,161 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
     // ------------------------------------------------------------------------
     let mut sorted_keys: Vec<_> = timeline.tracks.keys().collect();
     sorted_keys.sort(); 
-
     let mut channel_allocator = 0;
 
     for key in sorted_keys {
         let track_data = &timeline.tracks[key];
         let mut abs_events = Vec::new();
         
-        // Spec 27.2 & 23.3: Percussion maps MUST default to MIDI Channel 10 (Index 9)
-        let is_drum = track_data.patch.to_lowercase().contains("drum") 
-                   || track_data.patch.to_lowercase().contains("kit")
-                   || track_data.patch == "gm_kit";
-
+        // Strict Channel 10 mapping for percussion
+        let is_drum = track_data.patch.to_lowercase().contains("drum") || track_data.patch.to_lowercase().contains("kit") || track_data.patch == "gm_kit";
         let channel = if is_drum {
-            9 // Channel 10 in 0-indexed MIDI
+            9 
         } else {
-            // Prevent melodic instruments from overwriting the percussion channel
-            if channel_allocator == 9 { 
-                channel_allocator = 10; 
-            }
+            if channel_allocator == 9 { channel_allocator = 10; }
             let ch = channel_allocator;
             channel_allocator = (channel_allocator + 1) % 16;
             ch
         };
 
-        // 1. Program Change Resolution (Spec 23.5)
         let program = parse_patch_name(&track_data.patch);
         abs_events.push(AbsEvent {
-            tick: 0,
-            priority: 0,
-            kind: TrackEventKind::Midi {
-                channel: channel.into(),
-                message: MidiMessage::ProgramChange { program: program.into() },
-            }
+            tick: 0, priority: 0,
+            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::ProgramChange { program: program.into() } }
         });
 
-        // Track Name Meta
         abs_events.push(AbsEvent {
-            tick: 0,
-            priority: 0,
-            kind: TrackEventKind::Meta(MetaMessage::TrackName(track_data.label.as_bytes())),
+            tick: 0, priority: 0,
+            kind: TrackEventKind::Meta(MetaMessage::TrackName(track_data.label.as_bytes()))
         });
 
         // 2. Unroll IR Events into MIDI strikes
         for event in &track_data.events {
             match &event.kind {
-                // FIXED: Added `spelling: _` to gracefully ignore the visual spelling data during MIDI export
                 EventKind::Note { pitch_midi, cents, velocity, spelling: _ } => {
                     let key = (*pitch_midi).min(127).into();
                     let vel = (*velocity).min(127).into();
                     let cents_val = *cents;
 
-                    // V2.1 Spec 19: Microtonal Pitch Bend
-                    // Assumes synth Pitch Bend Range is set to standard +/- 2 Semitones (200 cents)
-                    if cents_val != 0 {
+                    // --- CONTINUOUS CONTROL (CC Automations & Tab Bends) ---
+                    // Generates a high-res sweep of MIDI events every 48 ticks (approx 10ms)
+                    if !event.cc_automations.is_empty() || event.tab_articulation != TabArticulation::None {
+                        let resolution = 48; 
+                        let steps = (event.duration_ticks / resolution).max(1);
+                        
+                        for i in 0..=steps {
+                            let current_tick = event.tick + (i * event.duration_ticks / steps);
+                            let progress = i as f32 / steps as f32; // 0.0 to 1.0
+
+                            // 1. CC Automations
+                            for cc in &event.cc_automations {
+                                // Linear interpolation
+                                let val = cc.start_val as f32 + (cc.end_val as f32 - cc.start_val as f32) * progress;
+                                abs_events.push(AbsEvent {
+                                    tick: current_tick, priority: 1,
+                                    kind: TrackEventKind::Midi {
+                                        channel: channel.into(),
+                                        message: MidiMessage::Controller {
+                                            controller: cc.controller.into(),
+                                            value: (val as u8).min(127).into(),
+                                        }
+                                    }
+                                });
+                            }
+
+                            // 2. Tablature Bends (Assumes standard GM pitch bend range is +/- 2 semitones = 1 whole step)
+                            // Center = 8192. Max Up (1 whole step) = 16383. Max Down = 0.
+                            match event.tab_articulation {
+                                TabArticulation::BendUp(target) => {
+                                    let bend_val = 8192.0 + (target * 8191.0 * progress);
+                                    abs_events.push(AbsEvent {
+                                        tick: current_tick, priority: 1,
+                                        kind: TrackEventKind::Midi {
+                                            channel: channel.into(),
+                                            message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0.0, 16383.0) as u16)) }
+                                        }
+                                    });
+                                },
+                                TabArticulation::BendDown(target) => {
+                                    // Bend down releases back to center
+                                    let bend_val = 8192.0 + (target * 8191.0 * (1.0 - progress));
+                                    abs_events.push(AbsEvent {
+                                        tick: current_tick, priority: 1,
+                                        kind: TrackEventKind::Midi {
+                                            channel: channel.into(),
+                                            message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0.0, 16383.0) as u16)) }
+                                        }
+                                    });
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    // --- STATIC MICROTONALITY ---
+                    if cents_val != 0 && event.tab_articulation == TabArticulation::None {
                         let bend_val = 8192 + (cents_val as f32 * 8192.0 / 200.0) as i32;
-                        let clamped_bend = bend_val.clamp(0, 16383) as u16;
                         abs_events.push(AbsEvent {
-                            tick: event.tick,
-                            priority: 1, // Before NoteOn
+                            tick: event.tick, priority: 1,
                             kind: TrackEventKind::Midi {
                                 channel: channel.into(),
-                                message: MidiMessage::PitchBend { 
-                                    bend: midly::PitchBend(u14::from_int_lossy(clamped_bend)) 
-                                },
+                                message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0, 16383) as u16)) },
                             },
                         });
                     }
 
-                    // Note On (Keyswitches, Grace notes, and Standard Notes all hit here)
-                    abs_events.push(AbsEvent {
-                        tick: event.tick,
-                        priority: 3,
-                        kind: TrackEventKind::Midi {
-                            channel: channel.into(),
-                            message: MidiMessage::NoteOn { key, vel },
-                        },
-                    });
-
-                    // Note Off (Physical duration dictated by articulation gate_ticks)
-                    let off_tick = event.tick + event.gate_ticks;
-                    abs_events.push(AbsEvent {
-                        tick: off_tick,
-                        priority: 2,
-                        kind: TrackEventKind::Midi {
-                            channel: channel.into(),
-                            message: MidiMessage::NoteOff { key, vel: 0.into() },
-                        },
-                    });
-
-                    // Pitch Bend Reset (Immediately following NoteOff to prevent smearing)
-                    if cents_val != 0 {
+                    // --- NOTE GENERATION & TREMOLO ROLLS ---
+                    if let Some(slashes) = event.tremolo_slashes {
+                        // Unroll the tremolo into rapid-fire notes!
+                        // 1 slash = divide by 2. 2 slashes = divide by 4. 3 slashes = divide by 8.
+                        let repeats = 1 << slashes; 
+                        let sub_duration = event.gate_ticks / repeats;
+                        
+                        for i in 0..repeats {
+                            let start = event.tick + (i * sub_duration);
+                            let end = start + sub_duration - 10; // Slight 10-tick gap so NoteOff processes before next NoteOn
+                            
+                            abs_events.push(AbsEvent {
+                                tick: start, priority: 3,
+                                kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::NoteOn { key, vel } },
+                            });
+                            abs_events.push(AbsEvent {
+                                tick: end, priority: 2,
+                                kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::NoteOff { key, vel: 0.into() } },
+                            });
+                        }
+                    } else {
+                        // Standard Note Generation
                         abs_events.push(AbsEvent {
-                            tick: off_tick,
-                            priority: 4,
+                            tick: event.tick, priority: 3,
+                            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::NoteOn { key, vel } },
+                        });
+
+                        let off_tick = event.tick + event.gate_ticks;
+                        abs_events.push(AbsEvent {
+                            tick: off_tick, priority: 2,
+                            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::NoteOff { key, vel: 0.into() } },
+                        });
+                    }
+
+                    // Reset Pitch Bend after note finishes
+                    if cents_val != 0 || event.tab_articulation != TabArticulation::None {
+                        let off_tick = event.tick + event.gate_ticks;
+                        abs_events.push(AbsEvent {
+                            tick: off_tick, priority: 4,
                             kind: TrackEventKind::Midi {
                                 channel: channel.into(),
-                                message: MidiMessage::PitchBend { 
-                                    bend: midly::PitchBend(u14::from_int_lossy(8192)) 
-                                },
+                                message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(8192)) },
                             },
                         });
                     }
                 },
-                EventKind::Frequency { .. } => { 
-                    /* Spec 19.4: Future Native MPE implementation for exact Hz assignment */ 
-                },
-                EventKind::Rest => {
-                    /* Rests are logically preserved in IR but emit no explicit MIDI payload */
-                },
+                EventKind::Frequency { .. } => {},
+                EventKind::Rest => {},
             }
         }
 
-        // 3. Sort chronologically, relying on priority for identical tick resolution
+        // 3. Sort chronologically
         abs_events.sort_by(|a, b| a.tick.cmp(&b.tick).then_with(|| a.priority.cmp(&b.priority)));
 
         // 4. Calculate Sequential Delta-Times
@@ -186,11 +207,7 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
             current_tick = e.tick;
         }
 
-        final_track.push(TrackEvent {
-            delta: 0.into(),
-            kind: TrackEventKind::Meta(MetaMessage::EndOfTrack),
-        });
-
+        final_track.push(TrackEvent { delta: 0.into(), kind: TrackEventKind::Meta(MetaMessage::EndOfTrack) });
         smf.tracks.push(final_track);
     }
 
@@ -199,12 +216,8 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
     Ok(buffer)
 }
 
-/// Resolves standard text definitions to 0-127 General MIDI patches
-/// Maps directly to the V2.1 Spec Section 23.5 Standard Constants.
 fn parse_patch_name(name: &str) -> u8 {
     let n = name.to_lowercase();
-    
-    // Exact V2.1 Spec Constants
     if n == "gm_piano" { return 0; }
     if n == "gm_epiano" { return 4; }
     if n == "gm_organ" { return 16; }
@@ -216,18 +229,12 @@ fn parse_patch_name(name: &str) -> u8 {
     if n == "gm_trumpet" { return 56; }
     if n == "gm_sax" { return 65; }
     if n == "gm_flute" { return 73; }
-    if n == "gm_kit" { return 0; } // Channel 10 default handles the mapping natively
+    if n == "gm_kit" { return 0; } 
 
-    // Graceful fuzzy fallback for generic string declarations
-    if n.contains("piano") { 0 }
-    else if n.contains("epiano") { 4 }
-    else if n.contains("organ") { 16 }
-    else if n.contains("guitar") { 24 }
-    else if n.contains("bass") { 32 }
-    else if n.contains("violin") { 40 }
-    else if n.contains("strings") { 48 }
-    else if n.contains("trumpet") { 56 }
-    else if n.contains("sax") { 65 }
-    else if n.contains("flute") { 73 }
-    else { 0 } // Default Acoustic Grand
+    if n.contains("piano") { 0 } else if n.contains("epiano") { 4 }
+    else if n.contains("organ") { 16 } else if n.contains("guitar") { 24 }
+    else if n.contains("bass") { 32 } else if n.contains("violin") { 40 }
+    else if n.contains("strings") { 48 } else if n.contains("trumpet") { 56 }
+    else if n.contains("sax") { 65 } else if n.contains("flute") { 73 }
+    else { 0 } 
 }

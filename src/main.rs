@@ -16,7 +16,7 @@ use tenutoc::xml;
 /// Reference Compiler for Tenuto v2.1.0
 #[derive(Parser, Debug)]
 #[command(name = "tenutoc")]
-#[command(version = "2.1.1")]
+#[command(version = "2.2.0")]
 #[command(about = "Compiles Tenuto v2.1 DSL into MIDI and MusicXML.", long_about = None)]
 struct Cli {
     /// Input source file (.ten)

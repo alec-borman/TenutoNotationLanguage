@@ -1,0 +1,14 @@
+C:\Users\alecb\Documents\Tenuto_Main\target\debug\deps\midly-2e7d387f0349ce3a.d: C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\lib.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\error.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\arena.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\event.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\io.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\live.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\primitive.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\riff.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\smf.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\stream.rs
+
+C:\Users\alecb\Documents\Tenuto_Main\target\debug\deps\libmidly-2e7d387f0349ce3a.rmeta: C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\lib.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\error.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\arena.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\event.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\io.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\live.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\primitive.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\riff.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\smf.rs C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\stream.rs
+
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\lib.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\error.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\arena.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\event.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\io.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\live.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\primitive.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\riff.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\smf.rs:
+C:\Users\alecb\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\midly-0.5.3\src\stream.rs:

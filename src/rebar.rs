@@ -5,7 +5,7 @@
 //! and automatic rest padding.
 
 use std::collections::HashMap;
-use crate::ir::{Timeline, AtomicEvent};
+use crate::ir::{Timeline, AtomicEvent, TabArticulation};
 
 // ============================================================================
 // 1. VISUAL IR DATA STRUCTURES
@@ -167,6 +167,9 @@ impl VisualStaff {
         }).collect();
 
         for event in &track.events {
+            // Grace notes do not consume logical time in measures.
+            if event.is_grace { continue; }
+
             let slices = grid.slice_event(event);
             for (m_idx, vis_event) in slices {
                 if m_idx < measures.len() {
@@ -188,7 +191,12 @@ impl VisualStaff {
                         atomic: AtomicEvent {
                             tick: current_tick, duration_ticks: gap_duration, gate_ticks: gap_duration,
                             kind: crate::ir::EventKind::Rest,
-                            tuplet_state: None, // FIXED: Required by new IR spec
+                            tuplet_state: None, 
+                            is_grace: false, 
+                            is_ghost: false, 
+                            tremolo_slashes: None,
+                            cc_automations: vec![], // FIXED: Added missing CC field
+                            tab_articulation: TabArticulation::None, // FIXED: Added missing Tab field
                         },
                         tie_start: false, tie_stop: false,
                     });
@@ -204,7 +212,12 @@ impl VisualStaff {
                     atomic: AtomicEvent {
                         tick: current_tick, duration_ticks: gap_duration, gate_ticks: gap_duration,
                         kind: crate::ir::EventKind::Rest,
-                        tuplet_state: None, // FIXED: Required by new IR spec
+                        tuplet_state: None, 
+                        is_grace: false, 
+                        is_ghost: false, 
+                        tremolo_slashes: None,
+                        cc_automations: vec![], // FIXED: Added missing CC field
+                        tab_articulation: TabArticulation::None, // FIXED: Added missing Tab field
                     },
                     tie_start: false, tie_stop: false,
                 });
@@ -222,7 +235,6 @@ impl VisualStaff {
 // ============================================================================
 
 impl VisualScore {
-    /// Consumes the unified Timeline and generates the strictly structured Visual IR.
     pub fn build(timeline: &Timeline) -> Self {
         let max_tick = timeline.tracks.values()
             .flat_map(|t| t.events.iter())
@@ -284,7 +296,12 @@ mod tests {
         let event = AtomicEvent {
             tick: 0, duration_ticks: 1920, gate_ticks: 1920,
             kind: crate::ir::EventKind::Rest, 
-            tuplet_state: None, // FIXED
+            tuplet_state: None, 
+            is_grace: false, 
+            is_ghost: false, 
+            tremolo_slashes: None,
+            cc_automations: vec![],
+            tab_articulation: TabArticulation::None,
         };
         let slices = grid.slice_event(&event);
         assert_eq!(slices.len(), 1);
@@ -301,7 +318,12 @@ mod tests {
                 pitch_midi: 60, cents: 0, velocity: 100, 
                 spelling: crate::spelling::SpelledPitch::from_midi(60, 0, &crate::spelling::KeySignature::default()) 
             },
-            tuplet_state: None, // FIXED
+            tuplet_state: None, 
+            is_grace: false, 
+            is_ghost: false, 
+            tremolo_slashes: None,
+            cc_automations: vec![],
+            tab_articulation: TabArticulation::None,
         };
         let slices = grid.slice_event(&event);
         assert_eq!(slices.len(), 2);
@@ -335,7 +357,12 @@ mod tests {
                 pitch_midi: 60, cents: 0, velocity: 100, 
                 spelling: crate::spelling::SpelledPitch::from_midi(60, 0, &crate::spelling::KeySignature::default()) 
             },
-            tuplet_state: None, // FIXED
+            tuplet_state: None, 
+            is_grace: false, 
+            is_ghost: false, 
+            tremolo_slashes: None,
+            cc_automations: vec![],
+            tab_articulation: TabArticulation::None,
         };
         let track = crate::ir::Track {
             label: "Vln".into(), patch: "violin".into(), tuning: vec![],
@@ -357,12 +384,18 @@ mod tests {
         let mut timeline = Timeline {
             title: "Rebar Test".into(), tempo: 120, ppq: 1920, tracks: HashMap::new(),
         };
+        
         let track = crate::ir::Track {
-            label: "Vln".into(), patch: "violin".into(), tuning: vec![],
-            keyswitches: HashMap::new(), perc_map: HashMap::new(), events: vec![],
+            label: "Vln".into(), 
+            patch: "violin".into(), 
+            tuning: Vec::new(),
+            keyswitches: HashMap::new(), 
+            perc_map: HashMap::new(), 
+            events: Vec::new(),
             current_key: crate::spelling::KeySignature::default(),
             spelling_state: crate::spelling::MeasureSpellingState::new(crate::spelling::KeySignature::default()),
         };
+        
         timeline.tracks.insert("vln".into(), track);
 
         let v_score = VisualScore::build(&timeline);
