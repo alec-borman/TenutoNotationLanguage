@@ -3,7 +3,7 @@
 > **The Semantic Markup Language for Musical Intent.**  
 > What HTML did for document structure, and Mermaid.js did for diagrams, Tenuto does for music.
 
-![Version](https://img.shields.io/badge/version-2.1.1-green)
+![Version](https://img.shields.io/badge/version-2.2.0-green)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Language](https://img.shields.io/badge/language-Rust-orange)
@@ -22,8 +22,8 @@ Historically, digital music representation has been forced into a compromise. Fo
 *   **Contextual Inference ("Sticky State"):** Tenuto acts like a human sight-reader. Attributes like duration (`:4`) and octave (`4`) persist until explicitly changed, natively eliminating data redundancy.
 *   **Rational Temporal Engine:** Time is evaluated exclusively using exact fractions (ℚ). A triplet remains mathematically perfect ($\frac{1}{3}$), completely eliminating the floating-point quantization drift inherent in standard DAWs.
 *   **Deterministic LL(1) Parsing:** Built on `chumsky` and `logos`, the engine utilizes compound sigils (`@{}` and `<[]>`) to guarantee linear-time parsing, infinite-loop protection, and robust error recovery.
-*   **The Rebarring Engine (v2.1.1):** Automatically slices absolute-time events across visual barlines ("The Guillotine") and pads empty space with mathematically precise rests ("The Void Filler") to guarantee perfect layout syntax.
-*   **Optimized for AI/ML:** By stripping away graphical layout bloat, Tenuto's highly token-efficient grammar provides an ideal, predictable syntax for LLM-driven algorithmic composition.
+*   **The Rebarring Engine:** Automatically slices absolute-time events across visual barlines ("The Guillotine") and pads empty space with mathematically precise rests ("The Void Filler") to guarantee perfect layout syntax.
+*   **Continuous Control (v2.2.0):** Natively generates high-resolution MIDI CC sweeps (`.cc(11, [0,127])`), 14-bit tablature pitch bends (`.bu(full)`), and unrolls tremolo stutters (`.roll(3)`).
 
 ---
 
@@ -75,16 +75,17 @@ cargo build --release
 
 ### 2. Write a Tenuto File (`example.ten`)
 
-The v2.1.1 syntax is clean, expressive, and strictly deterministic.
+The v2.2.0 syntax is clean, expressive, and strictly deterministic.
 
 ```tenuto
-tenuto "2.1" {
-  %% 1. Global Metadata (V2.1 Map Sigil)
-  meta @{ title: "Tenuto Demo", tempo: 120 }
+tenuto "2.2" {
+  %% 1. Global Metadata (Map Sigil)
+  meta @{ title: "Tenuto Demo", tempo: 120, time: "4/4" }
 
   %% 2. Instrument Definitions (The Physics)
   def pno "Piano"  style=standard patch="gm_piano"
   def gtr "Guitar" style=tab      tuning=guitar_std
+  def drm "Drums"  style=grid     patch="gm_kit" map=@{ k:[0,36], s:[2,38] }
   
   %% 3. Preprocessor Macros & Variables
   var my_vol = 80
@@ -92,14 +93,17 @@ tenuto "2.1" {
 
   %% 4. Musical Logic
   measure 1 {
-    %% Polyphony using V2.1 Voice Brackets
+    %% Polyphony using Voice Brackets
     pno: <[
       v1: $Motif(c5).vol($my_vol) g5:2 | 
       v2: c3:1                         | 
     ]>
 
-    %% Tablature with mechanical techniques
+    %% Tablature with precise pitch bends
     gtr: 10-2:2.bu(full) 10-2.bd(0) |
+
+    %% Drums: Ghost notes scale velocity; roll(3) unrolls to 32nd notes!
+    drm: k:4 s.ghost k:8 s:8.roll(3) |
   }
 }
 ```
@@ -149,10 +153,10 @@ graph TD
     end
 ```
 
-1. **Lexer (`logos`):** Transforms the UTF-8 stream into tokens, natively isolating domain-specific primitives and V2.1 compound sigils.
+1. **Lexer (`logos`):** Transforms the UTF-8 stream into tokens, natively isolating domain-specific primitives and compound sigils.
 2. **Parser (`chumsky`):** Generates the AST. Employs `ariadne` for advanced, context-aware error reporting and safe recovery.
 3. **Preprocessor:** Expands `$macros`, recursively injects `$variables` into attributes/maps, and evaluates conditional build targets.
-4. **Inference Engine (IR):** Resolves the relative "Sticky State" cursors and applies rational tuplet scalars to generate an absolute-time intermediate representation (`Timeline`).
+4. **Inference Engine (IR):** Resolves the relative "Sticky State" cursors and applies rational tuplet scalars to generate an absolute-time intermediate representation (`Timeline`). Unrolls sweeps, bends, and tremolos.
 5. **Rebarring & Spelling:** Slices absolute time into visual measures, derives tablature into standard notation via the Line of Fifths, and strictly applies Gould's accidental rendering rules.
 6. **Exporters:** Serializes the unified data into targeted backend formats (`midly` for MIDI, custom zero-DOM string builder for MusicXML).
 
@@ -161,14 +165,14 @@ graph TD
 
 ## 🗺️ Project Roadmap & The Future of Tenuto
 
-With the v2.1 Core Engine now feature-complete and backed by a comprehensive test suite, the foundation of the language is locked in. Active development is now pivoting to expanding the ecosystem, tooling, and native rendering pipelines.
+With the v2.2 Core Engine now feature-complete as a DAW-class performance and interchange tool, the foundation of the language is locked in. Active development is now pivoting to expanding the ecosystem, tooling, and native rendering pipelines.
 
 | Phase | Component | Status |
 | :--- | :--- | :--- |
 | **I** | Lexical Engine & Deterministic LL(1) Parser | ✅ Completed (v2.1.0) |
 | **II** | Rational Inference Engine (Sticky State) | ✅ Completed (v2.1.0) |
-| **III** | MIDI 1.0 / Synthesis Backend | ✅ Completed (v2.1.0) |
-| **IV** | MusicXML 4.0 Export & Rebarring Algorithm | ✅ Completed (v2.1.1) |
+| **III** | MusicXML 4.0 Export & Rebarring Algorithm | ✅ Completed (v2.1.1) |
+| **IV** | Continuous Control & Performance (MIDI) | ✅ Completed (v2.2.0) |
 | **V** | The Language Server Protocol (LSP) & DX | ⏳ Planned |
 | **VI** | Real-Time Collaboration Daemon (`tenutod`) | ⏳ Planned |
 | **VII**| Direct SVG Engraving (SMuFL Integration) | ⏳ Future |
@@ -190,9 +194,9 @@ Tenuto is designed to be the ultimate format for live-coding and algorithmic DJs
 *   **Skyline Collision Avoidance:** Adapting LilyPond's famous skyline algorithms to calculate the top and bottom bounding polygons of a staff. This allows the engine to utilize Bezier curve math (`kurbo` crate) to route slurs and ties gracefully around noteheads and accidentals without wasting vertical page space.
 
 ### Ongoing: Language Expansion (The Full Orchestra)
-In parallel with ecosystem development, the core compiler will continue to implement the remaining expressive features of the v2.1 specification:
+In parallel with ecosystem development, the core compiler will continue to implement the remaining expressive features of the specification:
 *   **The Lyric Engine:** Mapping `.lyric` string syllables perfectly to note events and XML tags.
-*   **Dynamics & Articulations:** Routing attributes (`.ff`, `.stacc`, `.slur`) into both MIDI velocities and MusicXML `<notations>` tags.
+*   **Structural Unrolling (`|:`):** Expanding repeat signs into absolute-time duplications.
 *   **Project Linking (`import`):** Allowing composers to split massive symphonies into modular files (e.g., `import "strings.ten"`).
 
 
@@ -200,7 +204,7 @@ In parallel with ecosystem development, the core compiler will continue to imple
 
 We welcome contributions from compiler engineers, music theorists, and Rust developers. Priority areas include expanding the MusicXML layout capabilities and planning the SVG rendering pipeline.
 
-1. Review the [Tenuto v2.1.1 Language Specification](./docs/SPEC.md).
+1. Review the [Tenuto v2.2.0 Language Specification](./docs/SPEC.md).
 2. Review the [Compiler API Reference](./docs/API.md).
 3. Ensure all pipeline tests pass before submitting a PR:
    ```bash
