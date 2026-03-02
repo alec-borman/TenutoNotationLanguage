@@ -1,0 +1,396 @@
+tenuto "2.2" {
+
+meta @{
+    title: "Fantasie and Fugue in C Minor",
+    composer: "AI Master Composer",
+    time: "4/4",
+    tempo: 45,
+    key: "Cm"
+}
+
+%% Instrument Definitions (The Physics)
+def rh "Right Hand" style=standard clef=treble
+def lh "Left Hand" style=standard clef=bass
+
+%% ==========================================
+%% Section A: Grave (The Imposing Fantasie)
+%% ==========================================
+measure 1 {
+    lh: [c2 g2 c3 eb3]:1.ff.ped |
+    rh: [g3 c4 eb4 g4]:1.ff |
+}
+measure 2 {
+    lh: [bn1 g2 d3 f3]:1 |
+    rh: [g3 d4 f4 g4]:1 |
+}
+measure 3 {
+    lh: [c2 g2 c3 eb3]:2 [ab1 eb2 c3 eb3]:2 |
+    rh: [g3 c4 eb4 g4]:2 [ab3 c4 eb4 ab4]:2 |
+}
+measure 4 {
+    lh: [f1 c2 ab2 c3]:2 [g1 d2 bn2 d3]:2 |
+    rh: [f3 c4 f4 ab4]:2 [g3 d4 f4 bn4]:2 |
+}
+measure 5 {
+    lh: c2:2..ped eb2:4 |
+    rh: <[
+        v1: eb5:4..p.ten f5:8 g5:4 c6:4 |
+        v2: [c4 g4]:2 [c4 g4]:4 [eb4 g4]:4 |
+    ]>
+}
+measure 6 {
+    lh: d2:2..ped f2:4 |
+    rh: <[
+        v1: d5:4..tr.text("espressivo") eb5:8 f5:4 bn4:4 |
+        v2: [bn3 g4]:2 [bn3 g4]:4 [d4 g4]:4 |
+    ]>
+}
+measure 7 {
+    lh: c2:2 eb2:2 |
+    rh: <[
+        v1: c5:4..mord d5:8 eb5:4 g5:4 |
+        v2: [c4 g4]:2 [c4 g4]:2 |
+    ]>
+}
+measure 8 {
+    lh: ab1:2 g1:2 |
+    rh: <[
+        v1: f5:4. g5:8 d5:2 |
+        v2: [c4 f4]:2 [bn3 f4]:2 |
+    ]>
+}
+
+%% ==========================================
+%% Section B: Allegro Fugato (The Subject & Answer)
+%% ==========================================
+measure 9 {
+    meta @{ tempo: 120 }
+    lh: r:1 |
+    rh: r:2 c5:8 bn4 c5 g4 |
+}
+measure 10 {
+    lh: r:1 |
+    rh: eb5:4. d5:16 c5:16 bn4:8 g4 c5 d5 |
+}
+measure 11 {
+    lh: r:1 |
+    rh: eb5:8 f5 g5 c5 f5:4. eb5:16 d5:16 |
+}
+measure 12 {
+    lh: r:1 |
+    rh: eb5:8 c5 d5 bn4 c5:4 g4:4 |
+}
+measure 13 {
+    lh: r:2 g3:8 f#3 g3 d3 |
+    rh: c5:8 g4 eb5 c5 bn4:8 g4 ab4 f4 |
+}
+measure 14 {
+    lh: bb3:4. a3:16 g3:16 f#3:8 d3 g3 a3 |
+    rh: g4:8 c5 eb5 g5 f5:8 d5 bn4 g4 |
+}
+measure 15 {
+    lh: bb3:8 c4 d4 g3 c4:4. bb3:16 a3:16 |
+    rh: c5:8 ab4 f4 d4 eb4:8 c5 g4 eb4 |
+}
+measure 16 {
+    lh: bb3:8 g3 a3 f#3 g3:4 g2:4 |
+    rh: d4:8 f4 bn4 d5 c5:4 r:4 |
+}
+
+%% ==========================================
+%% Section C: Fugato Episodes (4-Voice Texture)
+%% ==========================================
+measure 17 {
+    lh: c3:8 bn2 c3 g2 eb3:4. d3:16 c3:16 |
+    rh: <[
+        v1: eb5:2 c5:2 |
+        v2: g4:4. f4:8 eb4:4 f4:4 |
+    ]>
+}
+measure 18 {
+    lh: bn2:8 g2 c3 d3 eb3:8 f3 g3 c3 |
+    rh: <[
+        v1: d5:2 eb5:4 c5:4 |
+        v2: g4:4 f4:4 g4:4 eb4:4 |
+    ]>
+}
+measure 19 {
+    lh: f3:4. eb3:16 d3:16 eb3:8 c3 d3 bn2 |
+    rh: <[
+        v1: c5:4 ab4:4 g4:4 f4:4 |
+        v2: d4:2 c4:4 d4:4 |
+    ]>
+}
+measure 20 {
+    lh: c3:4 g2:4 c2:2 |
+    rh: <[
+        v1: eb4:4 d4:4 c4:2 |
+        v2: c4:4 bn3:4 c4:2 |
+    ]>
+}
+measure 21 {
+    lh: f2:8 g2 a2 f2 bb2:8 c3 d3 bb2 |
+    rh: c5:8 f5 eb5 d5 f5:8 bb4 a4 g4 |
+}
+measure 22 {
+    lh: eb2:8 f2 g2 eb2 ab2:8 bb2 c3 ab2 |
+    rh: bb4:8 eb5 d5 c5 eb5:8 ab4 g4 f4 |
+}
+measure 23 {
+    lh: d2:8 e2 f2 d2 g2:8 a2 bn2 g2 |
+    rh: ab4:8 d5 c5 bn4 d5:8 g4 f4 eb4 |
+}
+measure 24 {
+    lh: c2:8 d2 eb2 c2 f2:8 eb2 d2 c2 |
+    rh: g4:8 c5 bn4 a4 g4:4 r:4 |
+}
+
+%% ==========================================
+%% Section D: Partimento (Rule of the Octave)
+%% ==========================================
+measure 25 {
+    lh: c3:2.ped bn2:4 |
+    rh: [eb4 g4 c5]:2 [d4 g4 bn4]:4 r:4 |
+}
+measure 26 {
+    lh: c3:2.ped d3:2 |
+    rh: [eb4 g4 c5]:2 [f4 ab4 c5]:2 |
+}
+measure 27 {
+    lh: e3:2.ped f3:2 |
+    rh: [g4 c5 e5]:2 [ab4 c5 f5]:2 |
+}
+measure 28 {
+    lh: g3:2.ped a3:2 |
+    rh: [bn4 d5 g5]:2 [c5 eb5 a5]:2 |
+}
+measure 29 {
+    lh: bn3:2.ped c4:2 |
+    rh: [d5 f5 g5 bn5]:2 [eb5 g5 c6]:2 |
+}
+measure 30 {
+    lh: bb3:2.ped ab3:2 |
+    rh: [e5 g5 c6]:2 [f5 c6]:2 |
+}
+measure 31 {
+    lh: g3:2.ped f3:2 |
+    rh: [d5 g5 bn5]:2 [c5 f5 ab5]:2 |
+}
+measure 32 {
+    lh: eb3:2.ped d3:2 |
+    rh: [c5 eb5 g5]:2 [c5 d5 f5]:2 |
+}
+
+%% ==========================================
+%% Section E: Galant Schemata (Descending Sequences)
+%% ==========================================
+measure 33 {
+    lh: c3:4 g3:4 eb3:4 c3:4 |
+    rh: c6:8 g5 eb5 g5 c6:8 g5 eb5 g5 |
+}
+measure 34 {
+    lh: bn2:4 g3:4 d3:4 bn2:4 |
+    rh: bn5:8 g5 d5 g5 bn5:8 g5 d5 g5 |
+}
+measure 35 {
+    lh: c3:4 g3:4 eb3:4 c3:4 |
+    rh: c6:8 g5 eb5 g5 c6:8 g5 eb5 g5 |
+}
+measure 36 {
+    lh: a2:4 f3:4 c3:4 a2:4 |
+    rh: c6:8 f5 c5 f5 c6:8 f5 c5 f5 |
+}
+measure 37 {
+    lh: bb2:4 f3:4 d3:4 bb2:4 |
+    rh: bb5:8 f5 d5 f5 bb5:8 f5 d5 f5 |
+}
+measure 38 {
+    lh: ab2:4 eb3:4 c3:4 ab2:4 |
+    rh: ab5:8 eb5 c5 eb5 ab5:8 eb5 c5 eb5 |
+}
+measure 39 {
+    lh: g2:4 d3:4 bn2:4 g2:4 |
+    rh: g5:8 d5 bn4 d5 g5:8 d5 bn4 d5 |
+}
+measure 40 {
+    lh: c2:4 g2:4 eb2:4 c2:4 |
+    rh: c5:4 r:4 r:2 |
+}
+
+%% ==========================================
+%% Section F: Virtuoso Arpeggios (Taubman Motions)
+%% ==========================================
+measure 41 {
+    lh: [c2 c3]:1.ped |
+    rh: c4:16 eb4 g4 c5 eb5 g5 c6 eb6 g6 eb6 c6 g5 eb5 c5 g4 eb4 |
+}
+measure 42 {
+    lh: [bn1 bn2]:1 |
+    rh: d4:16 f4 g4 bn4 d5 f5 g5 bn5 d6 bn5 g5 f5 d5 bn4 g4 f4 |
+}
+measure 43 {
+    lh: [c2 c3]:1 |
+    rh: c4:16 eb4 g4 c5 eb5 g5 c6 eb6 g6 eb6 c6 g5 eb5 c5 g4 eb4 |
+}
+measure 44 {
+    lh: [a1 a2]:1 |
+    rh: c4:16 eb4 f4 a4 c5 eb5 f5 a5 c6 a5 f5 eb5 c5 a4 f4 eb4 |
+}
+measure 45 {
+    lh: [bb1 bb2]:1 |
+    rh: d4:16 f4 bb4 d5 f5 bb5 d6 f6 bb6 f6 d6 bb5 f5 d5 bb4 f4 |
+}
+measure 46 {
+    lh: [ab1 ab2]:1 |
+    rh: c4:16 eb4 ab4 c5 eb5 ab5 c6 eb6 ab6 eb6 c6 ab5 eb5 c5 ab4 eb4 |
+}
+measure 47 {
+    lh: [g1 g2]:1 |
+    rh: bn3:16 d4 g4 bn4 d5 g5 bn5 d6 g6 d6 bn5 g5 d5 bn4 g4 d4 |
+}
+measure 48 {
+    lh: [g1 g2]:1 |
+    rh: g3:16 bn3 d4 f4 g4 bn4 d5 f5 g5 f5 d5 bn4 g4 f4 d4 bn3 |
+}
+measure 49 {
+    lh: [c2 c3]:1 |
+    rh: c4:16 eb4 g4 c5 eb5 g5 c6 eb6 g6 eb6 c6 g5 eb5 c5 g4 eb4 |
+}
+measure 50 {
+    lh: [db2 db3]:1 |
+    rh: db4:16 f4 ab4 db5 f5 ab5 db6 f6 ab6 f6 db6 ab5 f5 db5 ab4 f4 |
+}
+measure 51 {
+    lh: [d2 d3]:1 |
+    rh: d4:16 f4 ab4 d5 f5 ab5 d6 f6 ab6 f6 d6 ab5 f5 d5 ab4 f4 |
+}
+measure 52 {
+    lh: [eb2 eb3]:1 |
+    rh: eb4:16 g4 bb4 eb5 g5 bb5 eb6 g6 bb6 g6 eb6 bb5 g5 eb5 bb4 g4 |
+}
+measure 53 {
+    lh: [e2 e3]:1 |
+    rh: e4:16 g4 bb4 c5 e5 g5 bb5 c6 e6 c6 bb5 g5 e5 c5 bb4 g4 |
+}
+measure 54 {
+    lh: [f2 f3]:1 |
+    rh: f4:16 ab4 c5 f5 ab5 c6 f6 ab6 c7 ab6 f6 c6 ab5 f5 c5 ab4 |
+}
+measure 55 {
+    lh: [f#2 f#3]:1 |
+    rh: f#4:16 a4 c5 d5 f#5 a5 c6 d6 f#6 d6 c6 a5 f#5 d5 c5 a4 |
+}
+measure 56 {
+    lh: [g2 g3]:1 |
+    rh: g4:16 bn4 d5 g5 bn5 d6 g6 bn6 d7 bn6 g6 d6 bn5 g5 d5 bn4 |
+}
+
+%% ==========================================
+%% Section G: The Classical Cadenza (I6/4)
+%% ==========================================
+measure 57 {
+    lh: [g1 g2 c3 eb3]:1.ff.fermata.ped |
+    rh: [g4 c5 eb5 g5]:1.fermata |
+}
+measure 58 {
+    meta @{ tempo: [21, 22], curve: "exp" }
+    lh: r:1 |
+    rh: (c6:16 eb6 g6 c7 eb7 g7):6/4 (c8:16 g7 eb7 c7 g6 eb6):6/4 (d6:16 f6 ab6 d7 f7 ab7):6/4 (d8:16 ab7 f7 d7 ab6 f6):6/4 |
+}
+measure 59 {
+    lh: r:1 |
+    rh: (eb6:16 g6 c7 eb7 g7 c8):6/4 (eb8:16 c8 g7 eb7 c7 g6):6/4 (f6:16 ab6 bn6 d7 f7 ab7):6/4 (d8:16 bn7 ab7 f7 d7 bn6):6/4 |
+}
+measure 60 {
+    lh: r:1 |
+    rh: (g6:16 c7 eb7 g7 c8 eb8):6/4 (g8:16 eb8 c8 g7 eb7 c7):6/4 (ab6:16 c7 d7 f7 ab7 c8):6/4 (d8:16 c8 ab7 f7 d7 c7):6/4 |
+}
+measure 61 {
+    lh: r:1 |
+    rh: (g6:16 bn6 d7 g7 bn7 d8):6/4 (g8:16 d8 bn7 g7 d7 bn6):6/4 g6:2.tr |
+}
+measure 62 {
+    meta @{ tempo: 45 }
+    lh: r:1 |
+    rh: g6:2.tr g6:2.tr |
+}
+measure 63 {
+    lh: r:1 |
+    rh: g6:2.tr g6:2.tr |
+}
+measure 64 {
+    lh: r:1 |
+    rh: g6:2.tr g6:2.tr |
+}
+measure 65 {
+    lh: r:1 |
+    rh: g6:2..tr (f6:16 g6 ab6 g6 f6 eb6 d6 c6):8/4 |
+}
+measure 66 {
+    lh: r:1 |
+    rh: bn5:2..tr (a5:16 bn5 c6 bn5 a5 g5 f5 eb5):8/4 |
+}
+measure 67 {
+    lh: r:1 |
+    rh: d5:2..tr (c5:16 d5 eb5 d5 c5 bn4 a4 g4):8/4 |
+}
+measure 68 {
+    lh: [g0 g1 d2 f2 bn2]:1.fermata.ped |
+    rh: d5:1.tr_ext.fermata |
+}
+
+%% ==========================================
+%% Section H: Recapitulation & Coda (Maestoso)
+%% ==========================================
+measure 69 {
+    meta @{ tempo: 90 }
+    lh: [c1 c2 c3 g3]:1.ff.ped |
+    rh: [eb4 g4 c5 eb5]:1.ff.marc |
+}
+measure 70 {
+    lh: [g0 g1 g2 d3]:1 |
+    rh: [d4 g4 bn4 d5]:1.marc |
+}
+measure 71 {
+    lh: [ab0 ab1 ab2 eb3]:2 [f0 f1 f2 c3]:2 |
+    rh: [c4 eb4 ab4 c5]:2.marc [ab3 c4 f4 ab4]:2.marc |
+}
+measure 72 {
+    lh: [g0 g1 g2 d3]:1.fermata |
+    rh: [g3 bn3 d4 g4]:1.fermata |
+}
+measure 73 {
+    lh: [c2 c3]:4 [g1 g2]:4 [ab1 ab2]:4 [eb1 eb2]:4 |
+    rh: [eb4 g4 c5]:4 [d4 g4 bn4]:4 [c4 eb4 ab4]:4 [g3 eb4 g4]:4 |
+}
+measure 74 {
+    lh: [f1 f2]:4 [g1 g2]:4 [c1 c2]:2 |
+    rh: [ab3 c4 f4]:4 [g3 d4 f4]:4 [g3 c4 eb4]:2 |
+}
+measure 75 {
+    meta @{ tempo: [23, 24], curve: "linear" }
+    lh: [f1 f2]:4 [g1 g2]:4 [ab1 ab2]:2 |
+    rh: [f3 ab3 c4]:4 [g3 bn3 d4]:4 [ab3 c4 eb4]:2 |
+}
+measure 76 {
+    lh: [db1 db2]:2 [c1 c2]:2 |
+    rh: [f3 ab3 db4]:2 [eb3 g3 c4]:2 |
+}
+measure 77 {
+    lh: [g0 g1]:1.ped |
+    rh: [d3 f3 bn3]:1 |
+}
+measure 78 {
+    lh: [c1 c2]:1.ped |
+    rh: [c3 eb3 g3 c4]:1 |
+}
+measure 79 {
+    lh: [c1 c2]:1.ped |
+    rh: [c3 eb3 g3 c4]:1.text("dim.") |
+}
+measure 80 {
+    lh: [c0 c1]:1.ppp.fermata.ped_up |
+    rh: [c2 g2 c3 eb3]:1.ppp.fermata |
+}
+
+}
