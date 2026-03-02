@@ -1,0 +1,386 @@
+tenuto "2.2" {
+
+meta @{
+    title: "Kosmos: An Architectural Fantasia",
+    composer: "AI Master Composer",
+    time: "4/4",
+    tempo: 72,
+    key: "C"
+}
+
+%% Instrument Definitions (The Physics)
+def rh "Right Hand" style=standard clef=treble
+def lh "Left Hand" style=standard clef=bass
+
+%% ==========================================
+%% MOVEMENT I: The Partimento Foundation
+%% Stage 1: Semplici Consonanze & Rule of the Octave
+%% ==========================================
+measure 1 {
+    lh: c3:2.ped b2:4 |
+    rh: [e4 g4 c5]:2.mp [d4 g4 b4]:4 |
+}
+measure 2 {
+    lh: c3:2 d3:2 |
+    rh: [e4 g4 c5]:2 [f4 a4 c5]:2 |
+}
+measure 3 {
+    lh: e3:2 f3:2 |
+    rh: [g4 c5 e5]:2 [a4 c5 f5]:2 |
+}
+measure 4 {
+    lh: g3:1 |
+    rh: [b4 d5 g5]:1 |
+}
+
+%% Stage 2: Addition of 4-3 and 7-6 Suspensions
+measure 5 {
+    lh: c3:2 b2:2 |
+    rh: <[
+        v1: c5:2. d5:4 |
+        v2: [e4 g4]:2 [d4 g4]:2 |
+    ]>
+}
+measure 6 {
+    lh: c3:2 d3:2 |
+    rh: <[
+        v1: e5:2 f5:2 |
+        v2: [e4 g4]:2 [f4 a4]:2 |
+    ]>
+}
+measure 7 {
+    lh: e3:2 f3:2 |
+    rh: <[
+        v1: g5:2 a5:2 |
+        v2: [g4 c5]:2 [a4 c5]:2 |
+    ]>
+}
+measure 8 {
+    lh: g3:1 |
+    rh: <[
+        v1: g5:2 f5:2 |
+        v2: [b4 d5]:1 |
+    ]>
+}
+
+%% Stage 3: Advanced Diminutions
+measure 9 {
+    lh: c3:4 d e f |
+    rh: c5:16 d e f g f e d c d e f g f e d |
+}
+measure 10 {
+    lh: g3:4 f e d |
+    rh: b4:16 c5 d e f e d c b4 c5 d e f e d c |
+}
+measure 11 {
+    lh: c3:4 g c2 g |
+    rh: c5:16 g4 e g c5 g e g c5 g e g c5 g e g |
+}
+measure 12 {
+    lh: d3:4 a d2 a |
+    rh: d5:16 a4 f a d5 a f a d5 a f a d5 a f a |
+}
+measure 13 {
+    lh: e3:4 b e2 b |
+    rh: e5:16 b4 g b e5 b g b e5 b g b e5 b g b |
+}
+measure 14 {
+    lh: f3:4 c4 f2 c3 |
+    rh: f5:16 c5 a4 c5 f5 c a c f c a c f c a c |
+}
+measure 15 {
+    lh: g3:4 d g2 d |
+    rh: g5:16 d5 b4 d5 g5 d b d g d b d g d b d |
+}
+measure 16 {
+    lh: c3:1 |
+    rh: [e5 g5 c6]:1 |
+}
+
+%% ==========================================
+%% MOVEMENT II: The Classical Cadenza & Virtuosity
+%% ==========================================
+measure 17 {
+    meta @{ tempo: [27, 28], curve: "exp" }
+    lh: c2:16 e g c3 e g c4 e g e c g3 e c g2 e |
+    rh: r:1 |
+}
+measure 18 {
+    lh: g1:16 b d2 g b d3 g b g d b2 g d b1 g d |
+    rh: r:1 |
+}
+measure 19 {
+    lh: a1:16 c2 e a c3 e a c4 e c a3 e c a2 e c |
+    rh: r:1 |
+}
+measure 20 {
+    lh: f1:16 a c2 f a c3 f a c4 a f3 c a2 f c a1 |
+    rh: r:1 |
+}
+
+%% The I6/4 Cadential Setup
+measure 21 {
+    meta @{ tempo: 60 }
+    lh: [g1 d2 g2]:1.ped.ff |
+    rh: [b4 d5 g5]:1.ff |
+}
+measure 22 {
+    lh: r:1 |
+    rh: g5:16 a b c6 d e f# g a b c7 d e f# g a |
+}
+measure 23 {
+    lh: r:1 |
+    rh: b7:16 a g f# e d c b6 a g f# e d c b5 a |
+}
+measure 24 {
+    lh: r:1 |
+    rh: g5:16 f# e d c b4 a g f# e d c b3 a g f# |
+}
+measure 25 {
+    lh: r:1 |
+    rh: e3:16 g c4 e g c5 e g c6 e g c7 e g c8 e |
+}
+measure 26 {
+    lh: r:1 |
+    rh: g8:16 e c g7 e c g6 e c g5 e c g4 e c g3 |
+}
+measure 27 {
+    lh: r:1 |
+    rh: [g4 c5 e5 g5]:1.tr_ext |
+}
+measure 28 {
+    lh: [g1 d2 f2 b2]:1 |
+    rh: [g4 c5 e5 g5]:1.tr_ext |
+}
+measure 29 {
+    lh: c2:1.ped_up |
+    rh: [e4 g4 c5]:1 |
+}
+measure 30 {
+    lh: g1:1 |
+    rh: [d4 g4 b4]:1 |
+}
+measure 31 {
+    lh: a1:1 |
+    rh: [c4 e4 a4]:1 |
+}
+measure 32 {
+    lh: f1:1 |
+    rh: [c4 f4 a4]:1 |
+}
+measure 33 {
+    lh: c2:1 |
+    rh: [e4 g4 c5]:1 |
+}
+measure 34 {
+    lh: g1:1 |
+    rh: [d4 g4 b4]:1 |
+}
+measure 35 {
+    lh: a1:1 |
+    rh: [c4 e4 a4]:1 |
+}
+measure 36 {
+    lh: f1:1 |
+    rh: [c4 f4 a4]:1 |
+}
+measure 37 {
+    lh: c2:1 |
+    rh: [e4 g4 c5]:1 |
+}
+measure 38 {
+    lh: g1:1 |
+    rh: [d4 g4 b4]:1 |
+}
+measure 39 {
+    lh: a1:1 |
+    rh: [c4 e4 a4]:1 |
+}
+measure 40 {
+    lh: f1:1 |
+    rh: [c4 f4 a4]:1 |
+}
+
+%% ==========================================
+%% MOVEMENT III: The Universal Mind (Jazz)
+%% Guide Tones and Polyrhythmic Freedom
+%% ==========================================
+measure 41 {
+    meta @{ tempo: 110, swing: 66 }
+    lh: [c3 e3 bb3]:1.mf |
+    rh: r:4 g4:8 a4:8 c5:4 d5:4 |
+}
+measure 42 {
+    lh: [f2 e3 a3]:1 |
+    rh: e5:2.text("swing") r:2 |
+}
+measure 43 {
+    lh: [b2 f3 a3]:1 |
+    rh: r:8 d5:8 f5:8 a5:8 c6:4 b5:4 |
+}
+measure 44 {
+    lh: [e2 d3 g3]:1 |
+    rh: a5:2 r:2 |
+}
+measure 45 {
+    lh: [a2 g3 c4]:1 |
+    rh: r:4 g5:8 e5:8 c5:4 d5:4 |
+}
+measure 46 {
+    lh: [d2 c3 f3]:1 |
+    rh: e5:4. c5:8 a4:2 |
+}
+measure 47 {
+    lh: [g2 f3 b3]:1 |
+    rh: r:8 a4:8 b4:8 d5:8 f5:4 e5:4 |
+}
+measure 48 {
+    lh: [c2 bb2 e3]:1 |
+    rh: d5:2 c5:2 |
+}
+measure 49 {
+    %% Playing against strict squareness (3:2 Cross Rhythms)
+    lh: [f2 e3 a3]:1 |
+    rh: (g5:8 a5 c6):3/2 (d6:8 c6 a5):3/2 (g5:8 e5 c5):3/2 (d5:8 e5 g5):3/2 |
+}
+measure 50 {
+    lh: [bb2 a3 d4]:1 |
+    rh: (f5:8 d5 bb4):3/2 (c5:8 d5 f5):3/2 (a5:8 g5 f5):3/2 (d5:8 c5 a4):3/2 |
+}
+measure 51 {
+    lh: [eb2 d3 g3]:1 |
+    rh: (g5:8 e5 c5):3/2 (d5:8 c5 a4):3/2 (g4:8 a4 c5):3/2 (e5:8 d5 c5):3/2 |
+}
+measure 52 {
+    lh: [ab2 g3 c4]:1 |
+    rh: (d5:8 c5 ab4):3/2 (g4:8 f4 d4):3/2 (c4:8 d4 f4):3/2 (ab4:8 c5 d5):3/2 |
+}
+measure 53 {
+    lh: [db2 c3 f3]:1 |
+    rh: (f5:8 d5 c5):3/2 (ab4:8 f4 d4):3/2 (c4:8 db4 f4):3/2 (ab4:8 c5 eb5):3/2 |
+}
+measure 54 {
+    lh: [gb2 f3 bb3]:1 |
+    rh: (gb5:8 eb5 c5):3/2 (bb4:8 gb4 eb4):3/2 (c4:8 eb4 gb4):3/2 (bb4:8 c5 eb5):3/2 |
+}
+measure 55 {
+    lh: [b1 a2 d3]:1 |
+    rh: (f5:8 d5 b4):3/2 (a4:8 f4 d4):3/2 (b3:8 d4 f4):3/2 (a4:8 b4 d5):3/2 |
+}
+measure 56 {
+    lh: [e2 d3 g3]:1 |
+    rh: (e5:8 c5 a4):3/2 (g4:8 e4 c4):3/2 (a3:8 c4 e4):3/2 (g4:8 a4 c5):3/2 |
+}
+measure 57 {
+    meta @{ tempo: [29, 30], curve: "linear" }
+    lh: [a1 g2 c3]:1.text("dim.") |
+    rh: d5:2 c5:2 |
+}
+measure 58 {
+    lh: [d2 c3 f3]:1 |
+    rh: b4:2 a4:2 |
+}
+measure 59 {
+    lh: [g1 f2 b2]:1 |
+    rh: g4:2 f4:2 |
+}
+measure 60 {
+    lh: [c2 e2 bb2]:1 |
+    rh: e4:2 c4:2 |
+}
+
+%% ==========================================
+%% MOVEMENT IV: The Spectral Abyss & New Complexity
+%% ==========================================
+measure 61 {
+    meta @{ tempo: 40, swing: 50 } 
+    %% Massive Fundamental Tone - Pedal held to the end
+    lh: [c1 c2]:1.ped.fff |
+    rh: r:1 |
+}
+measure 62 {
+    lh: [c1 c2]:1~ |
+    rh: r:1 |
+}
+measure 63 {
+    %% 3rd Partial Synthesized
+    lh: [c1 c2]:1~ |
+    rh: g2:1.cc(11, [31], "exp") |
+}
+measure 64 {
+    lh: [c1 c2]:1~ |
+    rh: [g2]:1~ |
+}
+measure 65 {
+    %% 5th Partial Synthesized
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3]:1.cc(11, [32], "exp") |
+}
+measure 66 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3]:1~ |
+}
+measure 67 {
+    %% 7th Partial (Microtonal Flat)
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf]:1.cc(11, [33], "exp") |
+}
+measure 68 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf]:1~ |
+}
+measure 69 {
+    %% 9th Partial
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4]:1.cc(11, [34], "exp") |
+}
+measure 70 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4]:1~ |
+}
+measure 71 {
+    %% 11th Partial (Microtonal Sharp)
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4 fs4qs]:1.cc(11, [30], "exp") |
+}
+measure 72 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4 fs4qs]:1~ |
+}
+measure 73 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4 fs4qs]:1~ |
+}
+measure 74 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4 fs4qs]:1~ |
+}
+measure 75 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4 fs4qs]:1~ |
+}
+measure 76 {
+    lh: [c1 c2]:1~ |
+    rh: [g2 e3 bb3qf d4 fs4qs]:1~ |
+}
+
+%% New Complexity Rhythmic Dissipation
+measure 77 {
+    meta @{ tempo: [35, 36], curve: "exp" }
+    lh: [c1 c2]:1~ |
+    rh: (c7:16 b6 a6 g6 f6 e6 d6):7/4 r:4. |
+}
+measure 78 {
+    lh: [c1 c2]:1~ |
+    rh: (db6:32 c6 bb5 ab5 g5 gb5 f5 e5):8/4 r:2 |
+}
+measure 79 {
+    lh: [c1 c2]:1~ |
+    rh: (eb5:64 d5 c5 b4 a4 g4 f4 e4 d4 c4 b3 a3):12/4 r:2. |
+}
+measure 80 {
+    lh: [c1 c2]:1..fermata.ped_up |
+    rh: r:1. |
+}
+
+}
