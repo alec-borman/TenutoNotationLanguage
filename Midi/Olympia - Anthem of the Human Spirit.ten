@@ -1,0 +1,366 @@
+tenuto "2.2" {
+
+meta @{
+    title: "Olympia: Anthem of the Human Spirit",
+    composer: "AI Master Composer",
+    time: "4/4",
+    tempo: 108,
+    key: "Eb"
+}
+
+%% Instrument Definitions
+def rh "Right Hand" style=standard clef=treble
+def lh "Left Hand" style=standard clef=bass
+
+%% ==========================================
+%% Section A: The Heroic Fanfare (Intro)
+%% ==========================================
+measure 1 {
+    lh: [eb1 eb2]:1.ped | 
+    rh: [eb4 g4 bb4 eb5]:4.ff.marc [eb4 g4 bb4 eb5]:16 [eb4 g4 bb4 eb5]:16 [eb5 g5 bb5 eb6]:2 |
+}
+measure 2 {
+    lh: [bb0 bb1]:1 | 
+    rh: [d4 f4 bb4 d5]:4. [d4 f4 bb4 d5]:16 [d4 f4 bb4 d5]:16 [f5 bb5 d6 f6]:2 |
+}
+measure 3 {
+    lh: [ab0 ab1]:1 | 
+    rh: [c4 eb4 ab4 c5]:4. [c4 eb4 ab4 c5]:16 [c4 eb4 ab4 c5]:16 [eb5 ab5 c6 eb6]:2 |
+}
+measure 4 {
+    lh: [bb0 bb1]:1 | 
+    rh: (bb5:8 c6 d6):3/2 (eb6:8 f6 g6):3/2 [ab6 c7]:2 |
+}
+measure 5 {
+    lh: [eb1 eb2]:1.ped | 
+    rh: [eb5 g5 bb5 eb6]:4. [eb5 g5 bb5 eb6]:16 [eb5 g5 bb5 eb6]:16 [g5 bb5 eb6 g6]:2 |
+}
+measure 6 {
+    lh: [bb0 bb1]:1 | 
+    rh: [d5 f5 bb5 d6]:4. [d5 f5 bb5 d6]:16 [d5 f5 bb5 d6]:16 [f5 bb5 d6 f6]:2 |
+}
+measure 7 {
+    lh: [c1 c2]:2 [ab0 ab1]:2 | 
+    rh: (c6:8 d6 eb6):3/2 (ab5:8 bb5 c6):3/2 (f5:8 g5 ab5):3/2 (d5:8 eb5 f5):3/2 |
+}
+measure 8 {
+    lh: [bb0 bb1]:1 | 
+    rh: [bb4 eb5 g5 bb5]:2 [bb4 d5 f5 bb5]:2 |
+}
+
+%% ==========================================
+%% Section B: The Olympic Theme (Maestoso)
+%% ==========================================
+measure 9 {
+    lh: [eb2 bb2 eb3]:2 [d2 bb2 d3]:2 | 
+    rh: eb5:2..f g5:8 |
+}
+measure 10 {
+    lh: [c2 g2 c3]:2 [g1 d2 g2]:2 | 
+    rh: f5:4. eb5:16 d5:16 eb5:2 |
+}
+measure 11 {
+    lh: [ab1 eb2 ab2]:2 [eb1 bb1 eb2]:2 | 
+    rh: c6:2.. bb5:8 |
+}
+measure 12 {
+    lh: [f1 c2 f2]:2 [bb1 f2 bb2]:2 | 
+    rh: ab5:4. g5:16 f5:16 g5:2 |
+}
+measure 13 {
+    lh: [eb2 bb2 eb3]:2 [d2 bb2 d3]:2 | 
+    rh: bb5:2.. c6:8 |
+}
+measure 14 {
+    lh: [c2 g2 c3]:2 [bb1 f2 bb2]:2 | 
+    rh: d6:4. c6:16 bb5:16 c6:2 |
+}
+measure 15 {
+    lh: [ab1 eb2 ab2]:2 [f1 c2 f2]:2 | 
+    rh: eb6:2.. d6:8 |
+}
+measure 16 {
+    lh: [bb1 f2 bb2]:1 | 
+    rh: c6:4. bb5:16 ab5:16 bb5:2 |
+}
+measure 17 {
+    lh: [eb2 bb2 eb3]:2 [d2 bb2 d3]:2 | 
+    rh: eb5:2..f g5:8 |
+}
+measure 18 {
+    lh: [c2 g2 c3]:2 [g1 d2 g2]:2 | 
+    rh: f5:4. eb5:16 d5:16 eb5:2 |
+}
+measure 19 {
+    lh: [ab1 eb2 ab2]:2 [eb1 bb1 eb2]:2 | 
+    rh: c6:2.. bb5:8 |
+}
+measure 20 {
+    lh: [f1 c2 f2]:2 [bb1 f2 bb2]:2 | 
+    rh: ab5:4. g5:16 f5:16 g5:2 |
+}
+measure 21 {
+    lh: [c2 g2 c3]:2 [f1 c2 f2]:2 | 
+    rh: g5:4 ab5:4 bb5:4 c6:4 |
+}
+measure 22 {
+    lh: [d2 a2 d3]:2 [g1 d2 g2]:2 | 
+    rh: d6:4 eb6:4 f6:4 g6:4 |
+}
+measure 23 {
+    lh: [c2 g2 c3]:2 [f1 c2 ab2]:2 | 
+    rh: ab6:4 g6:4 f6:4 eb6:4 |
+}
+measure 24 {
+    lh: [bb1 f2 bb2]:2 [bb0 f1 bb1]:2 | 
+    rh: d6:4. c6:16 d6:16 eb6:2 |
+}
+
+%% ==========================================
+%% Section C: Theme A Orchestral Octaves
+%% ==========================================
+measure 25 {
+    lh: [eb1 eb2]:4 [bb1 bb2]:4 [eb2 eb3]:2 | 
+    rh: [eb5 eb6]:2..ff [g5 g6]:8 |
+}
+measure 26 {
+    lh: [c1 c2]:4 [g1 g2]:4 [c2 c3]:2 | 
+    rh: [f5 f6]:4. [eb5 eb6]:16 [d5 d6]:16 [eb5 eb6]:2 |
+}
+measure 27 {
+    lh: [ab1 ab2]:4 [eb1 eb2]:4 [ab1 ab2]:2 | 
+    rh: [c6 c7]:2.. [bb5 bb6]:8 |
+}
+measure 28 {
+    lh: [f1 f2]:4 [c1 c2]:4 [f1 f2]:2 | 
+    rh: [ab5 ab6]:4. [g5 g6]:16 [f5 f6]:16 [g5 g6]:2 |
+}
+measure 29 {
+    lh: [eb1 eb2]:4 [bb1 bb2]:4 [eb2 eb3]:2 | 
+    rh: [bb5 bb6]:2.. [c6 c7]:8 |
+}
+measure 30 {
+    lh: [c1 c2]:4 [g1 g2]:4 [c2 c3]:2 | 
+    rh: [d6 d7]:4. [c6 c7]:16 [bb5 bb6]:16 [c6 c7]:2 |
+}
+measure 31 {
+    lh: [ab1 ab2]:4 [eb1 eb2]:4 [ab1 ab2]:2 | 
+    rh: [eb6 eb7]:2.. [d6 d7]:8 |
+}
+measure 32 {
+    lh: [bb1 bb2]:4 [f1 f2]:4 [bb0 bb1]:2 | 
+    rh: [c6 c7]:4. [bb5 bb6]:16 [ab5 ab6]:16 [bb5 bb6]:2 |
+}
+
+%% ==========================================
+%% Section D: The Athlete's Trio (Lyrical)
+%% ==========================================
+measure 33 {
+    lh: [ab1 eb2 c3]:1.mp | 
+    rh: ab5:2.. g5:8 |
+}
+measure 34 {
+    lh: [eb1 bb1 g2]:1 | 
+    rh: f5:4. eb5:8 f5:2 |
+}
+measure 35 {
+    lh: [f1 c2 ab2]:1 | 
+    rh: g5:2.. f5:8 |
+}
+measure 36 {
+    lh: [db1 ab1 f2]:1 | 
+    rh: eb5:4. db5:8 c5:2 |
+}
+measure 37 {
+    lh: [ab1 eb2 c3]:1 | 
+    rh: c6:2.. bb5:8 |
+}
+measure 38 {
+    lh: [eb1 bb1 g2]:1 | 
+    rh: ab5:4. g5:8 ab5:2 |
+}
+measure 39 {
+    lh: [f1 c2 ab2]:2 [db1 ab1 f2]:2 | 
+    rh: bb5:2.. ab5:8 |
+}
+measure 40 {
+    lh: [eb1 bb1 g2]:2 [eb0 bb0 eb1]:2 | 
+    rh: g5:4. f5:8 g5:2 |
+}
+measure 41 {
+    lh: [ab1 eb2 c3]:1.mf | 
+    rh: <[ v1: ab5:2.. g5:8 | v2: [c5 eb5]:1 | ]>
+}
+measure 42 {
+    lh: [eb1 bb1 g2]:1 | 
+    rh: <[ v1: f5:4. eb5:8 f5:2 | v2: [bb4 db5]:1 | ]>
+}
+measure 43 {
+    lh: [f1 c2 ab2]:1 | 
+    rh: <[ v1: g5:2.. f5:8 | v2: [c5 eb5]:1 | ]>
+}
+measure 44 {
+    lh: [db1 ab1 f2]:1 | 
+    rh: <[ v1: eb5:4. db5:8 c5:2 | v2: [ab4 c5]:1 | ]>
+}
+measure 45 {
+    lh: [ab1 eb2 c3]:1.text("cresc.") | 
+    rh: c6:2.. bb5:8 |
+}
+measure 46 {
+    lh: [c2 g2 e3]:1 | 
+    rh: d6:4. c6:8 d6:2 |
+}
+measure 47 {
+    lh: [f1 c2 ab2]:2 [db1 ab1 f2]:2 | 
+    rh: f6:2.. eb6:8 |
+}
+measure 48 {
+    lh: [bb1 f2 d3]:2 [bb0 f1 d2]:2 | 
+    rh: d6:4. c6:8 d6:2 |
+}
+
+%% ==========================================
+%% Section E: The Build-Up (Snare Rhythms & Dominant Pedal)
+%% ==========================================
+measure 49 {
+    lh: [bb0 bb1]:1.ff.ped | 
+    rh: (bb4:8 c5 d5):3/2 (eb5:8 f5 g5):3/2 (ab5:8 bb5 c6):3/2 (d6:8 eb6 f6):3/2 |
+}
+measure 50 {
+    lh: [bb0 bb1]:1 | 
+    rh: [g5 bb5 eb6 g6]:2.marc r:4 |
+}
+measure 51 {
+    lh: [bb0 bb1]:1 | 
+    rh: (bb4:8 c5 d5):3/2 (eb5:8 f5 g5):3/2 (ab5:8 bb5 c6):3/2 (d6:8 eb6 f6):3/2 |
+}
+measure 52 {
+    lh: [bb0 bb1]:1 | 
+    rh: [f5 ab5 d6 f6]:2.marc r:4 |
+}
+measure 53 {
+    lh: [bb0 bb1]:1 | 
+    rh: (g5:8 ab5 bb5):3/2 (c6:8 d6 eb6):3/2 (f6:8 g6 ab6):3/2 (bb6:8 c7 d7):3/2 |
+}
+measure 54 {
+    lh: [bb0 bb1]:1 | 
+    rh: [eb6 g6 bb6 eb7]:2 [d6 f6 bb6 d7]:2 |
+}
+measure 55 {
+    lh: (bb1:8 bb1 bb1):3/2 (bb1:8 bb1 bb1):3/2 (bb1:8 bb1 bb1):3/2 (bb1:8 bb1 bb1):3/2 | 
+    rh: [c6 eb6 ab6 c7]:2 [bb5 d6 f6 bb6]:2 |
+}
+measure 56 {
+    meta @{ tempo: [6, 7], curve: "linear" }
+    lh: (bb0:8 bb0 bb0):3/2 (bb0:8 bb0 bb0):3/2 [bb0 bb1]:2 | 
+    rh: [ab5 c6 eb6 ab6]:2 [f5 bb5 d6 f6]:2 |
+}
+
+%% ==========================================
+%% Section F: The Grand Recapitulation (Full Tutti)
+%% ==========================================
+measure 57 {
+    lh: [eb1 bb1 eb2]:2 [d1 bb1 d2]:2 | 
+    rh: [eb5 g5 bb5 eb6]:2..fff [g5 bb5 eb6 g6]:8 |
+}
+measure 58 {
+    lh: [c1 g1 c2]:2 [g0 d1 g1]:2 | 
+    rh: [f5 ab5 d6 f6]:4. [eb5 g5 c6 eb6]:16 [d5 f5 bb5 d6]:16 [eb5 g5 bb5 eb6]:2 |
+}
+measure 59 {
+    lh: [ab0 eb1 ab1]:2 [eb1 bb1 eb2]:2 | 
+    rh: [c6 eb6 ab6 c7]:2.. [bb5 eb6 g6 bb6]:8 |
+}
+measure 60 {
+    lh: [f0 c1 f1]:2 [bb0 f1 bb1]:2 | 
+    rh: [ab5 c6 f6 ab6]:4. [g5 bb5 eb6 g6]:16 [f5 ab5 d6 f6]:16 [g5 bb5 eb6 g6]:2 |
+}
+measure 61 {
+    lh: [eb1 bb1 eb2]:2 [d1 bb1 d2]:2 | 
+    rh: [bb5 eb6 g6 bb6]:2.. [c6 eb6 ab6 c7]:8 |
+}
+measure 62 {
+    lh: [c1 g1 c2]:2 [bb0 f1 bb1]:2 | 
+    rh: [d6 f6 bb6 d7]:4. [c6 eb6 ab6 c7]:16 [bb5 d6 f6 bb6]:16 [c6 eb6 ab6 c7]:2 |
+}
+measure 63 {
+    lh: [ab0 eb1 ab1]:2 [f0 c1 f1]:2 | 
+    rh: [eb6 ab6 c7 eb7]:2.. [d6 f6 bb6 d7]:8 |
+}
+measure 64 {
+    lh: [bb0 f1 bb1]:1 | 
+    rh: [c6 eb6 ab6 c7]:4. [bb5 d6 f6 bb6]:16 [ab5 c6 f6 ab6]:16 [bb5 d6 f6 bb6]:2 |
+}
+measure 65 {
+    lh: [eb1 bb1 eb2]:2 [d1 bb1 d2]:2 | 
+    rh: [eb6 g6 bb6 eb7]:2..fff [g6 bb6 eb7 g7]:8 |
+}
+measure 66 {
+    lh: [c1 g1 c2]:2 [g0 d1 g1]:2 | 
+    rh: [f6 ab6 d7 f7]:4. [eb6 g6 c7 eb7]:16 [d6 f6 bb6 d7]:16 [eb6 g6 bb6 eb7]:2 |
+}
+measure 67 {
+    lh: [ab0 eb1 ab1]:2 [eb1 bb1 eb2]:2 | 
+    rh: [c7 eb7 ab7 c8]:2.. [bb6 eb7 g7 bb7]:8 |
+}
+measure 68 {
+    lh: [f0 c1 f1]:2 [bb0 f1 bb1]:2 | 
+    rh: [ab6 c7 f7 ab7]:4. [g6 bb6 eb7 g7]:16 [f6 ab6 d7 f7]:16 [g6 bb6 eb7 g7]:2 |
+}
+measure 69 {
+    lh: [c1 g1 c2]:2 [f0 c1 f1]:2 | 
+    rh: [g6 bb6 eb7 g7]:4 [ab6 c7 f7 ab7]:4 [bb6 eb7 g7 bb7]:4 [c7 eb7 ab7 c8]:4 |
+}
+measure 70 {
+    lh: [d1 a1 d2]:2 [g0 d1 g1]:2 | 
+    rh: [d7 f7 bb7 d8]:4 [eb7 g7 c8 eb8]:4 [f7 ab7 d8 f8]:4 [g7 bb7 eb8 g8]:4 |
+}
+measure 71 {
+    lh: [c1 g1 c2]:2 [f0 c1 ab1]:2 | 
+    rh: [ab7 c8 f8 ab8]:4 [g7 bb7 eb8 g8]:4 [f7 ab7 d8 f8]:4 [eb7 g7 c8 eb8]:4 |
+}
+measure 72 {
+    lh: [bb0 f1 bb1]:2 [bb0 f1 bb1]:2 | 
+    rh: [d7 f7 bb7 d8]:4. [c7 eb7 ab7 c8]:16 [d7 f7 bb7 d8]:16 [eb7 g7 bb7 eb8]:2 |
+}
+
+%% ==========================================
+%% Section G: The Coda (The Final Glory)
+%% ==========================================
+measure 73 {
+    lh: [eb1 bb1 eb2]:1.ped | 
+    rh: [g5 bb5 eb6 g6]:2.fff [ab5 c6 f6 ab6]:2 |
+}
+measure 74 {
+    lh: [eb1 bb1 eb2]:1 | 
+    rh: [bb5 eb6 g6 bb6]:2 [c6 eb6 ab6 c7]:2 |
+}
+measure 75 {
+    lh: [eb1 bb1 eb2]:1 | 
+    rh: [d6 f6 bb6 d7]:2 [eb6 g6 bb6 eb7]:2 |
+}
+measure 76 {
+    lh: [eb1 bb1 eb2]:1 | 
+    rh: [f6 ab6 d7 f7]:2 [g6 bb6 eb7 g7]:2 |
+}
+measure 77 {
+    lh: [bb0 f1 bb1]:1 | 
+    rh: (bb5:8 c6 d6):3/2 (eb6:8 f6 g6):3/2 (ab6:8 bb6 c7):3/2 (d7:8 eb7 f7):3/2 |
+}
+measure 78 {
+    lh: [eb1 bb1 eb2]:1 | 
+    rh: [eb7 g7 bb7 eb8]:1 |
+}
+measure 79 {
+    %% Timpani-like rumbling roll
+    lh: eb1:16 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 eb1 | 
+    rh: [g6 bb6 eb7 g7]:1 |
+}
+measure 80 {
+    %% Final glorious resolution
+    lh: [eb0 eb1]:1..fermata.ped | 
+    rh: [eb6 g6 bb6 eb7]:1..fermata |
+}
+
+}
