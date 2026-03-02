@@ -1,0 +1,581 @@
+tenuto "2.2" {
+
+meta @{
+    title: "Sonata-Fantasia in C Minor: Echoes of the Abyss",
+    composer: "The Master Architect",
+    time: "4/4",
+    tempo: 45,
+    key: "Cm"
+}
+
+%% 1. DEFINITIONS (The Physics)
+def rh "Right Hand" style=standard clef=treble
+def lh "Left Hand" style=standard clef=bass
+
+%% SECTION A: The Lament (Russian School Sonority)
+measure 1 {
+    rh: <[
+        v1: r:4 g4:4..p.text("pesante") c5:8 eb5:4 |
+        v2: r:1 |
+    ]>
+    lh: [c2 c3]:1.ped |
+}
+
+measure 2 {
+    rh: <[
+        v1: d5:2..tr c5:8 bn4:8 |
+        v2: r:4 [d4 f4 g4]:2. |
+    ]>
+    lh: [g1 g2]:1 |
+}
+
+measure 3 {
+    rh: <[
+        v1: c5:4..mp eb5:8 g5:4 c6:4 |
+        v2: r:2 [c4 eb4 g4]:2 |
+    ]>
+    lh: [ab1 ab2]:1 |
+}
+
+measure 4 {
+    rh: <[
+        v1: bn5:2..tr.text("dim.") g5:4 |
+        v2: [d4 f4 g4]:1 |
+    ]>
+    lh: [g1 g2]:1 |
+}
+
+%% SECTION B: Expanding the Pianto Motif
+measure 5 {
+    rh: <[
+        v1: (c6:8 d6 eb6):3/2 (f6:8 eb6 d6):3/2 c6:2 |
+        v2: r:2 [eb4 g4 c5]:2 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 6 {
+    rh: <[
+        v1: (bn5:8 c6 d6):3/2 (eb6:8 d6 c6):3/2 bn5:2 |
+        v2: r:2 [d4 g4 bn4]:2 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 7 {
+    rh: <[
+        v1: ab5:2..f f5:4 |
+        v2: [c4 f4 ab4]:1 |
+    ]>
+    lh: [f1 c2 f2]:1 |
+}
+
+measure 8 {
+    meta @{ tempo: [1, 2], curve: "exp" }
+    rh: <[
+        v1: g5:1..ff |
+        v2: [bn3 d4 g4]:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+%% SECTION C: Agitato - The French Jeu Perlé
+measure 9 {
+    meta @{ tempo: 120 }
+    rh: c5:16..p.stacc d5 eb5 f5 g5 ab5 bn5 c6 d6 eb6 f6 g6 ab6 bn6 c7 d7 |
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 10 {
+    rh: eb7:16 d7 c7 bn6 ab6 g6 f6 eb6 d6 c6 bn5 ab5 g5 f5 eb5 d5 |
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 11 {
+    rh: c5:16 d5 eb5 f5 g5 ab5 bn5 c6 d6 eb6 f6 g6 ab6 bn6 c7 d7 |
+    lh: [ab1 eb2 ab2]:1 |
+}
+
+measure 12 {
+    rh: f7:16 eb7 d7 c7 bn6 ab6 g6 f6 eb6 d6 c6 bn5 ab5 g5 f5 d5 |
+    lh: [f1 c2 f2]:1 |
+}
+
+measure 13 {
+    rh: <[
+        v1: g6:1..tr_ext.ff |
+        v2: [bn4 d5 g5]:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 14 {
+    rh: <[
+        v1: g6:1..tr_ext |
+        v2: [bn4 d5 g5]:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 15 {
+    rh: <[
+        v1: g6:1..tr_ext |
+        v2: [bn4 d5 g5]:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 16 {
+    rh: <[
+        v1: g6:1..tr_ext |
+        v2: [bn4 d5 g5]:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+%% SECTION D: Partimento Moti del Basso (Rule of the Octave)
+measure 17 {
+    rh: <[
+        v1: c6:4..f d6:8 eb6:4 c6:4 |
+        v2: [g4 c5 eb5]:1 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 18 {
+    rh: <[
+        v1: f6:4. g6:8 ab6:4 f6:4 |
+        v2: [c5 f5 ab5]:1 |
+    ]>
+    lh: [f1 c2 f2]:1 |
+}
+
+measure 19 {
+    rh: <[
+        v1: bb5:4. c6:8 d6:4 bb5:4 |
+        v2: [f4 bb4 d5]:1 |
+    ]>
+    lh: [bb1 f2 bb2]:1 |
+}
+
+measure 20 {
+    rh: <[
+        v1: eb6:4. f6:8 g6:4 eb6:4 |
+        v2: [bb4 eb5 g5]:1 |
+    ]>
+    lh: [eb1 bb1 eb2]:1 |
+}
+
+measure 21 {
+    rh: <[
+        v1: ab5:4. bb5:8 c6:4 ab5:4 |
+        v2: [eb4 ab4 c5]:1 |
+    ]>
+    lh: [ab1 eb2 ab2]:1 |
+}
+
+measure 22 {
+    rh: <[
+        v1: d6:4. eb6:8 f6:4 d6:4 |
+        v2: [ab4 d5 f5]:1 |
+    ]>
+    lh: [d1 a1 d2]:1 |
+}
+
+measure 23 {
+    rh: <[
+        v1: g5:4. a5:8 bn5:4 g5:4 |
+        v2: [d4 g4 bn4]:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 24 {
+    rh: <[
+        v1: c6:1..ff |
+        v2: [eb4 g4 c5]:1 |
+    ]>
+    lh: [c1 g1 c2]:1 |
+}
+
+%% SECTION E: Cascading Polyrhythms
+measure 25 {
+    rh: <[
+        v1: (c6:8 d6 eb6):3/2 (g6:8 f6 eb6):3/2 c6:2 |
+        v2: r:2 [c5 eb5]:2 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 26 {
+    rh: <[
+        v1: (c6:8 d6 eb6):3/2 (g6:8 f6 eb6):3/2 c6:2 |
+        v2: r:2 [c5 eb5]:2 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 27 {
+    rh: <[
+        v1: (c6:8 d6 eb6):3/2 (g6:8 f6 eb6):3/2 c6:2 |
+        v2: r:2 [c5 eb5]:2 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 28 {
+    rh: <[
+        v1: (c6:8 d6 eb6):3/2 (g6:8 f6 eb6):3/2 c6:2 |
+        v2: r:2 [c5 eb5]:2 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 29 {
+    rh: <[
+        v1: (d6:8 eb6 f6):3/2 (ab6:8 g6 f6):3/2 d6:2 |
+        v2: r:2 [d5 f5]:2 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 30 {
+    rh: <[
+        v1: (d6:8 eb6 f6):3/2 (ab6:8 g6 f6):3/2 d6:2 |
+        v2: r:2 [d5 f5]:2 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 31 {
+    rh: <[
+        v1: (d6:8 eb6 f6):3/2 (ab6:8 g6 f6):3/2 d6:2 |
+        v2: r:2 [d5 f5]:2 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 32 {
+    rh: <[
+        v1: (d6:8 eb6 f6):3/2 (ab6:8 g6 f6):3/2 d6:2 |
+        v2: r:2 [d5 f5]:2 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+%% SECTION F: Spectral Automation & The Great Swell
+measure 33 {
+    meta @{ tempo: 60 }
+    rh: [c4 eb4 g4 c5]:1.cc(11, [3, 4], "linear") |
+    lh: [c1 c2]:1.cc(11, [3, 4], "linear") |
+}
+
+measure 34 {
+    rh: [c4 eb4 g4 c5]:1.cc(11, [1, 4], "linear") |
+    lh: [c1 c2]:1.cc(11, [1, 4], "linear") |
+}
+
+measure 35 {
+    rh: [c4 eb4 g4 c5]:1.cc(11, [1, 5], "linear") |
+    lh: [c1 c2]:1.cc(11, [1, 5], "linear") |
+}
+
+measure 36 {
+    rh: [c4 eb4 g4 c5]:1.cc(11, [5, 6], "linear") |
+    lh: [c1 c2]:1.cc(11, [5, 6], "linear") |
+}
+
+measure 37 {
+    rh: [c4 eb4 g4 c5]:1.cc(11, [6, 7], "linear") |
+    lh: [c1 c2]:1.cc(11, [6, 7], "linear") |
+}
+
+measure 38 {
+    rh: [c4 eb4 g4 c5]:1.cc(11, [7, 8], "linear") |
+    lh: [c1 c2]:1.cc(11, [7, 8], "linear") |
+}
+
+measure 39 {
+    rh: [c4 eb4 g4 c5]:1.cc(11, [2, 8], "exp") |
+    lh: [c1 c2]:1.cc(11, [2, 8], "exp") |
+}
+
+measure 40 {
+    rh: [c4 eb4 g4 c5]:1.cc(11, [2, 9], "exp") |
+    lh: [c1 c2]:1.cc(11, [2, 9], "exp") |
+}
+
+measure 41 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [9, 10], "linear") |
+    lh: [g0 g1]:1.cc(11, [9, 10], "linear") |
+}
+
+measure 42 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [10, 11], "linear") |
+    lh: [g0 g1]:1.cc(11, [10, 11], "linear") |
+}
+
+measure 43 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [11, 12], "linear") |
+    lh: [g0 g1]:1.cc(11, [11, 12], "linear") |
+}
+
+measure 44 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [12, 13], "linear") |
+    lh: [g0 g1]:1.cc(11, [12, 13], "linear") |
+}
+
+measure 45 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [13, 14], "linear") |
+    lh: [g0 g1]:1.cc(11, [13, 14], "linear") |
+}
+
+measure 46 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [14, 15], "linear") |
+    lh: [g0 g1]:1.cc(11, [14, 15], "linear") |
+}
+
+measure 47 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [3, 15], "linear") |
+    lh: [g0 g1]:1.cc(11, [3, 15], "linear") |
+}
+
+measure 48 {
+    rh: [bn3 d4 g4 bn4]:1.cc(11, [3], "linear") |
+    lh: [g0 g1]:1.cc(11, [3], "linear") |
+}
+
+%% SECTION G: The Cadenza (Atemporal flourishing within Strict Bounds)
+measure 49 {
+    meta @{ tempo: 80 }
+    rh: c6:16..fff d6 eb6 f6 g6 ab6 bn6 c7 d7 eb7 f7 g7 ab7 bn7 c8 d8 |
+    lh: [c2 g2 c3]:1..ped |
+}
+
+measure 50 {
+    rh: eb8:16 d8 c8 bn7 ab7 g7 f7 eb7 d7 c7 bn6 ab6 g6 f6 eb6 d6 |
+    lh: r:1 |
+}
+
+measure 51 {
+    rh: c6:16 bn5 ab5 g5 f5 eb5 d5 c5 bn4 ab4 g4 f4 eb4 d4 c4 bn3 |
+    lh: r:1 |
+}
+
+measure 52 {
+    rh: ab3:16 g3 f3 eb3 d3 c3 bn2 ab2 g2 f2 eb2 d2 c2 bn1 ab1 g1 |
+    lh: r:1 |
+}
+
+measure 53 {
+    rh: [g1 d2 f2 bn2]:1..tr_ext |
+    lh: [g0 g1]:1 |
+}
+
+measure 54 {
+    rh: [g1 d2 f2 bn2]:1..tr_ext |
+    lh: [g0 g1]:1 |
+}
+
+measure 55 {
+    rh: [g1 d2 f2 bn2]:1..tr_ext |
+    lh: [g0 g1]:1 |
+}
+
+measure 56 {
+    rh: [g1 d2 f2 bn2]:1..tr_ext |
+    lh: [g0 g1]:1 |
+}
+
+measure 57 {
+    meta @{ tempo: [12, 16], curve: "linear" }
+    rh: [g1 d2 f2 bn2]:1..tr_ext.text("rall.") |
+    lh: [g0 g1]:1 |
+}
+
+measure 58 {
+    meta @{ tempo: [5, 16], curve: "linear" }
+    rh: [g1 d2 f2 bn2]:1..tr_ext |
+    lh: [g0 g1]:1 |
+}
+
+measure 59 {
+    meta @{ tempo: [5, 14], curve: "linear" }
+    rh: [g1 d2 f2 bn2]:1..tr_ext |
+    lh: [g0 g1]:1 |
+}
+
+measure 60 {
+    meta @{ tempo: [1, 14], curve: "linear" }
+    rh: [g1 d2 f2 bn2]:1..tr_ext |
+    lh: [g0 g1]:1 |
+}
+
+%% SECTION H: Grand Recapitulation (Full Orchestral Texture)
+measure 61 {
+    meta @{ tempo: 45 }
+    rh: <[
+        v1: r:4 g5:4..ffff.text("pesante") c6:8 eb6:4 |
+        v2: r:4 [c4 eb4 g4 c5]:2. |
+    ]>
+    lh: [c1 c2 g2 c3]:1.ped |
+}
+
+measure 62 {
+    rh: <[
+        v1: d6:2..tr c6:8 bn5:8 |
+        v2: [g3 d4 f4 bn4]:1 |
+    ]>
+    lh: [g0 g1 d2 g2]:1 |
+}
+
+measure 63 {
+    rh: <[
+        v1: c6:4..ff eb6:8 g6:4 c7:4 |
+        v2: [c4 eb4 g4 c5]:1 |
+    ]>
+    lh: [ab0 ab1 eb2 ab2]:1 |
+}
+
+measure 64 {
+    rh: <[
+        v1: bn6:2..tr.text("dim.") g6:4 |
+        v2: [d4 f4 g4 bn4]:1 |
+    ]>
+    lh: [g0 g1 d2 g2]:1 |
+}
+
+measure 65 {
+    rh: <[
+        v1: (c6:8 eb6 g6):3/2 (bb5:8 d6 f6):3/2 (ab5:8 c6 eb6):3/2 c6:8 r:8 |
+        v2: r:4 r:4 r:4 r:4 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 66 {
+    rh: <[
+        v1: (c6:8 eb6 g6):3/2 (bb5:8 d6 f6):3/2 (ab5:8 c6 eb6):3/2 c6:8 r:8 |
+        v2: r:4 r:4 r:4 r:4 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 67 {
+    rh: <[
+        v1: (c6:8 eb6 g6):3/2 (bb5:8 d6 f6):3/2 (ab5:8 c6 eb6):3/2 c6:8 r:8 |
+        v2: r:4 r:4 r:4 r:4 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 68 {
+    rh: <[
+        v1: (c6:8 eb6 g6):3/2 (bb5:8 d6 f6):3/2 (ab5:8 c6 eb6):3/2 c6:8 r:8 |
+        v2: r:4 r:4 r:4 r:4 |
+    ]>
+    lh: [c2 g2 c3]:1 |
+}
+
+measure 69 {
+    rh: <[
+        v1: (g5:8 bn5 d6):3/2 (f5:8 ab5 c6):3/2 (eb5:8 g5 bn5):3/2 g5:8 r:8 |
+        v2: r:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 70 {
+    rh: <[
+        v1: (g5:8 bn5 d6):3/2 (f5:8 ab5 c6):3/2 (eb5:8 g5 bn5):3/2 g5:8 r:8 |
+        v2: r:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 71 {
+    rh: <[
+        v1: (g5:8 bn5 d6):3/2 (f5:8 ab5 c6):3/2 (eb5:8 g5 bn5):3/2 g5:8 r:8 |
+        v2: r:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+measure 72 {
+    rh: <[
+        v1: (g5:8 bn5 d6):3/2 (f5:8 ab5 c6):3/2 (eb5:8 g5 bn5):3/2 g5:8 r:8 |
+        v2: r:1 |
+    ]>
+    lh: [g1 d2 g2]:1 |
+}
+
+%% SECTION I: Coda (Spectral Dissipation)
+measure 73 {
+    meta @{ tempo: [1, 17], curve: "linear" }
+    rh: <[
+        v1: c5:1..ppp.letring |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1 |
+}
+
+measure 74 {
+    meta @{ tempo: [15, 17], curve: "linear" }
+    rh: <[
+        v1: c5:1..ppp.letring |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1 |
+}
+
+measure 75 {
+    meta @{ tempo: [4, 15], curve: "linear" }
+    rh: <[
+        v1: c5:1..ppp.letring |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1 |
+}
+
+measure 76 {
+    meta @{ tempo: [4, 18], curve: "linear" }
+    rh: <[
+        v1: c5:1..ppp.letring |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1 |
+}
+
+measure 77 {
+    rh: <[
+        v1: c5:1..pppp.letring |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1 |
+}
+
+measure 78 {
+    rh: <[
+        v1: c5:1..pppp.letring |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1 |
+}
+
+measure 79 {
+    rh: <[
+        v1: c5:1..pppp.letring |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1 |
+}
+
+measure 80 {
+    rh: <[
+        v1: c5:1..pppp.fermata |
+        v2: [eb4 g4]:1 |
+    ]>
+    lh: [c1 c2]:1..fermata.ped_up |
+}
+
+}
