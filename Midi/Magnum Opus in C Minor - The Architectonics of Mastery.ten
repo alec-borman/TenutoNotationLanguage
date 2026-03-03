@@ -1,0 +1,546 @@
+tenuto "2.2" {
+
+meta @{
+  title: "Magnum Opus in C Minor: The Architectonics of Mastery",
+  composer: "AI Master Composer",
+  time: "4/4",
+  tempo: 100,
+  key: "Cm",
+  strict: true
+}
+
+%% ==============================================================================
+%% 1. DEFINITIONS (The Physics)
+%% ==============================================================================
+def rh "Right Hand" style=standard clef=treble
+def lh "Left Hand" style=standard clef=bass
+
+%% ==============================================================================
+%% SECTION A: THE HEROIC FANFARE (Measures 1-8)
+%% Russian School influence. Massive, orchestral weight requiring full arm transfer.
+%% ==============================================================================
+
+measure 1 {
+  lh: c1:2.f.ped [g1 c2 eb2]:2 |
+  rh: [c4 eb4 g4 c5]:2.marc.f [d4 f4 b4 d5]:2 |
+}
+
+measure 2 {
+  lh: g0:2.ped [d1 g1 b1]:2 |
+  rh: [eb4 g4 c5 eb5]:2.marc [f4 g4 d5 f5]:2 |
+}
+
+measure 3 {
+  lh: eb1:2.ped [c2 eb2 ab2 c3]:2 |
+  rh: [g5 c6 eb6 g6]:2.marc [ab5 c6 f6 ab6]:2 |
+}
+
+measure 4 {
+  lh: g1:2.ped [g0 d1 g1]:2 |
+  rh: [g5 c6 eb6 g6]:2.marc [f5 b5 d6 f6]:2 |
+}
+
+measure 5 {
+  lh: c1:2.ped [c2 eb2 g2 c3]:2 |
+  rh: (c6:8 d6 eb6):3/2 (f6:8 g6 ab6):3/2 [g6 c7 eb7 g7]:2.marc |
+}
+
+measure 6 {
+  lh: g0:2.ped [d1 g1 b1]:2 |
+  rh: (d6:8 eb6 f6):3/2 (g6:8 ab6 b6):3/2 [b6 d7 f7 b7]:2.marc |
+}
+
+measure 7 {
+  lh: ab0:2.ped [eb1 ab1 c2]:2 |
+  rh: (eb6:8 f6 g6):3/2 (ab6:8 b6 c7):3/2 [c7 eb7 g7 c8]:2.marc |
+}
+
+measure 8 {
+  lh: g0:2.ped [g1 d2 g2]:2 |
+  rh: [d7 f7 b7 d8]:2.marc [b6 d7 f7 b7]:2.marc |
+}
+
+%% ==============================================================================
+%% SECTION B: LYRICAL POLYPHONY (Measures 9-16)
+%% French School jeu perlé. Strict polyphony managed via Tenuto Voice Brackets.
+%% ==============================================================================
+
+measure 9 {
+  lh: [c1 g1 c2]:1.p.ped |
+  rh: <[ 
+    v1: c6:4.mp.ten d6:8 eb6:2 | 
+    v2: r:4 [eb5 g5]:4 [g5 c6]:2 | 
+  ]>
+}
+
+measure 10 {
+  lh: [ab0 eb1 ab1 c2]:1.ped |
+  rh: <[ 
+    v1: c6:4.ten b5:8 c6:2 | 
+    v2: r:4 [eb5 ab5]:4 [ab5 c6]:2 | 
+  ]>
+}
+
+measure 11 {
+  lh: [f0 c1 f1 ab1]:1.ped |
+  rh: <[ 
+    v1: d6:4.ten c6:8 d6:2 | 
+    v2: r:4 [f5 ab5]:4 [ab5 d6]:2 | 
+  ]>
+}
+
+measure 12 {
+  lh: [g0 d1 g1 b1]:1.ped |
+  rh: <[ 
+    v1: eb6:2. g6:4 | 
+    v2: r:4 [g5 c6]:4 [b5 d6 f6]:2 | 
+  ]>
+}
+
+measure 13 {
+  lh: [c1 g1 c2]:1.ped |
+  rh: <[ 
+    v1: (c6:8 d6 eb6):3/2 (f6:8 g6 ab6):3/2 g6:2 | 
+    v2: r:4 [eb5 g5]:4 [g5 c6]:2 | 
+  ]>
+}
+
+measure 14 {
+  lh: [ab0 eb1 ab1 c2]:1.ped |
+  rh: <[ 
+    v1: (c7:8 b6 c7):3/2 (ab6:8 g6 f6):3/2 eb6:2 | 
+    v2: r:4 [eb5 ab5]:4 [ab5 c6]:2 | 
+  ]>
+}
+
+measure 15 {
+  lh: [f0 c1 f1]:2.ped [g0 d1 g1]:2 |
+  rh: <[ 
+    v1: d6:4. c6:8 b5:4 d6:4 | 
+    v2: r:4 [f5 ab5]:4 r:4 [f5 g5]:4 | 
+  ]>
+}
+
+measure 16 {
+  lh: [c1 g1 c2]:1.ped |
+  rh: <[ 
+    v1: c6:1 | 
+    v2: [eb5 g5]:1 | 
+  ]>
+}
+
+%% ==============================================================================
+%% SECTION C: SPECTRAL ARPEGGIATION (Measures 17-32)
+%% Rapid 32nd notes exploiting the Taubman Approach's continuous rotary motion.
+%% Spectral washes created by sustained pedal points over entire measures.
+%% ==============================================================================
+
+measure 17 {
+  meta @{ tempo: [1, 2], curve: "linear" }
+  lh: c1:1.mp.ped |
+  rh: c5:32 eb5 g5 c6 eb6 g6 c7 eb7 g7 eb7 c7 g6 eb6 c6 g5 eb5 d5 f5 ab5 d6 f6 ab6 d7 f7 ab7 f7 d7 ab6 f6 d6 ab5 f5 |
+}
+
+measure 18 {
+  lh: g0:1.ped |
+  rh: b4:32 d5 f5 g5 b5 d6 f6 g6 b6 g6 f6 d6 b5 g5 f5 d5 c5 eb5 g5 c6 eb6 g6 c7 eb7 g7 eb7 c7 g6 eb6 c6 g5 eb5 |
+}
+
+measure 19 {
+  lh: ab0:1.ped |
+  rh: ab4:32 c5 eb5 ab5 c6 eb6 ab6 c7 eb7 c7 ab6 eb6 c6 ab5 eb5 c5 g4 b4 d5 g5 b5 d6 g6 b6 d7 b6 g6 d6 b5 g5 d5 b4 |
+}
+
+measure 20 {
+  lh: c1:1.ped |
+  rh: c5:32 eb5 g5 c6 eb6 g6 c7 eb7 g7 eb7 c7 g6 eb6 c6 g5 eb5 c5 eb5 g5 c6 eb6 g6 c7 eb7 g7 eb7 c7 g6 eb6 c6 g5 eb5 |
+}
+
+measure 21 {
+  lh: f1:1.f.ped |
+  rh: f5:32 ab5 c6 f6 ab6 c7 f7 ab7 c8 ab7 f7 c7 ab6 f6 c6 ab5 e5 g5 c6 e6 g6 c7 e7 g7 e7 c7 g6 e6 c6 g5 e5 |
+}
+
+measure 22 {
+  lh: db1:1.ped |
+  rh: db5:32 f5 ab5 db6 f6 ab6 db7 f7 ab7 f7 db7 ab6 f6 db6 ab5 f5 c5 eb5 ab5 c6 eb6 ab6 c7 eb7 ab7 eb7 c7 ab6 eb6 c6 ab5 eb5 |
+}
+
+measure 23 {
+  lh: bb0:1.ped |
+  rh: bb4:32 d5 f5 bb5 d6 f6 bb6 d7 f7 d7 bb6 f6 d6 bb5 f5 d5 a4 c5 f5 a5 c6 f6 a6 c7 f7 c7 a6 f6 c6 a5 f5 c5 |
+}
+
+measure 24 {
+  lh: eb1:1.ped |
+  rh: eb5:32 g5 bb5 eb6 g6 bb6 eb7 g7 bb7 g7 eb7 bb6 g6 eb6 bb5 g5 eb5 g5 bb5 eb6 g6 bb6 eb7 g7 bb7 g7 eb7 bb6 g6 eb6 bb5 g5 |
+}
+
+measure 25 {
+  lh: ab0:1.ped |
+  rh: c5:32 eb5 ab5 c6 eb6 ab6 c7 eb7 ab7 eb7 c7 ab6 eb6 c6 ab5 eb5 bn4 d5 g5 bn5 d6 g6 bn6 d7 g7 d7 bn6 g6 d6 bn5 g5 d5 |
+}
+
+measure 26 {
+  lh: c1:1.ped |
+  rh: c5:32 eb5 g5 c6 eb6 g6 c7 eb7 g7 eb7 c7 g6 eb6 c6 g5 eb5 bb4 db5 g5 bb5 db6 g6 bb6 db7 g7 db7 bb6 g6 db6 bb5 g5 db5 |
+}
+
+measure 27 {
+  lh: f0:1.ped |
+  rh: ab4:32 c5 f5 ab5 c6 f6 ab6 c7 f7 c7 ab6 f6 c6 ab5 f5 c5 ab4 c5 f5 ab5 c6 f6 ab6 c7 f7 c7 ab6 f6 c6 ab5 f5 c5 |
+}
+
+measure 28 {
+  lh: g0:1.ped |
+  rh: g4:32 b4 d5 f5 g5 b5 d6 f6 g6 f6 d6 b5 g5 f5 d5 b4 g4 b4 d5 f5 g5 b5 d6 f6 g6 f6 d6 b5 g5 f5 d5 b4 |
+}
+
+measure 29 {
+  lh: c1:2.ped f0:2.ped |
+  rh: g4:32 c5 eb5 g5 c6 eb6 g6 c7 eb7 c7 g6 eb6 c6 g5 eb5 c5 ab4 c5 f5 ab5 c6 f6 ab6 c7 f7 c7 ab6 f6 c6 ab5 f5 c5 |
+}
+
+measure 30 {
+  lh: d1:2.ped g0:2.ped |
+  rh: a4:32 c5 f5 a5 c6 f6 a6 c7 f7 c7 a6 f6 c6 a5 f5 c5 b4 d5 f5 g5 b5 d6 f6 g6 f6 d6 b5 g5 f5 d5 b4 |
+}
+
+measure 31 {
+  lh: c1:1.ped |
+  rh: c5:32 eb5 g5 c6 eb6 g6 c7 eb7 g7 eb7 c7 g6 eb6 c6 g5 eb5 d5 f5 ab5 d6 f6 ab6 d7 f7 ab7 f7 d7 ab6 f6 d6 ab5 f5 |
+}
+
+measure 32 {
+  lh: g0:1.ped |
+  rh: bn4:32 d5 f5 g5 bn5 d6 f6 g6 bn6 g6 f6 d6 bn5 g5 f5 d5 bn4 d5 f5 g5 bn5 d6 f6 g6 bn6 g6 f6 d6 bn5 g5 f5 d5 |
+}
+
+%% ==============================================================================
+%% SECTION D: 4-VOICE FUGATO (Measures 33-48)
+%% Rigorous counterpoint. Tenuto strictly enforces identical measure durations 
+%% for v1, v2 (Right Hand) and v1, v2 (Left Hand).
+%% ==============================================================================
+
+measure 33 {
+  meta @{ tempo: 100 }
+  rh: <[ v1: r:1 | v2: r:1 | ]>
+  lh: <[ v1: c3:4.mp c3:8 d3:4 eb3:4 | v2: c2:1 | ]>
+}
+
+measure 34 {
+  rh: <[ v1: r:1 | v2: r:1 | ]>
+  lh: <[ v1: f3:4. d3:8 b2:4 g2:4 | v2: g1:1 | ]>
+}
+
+measure 35 {
+  rh: <[ v1: r:2 g4:4.mp g4:8 | v2: r:1 | ]>
+  lh: <[ v1: c3:2. c4:4 | v2: c2:1 | ]>
+}
+
+measure 36 {
+  rh: <[ v1: a4:4 b4:4 c5:2 | v2: r:1 | ]>
+  lh: <[ v1: b3:4 c4:4 g3:2 | v2: f2:2 g2:2 | ]>
+}
+
+measure 37 {
+  rh: <[ v1: d5:4. b4:8 g4:4 d5:4 | v2: r:1 | ]>
+  lh: <[ v1: ab3:4 f3:4 g3:4 g2:4 | v2: d2:2. b1:4 | ]>
+}
+
+measure 38 {
+  rh: <[ v1: eb5:4 c5:4 g4:2 | v2: r:1 | ]>
+  lh: <[ v1: c3:4 r:4 r:2 | v2: c2:4 d2:4 eb2:2 | ]>
+}
+
+measure 39 {
+  rh: <[ 
+    v1: g5:4.f g5:8 a5:4 b5:4 | 
+    v2: c5:4. c5:8 c5:4 d5:4 | 
+  ]>
+  lh: <[ 
+    v1: eb4:4. eb4:8 f4:4 g4:4 | 
+    v2: c3:4. c3:8 f3:4 d3:4 | 
+  ]>
+}
+
+measure 40 {
+  rh: <[ 
+    v1: c6:4. a5:8 f5:4 d6:4 | 
+    v2: eb5:2 d5:2 | 
+  ]>
+  lh: <[ 
+    v1: ab4:4 c4:4 b3:4 g4:4 | 
+    v2: c3:4 f2:4 g2:4 b2:4 | 
+  ]>
+}
+
+measure 41 {
+  rh: <[ 
+    v1: eb6:4 c6:4 g5:4 g5:4 | 
+    v2: c5:2. c5:4 | 
+  ]>
+  lh: <[ 
+    v1: g4:4 a4:4 b4:4 d4:4 | 
+    v2: c3:4 f3:4 g3:4 f3:4 | 
+  ]>
+}
+
+measure 42 {
+  rh: <[ 
+    v1: ab5:4 f5:4 d5:4 b4:4 | 
+    v2: c5:4 d5:4 b4:2 | 
+  ]>
+  lh: <[ 
+    v1: eb4:4 f4:4 g4:4 d4:4 | 
+    v2: eb3:4 d3:4 g2:2 | 
+  ]>
+}
+
+measure 43 {
+  rh: <[ v1: c5:1 | v2: c5:1 | ]>
+  lh: <[ v1: e4:1 | v2: c3:1 | ]>
+}
+
+measure 44 {
+  rh: <[ 
+    v1: f5:4. f5:8 g5:4 a5:4 | 
+    v2: c5:2 c5:2 | 
+  ]>
+  lh: <[ 
+    v1: f4:4. f4:8 c4:4 f4:4 | 
+    v2: a2:4. a2:8 e2:4 f2:4 | 
+  ]>
+}
+
+measure 45 {
+  rh: <[ 
+    v1: bb5:4. g5:8 e5:4 c6:4 | 
+    v2: c5:2 bb4:2 | 
+  ]>
+  lh: <[ 
+    v1: e4:4 c4:4 d4:4 e4:4 | 
+    v2: g2:4. e2:8 c2:4 c3:4 | 
+  ]>
+}
+
+measure 46 {
+  rh: <[ 
+    v1: a5:4 f5:4 c5:4 c6:4 | 
+    v2: a4:2 a4:2 | 
+  ]>
+  lh: <[ 
+    v1: f4:4 c4:4 a3:4 f4:4 | 
+    v2: f2:4 a2:4 c3:4 a2:4 | 
+  ]>
+}
+
+measure 47 {
+  rh: <[ 
+    v1: b5:4. g5:8 d5:4 f5:4 | 
+    v2: g4:2. g4:4 | 
+  ]>
+  lh: <[ 
+    v1: d4:4 b3:4 g3:4 d4:4 | 
+    v2: g2:4 d3:4 b2:4 g2:4 | 
+  ]>
+}
+
+measure 48 {
+  rh: <[ 
+    v1: eb5:2 d5:2 | 
+    v2: g4:2 f4:2 | 
+  ]>
+  lh: <[ 
+    v1: c4:4 g3:4 ab3:4 f3:4 | 
+    v2: c3:4 eb3:4 f3:4 d3:4 | 
+  ]>
+}
+
+%% ==============================================================================
+%% SECTION E: THE BUILD-UP (Measures 49-56)
+%% "The Little Bang": Polymetric 3/2 snare-drum rhythms in RH over a 
+%% sustained, tremolo dominant pedal (G) in the LH. Exponential tempo ramp.
+%% ==============================================================================
+
+measure 49 {
+  meta @{ tempo: [1, 2], curve: "exp" }
+  lh: g0:1.p.ped.trem(3) |
+  rh: (g4:8 a4 b4):3/2 (c5:8 d5 eb5):3/2 (f5:8 g5 ab5):3/2 (b5:8 c6 d6):3/2 |
+}
+
+measure 50 {
+  lh: g0:1.ped.trem(3) |
+  rh: (eb6:8 d6 c6):3/2 (b5:8 ab5 g5):3/2 (f5:8 eb5 d5):3/2 (c5:8 b4 ab4):3/2 |
+}
+
+measure 51 {
+  meta @{ tempo: [2, 3], curve: "exp" }
+  lh: g0:1.mp.ped.trem(3) |
+  rh: (g4:8 b4 d5):3/2 (f5:8 ab5 c6):3/2 (eb6:8 g6 b6):3/2 (d7:8 f7 ab7):3/2 |
+}
+
+measure 52 {
+  lh: g0:1.ped.trem(3) |
+  rh: (g7:8 f7 eb7):3/2 (d7:8 c7 b6):3/2 (ab6:8 g6 f6):3/2 (eb6:8 d6 c6):3/2 |
+}
+
+measure 53 {
+  meta @{ tempo: [3, 4], curve: "exp" }
+  lh: g0:1.mf.ped.trem(3) |
+  rh: [g4 b4 d5 f5]:2.marc [g4 b4 d5 f5]:2.marc |
+}
+
+measure 54 {
+  lh: g0:1.f.ped.trem(3) |
+  rh: [g5 b5 d6 f6]:2.marc [g5 b5 d6 f6]:2.marc |
+}
+
+measure 55 {
+  meta @{ tempo: [4, 5], curve: "exp" }
+  lh: g0:1.ff.ped.trem(3) |
+  rh: [g6 b6 d7 f7]:2.marc [g6 b6 d7 f7]:2.marc |
+}
+
+measure 56 {
+  meta @{ stretch: 1.5 }
+  lh: g0:1.fff.ped.trem(3) |
+  rh: (f7:32 eb7 d7 c7 b6 ab6 g6 f6):8/2 (eb6:32 d6 c6 b5 ab5 g5 f5 eb5):8/2 (d5:32 c5 b4 ab4 g4 f4 eb4 d4):8/2 (c4:32 b3 ab3 g3 f3 eb3 d3 b2):8/2 |
+}
+
+%% ==============================================================================
+%% SECTION F: GRAND RECAPITULATION (Measures 57-72)
+%% Modulating to triumphant C Major. Maximum sonic resonance.
+%% ==============================================================================
+
+measure 57 {
+  meta @{ tempo: 100, key: "C" }
+  lh: c1:2.ffff.ped [g1 c2 e2]:2 |
+  rh: [c5 e5 g5 c6]:2.marc [d5 f5 a5 d6]:2 |
+}
+
+measure 58 {
+  lh: g0:2.ped [d1 g1 b1]:2 |
+  rh: [e5 g5 c6 e6]:2.marc [f5 g5 d6 f6]:2 |
+}
+
+measure 59 {
+  lh: e1:2.ped [c2 e2 a2 c3]:2 |
+  rh: [g5 c6 e6 g6]:2.marc [a5 c6 f6 a6]:2 |
+}
+
+measure 60 {
+  lh: g1:2.ped [g0 d1 g1]:2 |
+  rh: [g5 c6 e6 g6]:2.marc [f5 b5 d6 f6]:2 |
+}
+
+measure 61 {
+  lh: c1:1.ped.arp |
+  rh: [c5 e5 g5 c6 e6 g6 c7]:1.arp |
+}
+
+measure 62 {
+  lh: f0:1.ped.arp |
+  rh: [c5 f5 a5 c6 f6 a6 c7]:1.arp |
+}
+
+measure 63 {
+  lh: d1:1.ped.arp |
+  rh: [c5 f5 a5 c6 f6 a6 c7]:1.arp |
+}
+
+measure 64 {
+  lh: g0:1.ped.arp |
+  rh: [b4 d5 f5 g5 b5 d6 f6]:1.arp |
+}
+
+measure 65 {
+  lh: c2:2.fff.ped [g2 c3 e3]:2 |
+  rh: [c6 e6 g6 c7]:2.marc [d6 f6 a6 d7]:2 |
+}
+
+measure 66 {
+  lh: g1:2.ped [d2 g2 b2]:2 |
+  rh: [e6 g6 c7 e7]:2.marc [f6 g6 d7 f7]:2 |
+}
+
+measure 67 {
+  lh: e2:2.ped [c3 e3 a3 c4]:2 |
+  rh: [g6 c7 e7 g7]:2.marc [a6 c7 f7 a7]:2 |
+}
+
+measure 68 {
+  lh: g2:2.ped [g1 d2 g2]:2 |
+  rh: [g6 c7 e7 g7]:2.marc [f6 b6 d7 f7]:2 |
+}
+
+measure 69 {
+  lh: c2:1.ped |
+  rh: (c7:8 e7 g7):3/2 (c8:8 g7 e7):3/2 (c7:8 g6 e6):3/2 (c6:8 g5 e5):3/2 |
+}
+
+measure 70 {
+  lh: f1:1.ped |
+  rh: (c5:8 f5 a5):3/2 (c6:8 f6 a6):3/2 (c7:8 f7 a7):3/2 (c8:8 a7 f7):3/2 |
+}
+
+measure 71 {
+  lh: d1:1.ped |
+  rh: (c7:8 a6 f6):3/2 (c6:8 a5 f5):3/2 (c5:8 a4 f4):3/2 (c4:8 f4 a4):3/2 |
+}
+
+measure 72 {
+  lh: g0:1.ped |
+  rh: (b4:8 d5 f5):3/2 (g5:8 b5 d6):3/2 (f6:8 g6 b6):3/2 (d7:8 f7 g7):3/2 |
+}
+
+%% ==============================================================================
+%% SECTION G: CODA (Measures 73-80)
+%% Sweeping virtuoso cadenza ending in a spectral evaporation into silence.
+%% ==============================================================================
+
+measure 73 {
+  meta @{ tempo: [1, 6], curve: "linear" }
+  lh: c1:1.ff.ped | 
+  rh: c8:32 g7 e7 c7 g6 e6 c6 g5 e5 c5 g4 e4 c4 g3 e3 c3 c3 e3 g3 c4 e4 g4 c5 e5 g5 c6 e6 g6 c7 e7 g7 c8 |
+}
+
+measure 74 {
+  lh: f0:1.ped | 
+  rh: a7:32 f7 c7 a6 f6 c6 a5 f5 c5 a4 f4 c4 a3 f3 c3 a2 a2 c3 f3 a3 c4 f4 a4 c5 f5 a5 c6 f6 a6 c7 f7 a7 |
+}
+
+measure 75 {
+  lh: g0:1.ped | 
+  rh: b7:32 g7 f7 d7 b6 g6 f6 d6 b5 g5 f5 d5 b4 g4 f4 d4 d4 f4 g4 b4 d5 f5 g5 b5 d6 f6 g6 b6 d7 f7 g7 b7 |
+}
+
+measure 76 {
+  meta @{ tempo: [6, 7], curve: "linear" }
+  lh: c1:2.ped [c1 c2]:2.fermata | 
+  rh: c8:32 g7 e7 c7 g6 e6 c6 g5 e5 c5 g4 e4 c4 g3 e3 c3 [c3 e3 g3 c4]:2.fermata |
+}
+
+measure 77 {
+  meta @{ tempo: 60 }
+  lh: c2:1.p.ped.arp | 
+  rh: [e5 g5 c6 e6]:1.arp |
+}
+
+measure 78 {
+  lh: f1:1.ped.arp | 
+  rh: [f5 a5 c6 f6]:1.arp |
+}
+
+measure 79 {
+  meta @{ tempo: [7, 8], curve: "linear" }
+  lh: g1:1.pp.ped.arp | 
+  rh: [d5 f5 b5 d6]:1.arp |
+}
+
+measure 80 {
+  lh: [c1 c2]:1.ppp.fermata.ped_up | 
+  rh: [c5 e5 g5 c6]:1.fermata |
+}
+
+}
