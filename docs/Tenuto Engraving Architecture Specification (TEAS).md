@@ -355,5 +355,183 @@ When the user alters a single note in Measure 5 via the text editor:
 
 Because `salsa` clones data between query layers to detect changes, the engine must heavily utilize `Arc` (Atomic Reference Counting) to prevent massive memory allocations during the caching process. The flat, `slotmap`-based ECS World defined in Chunk 1 pairs perfectly with this, as `salsa` only needs to compare lightweight `EntityId` arrays to detect state mutations.
 
+
+
+# TEAS Addendum A: Advanced Mechanics & Pagination
+
+## 12. The Zero-Duration Domain (Prefatory & Grace)
+
+The standard Spring-Mass model assumes that graphical space is proportional to temporal duration. However, music is littered with crucial glyphs that consume *zero* metrical time but require rigid physical space. The engine handles these via **Zero-Duration Columns**.
+
+### 12.1 Prefatory Columns (Clefs, Keys, Meters)
+Measure boundaries and mid-measure changes often introduce Clefs, Key Signatures, and Time Signatures. 
+*   **Architecture:** These are instantiated as `TimeColumnId` entities with a `metrical_duration = 0`.
+*   **Constraint Resolution:** In the Cassowary solver, a Prefatory Column possesses a **Rod** (rigid width based on the SMuFL bounding box) but **no Spring**. 
+*   **Result:** A treble clef pushes the subsequent notes to the right strictly by its physical width plus standard padding ($L_{min}$), but it will *never* stretch or compress when justification forces ($F$) are applied to the measure.
+
+### 12.2 Grace Note Formatting
+Grace notes present a unique paradox: they are visually beamed and stemmed like standard notes, but do not consume metric time.
+*   **ECS Flagging:** Grace notes are grouped into their own `TimeColumnId`s flagged with `is_grace = true`.
+*   **Scale Transformation:** The engine applies a universal `scale_factor` (typically `0.6` or $60\%$) to the `GlyphId`s associated with the grace column, querying the SMuFL `graceNote` classes.
+*   **Cassowary Handling:** Grace columns are assigned infinitely stiff springs ($c = \infty$). Their physical spacing relies entirely on their scaled Rod lengths, keeping them tightly packed against their primary target note, immune to global measure justification.
+
 ---
-**End of the Tenuto Engraving Architecture Specification (TEAS).** 
+
+## 13. Complex Glyph Orchestration & Stacking
+
+While single notes are trivial, the engine must systematically assemble complex composite objects before calculating their global bounding boxes.
+
+### 13.1 Accidental Stacking Algorithms
+When a chord contains multiple altered pitches (e.g., a clustered D7♭9 chord), drawing all accidentals in a single vertical column will cause catastrophic visual collisions.
+*   **The Sub-Column Array:** Accidentals are assigned to a secondary structural entity called an `AccidentalColumnId`. 
+*   **The Packing Algorithm:** The engine sorts the chord's accidentals by vertical Y-coordinate. It attempts to place them in a primary vertical column immediately to the left of the chord. If a collision is detected via AABB overlap, it creates a new `AccidentalColumnId` further to the left, cascading outward in a classic "zig-zag" pattern.
+*   **Rod Expansion:** The aggregate width of all nested `AccidentalColumnId`s is added to the parent `TimeColumnId`'s Rod constraint.
+
+### 13.2 Centering Articulations and Ornaments
+Fermatas, staccato dots, and marcato accents are placed outside the staff using the Skyline algorithm for vertical clearance, but require precise horizontal alignment.
+*   **SMuFL `opticalCenter`:** The engine does not center these glyphs based on the total width of the notehead's bounding box. It queries the SMuFL `opticalCenter` anchor.
+*   **Execution:** A staccato dot's X-coordinate is locked via Cassowary constraint to `Notehead.x + Notehead.opticalCenter.x`, ensuring perfect visual weight distribution even on asymmetrical glyphs.
+
+### 13.3 The Generalized Kerning Matrix
+The optical cut-out logic defined in the core spec must extend beyond Flat/Notehead pairs. 
+*   **The Kerning Database:** During the `smufl` parsing phase, the engine constructs a generalized Interaction Matrix. It maps overlapping cut-out polygons for high-friction pairs:
+    *   Sharp signs and natural signs adjacent to bar lines.
+    *   Tuplets numbers tucked between stems and slurs.
+    *   Accidentals nesting into the negative space of adjacent accidentals in a stacked chord.
+*   **Performance:** By pre-calculating the maximum safe overlap distances for these pairs into a cached matrix, the engine avoids expensive polygon-intersection math during the active layout loop.
+
+---
+
+## 14. Advanced Spanners & Continuous Lines
+
+The `kurbo` Bezier subsystem must handle significantly more than simple slurs.
+
+### 14.1 Tuplet Brackets and Numerals
+Tuplets require a multi-component `SpannerId`.
+*   **Components:** A horizontal/sloped line, two vertical "hooks" (if unconnected to a beam), and a SMuFL numeral (e.g., **3**).
+*   **Constraint:** The slope of the tuplet bracket must parallel the prevailing slope of the note group beneath it.
+*   **Skyline Interaction:** The tuplet number is injected into the Skyline array *before* slurs are routed, forcing overlapping slurs to arch *over* the tuplet numeral, adhering to standard engraving hierarchy.
+
+### 14.2 Feathered Beams (Accelerando/Ritardando)
+Contemporary notation requires beams that fan outward or inward.
+*   **Architecture:** Instead of a single thick `kurbo` path, a feathered beam is modeled as a parent `SpannerId` containing multiple child paths.
+*   **Y-Offset Scaling:** The primary beam connects $P_{start}$ to $P_{end}$. The secondary and tertiary beams compute their Y-offsets dynamically based on the $X$ progression.
+*   **Equation:** For a 3-beam accelerando group, the vertical distance between beams at $X_{start}$ is $1.0\text{ss}$, tapering linearly to $0.25\text{ss}$ at $X_{end}$.
+
+
+## 15. Macro-Typography & Page Formatting
+
+While Gourlay's algorithm successfully distributes measures into optimal Systems (lines), the engine must perform a secondary dynamic programming pass to distribute those Systems across physical Pages. 
+
+### 15.1 Vertical Spring-Mass & Page Justification
+Just as horizontal time is elastic, the vertical space between staves (`staff-staff-spacing`) and systems (`system-system-spacing`) acts as a vertical Spring-Mass system.
+*   **The Goal:** A page should appear optically balanced, with systems stretching vertically to fill the page height, creating flush top and bottom margins.
+*   **The Constraints:** The vertical "Rods" are determined by the maximum interlocking distance calculated by the Skyline algorithm (Section 7). The vertical "Springs" stretch the systems apart based on a global stretchability constant.
+
+### 15.2 Page Breaking (The 2D Knuth-Plass DAG)
+The engine constructs a second Directed Acyclic Graph where the nodes are the previously calculated line breaks, and the edges are full printed pages. 
+The demerit function ($B_{page}$) evaluates:
+1.  **Vertical Stretch/Shrink Penalty:** How much the vertical springs had to deform to fit the page height.
+2.  **Widow/Orphan Penalties:** Massive demerits for stranding a single system on the final page, or leaving a single system of a new movement at the bottom of a previous page.
+3.  **Page-Turn Optimizations:** The engine scans the IR for rests. It artificially reduces the penalty for breaking a page during a long multi-measure rest, actively aiding human performers in physical page-turning.
+
+### 15.3 Global Layout Elements
+Titles, composers, headers, and page numbers bypass the musical constraint solver. They are injected as absolute-positioned `TextEntity` objects during the final rendering frame, utilizing standard typographical bounding boxes. Their presence permanently alters the Top/Bottom page margins fed into the Cassowary solver.
+
+---
+
+## 16. Ossia Staves & Scaling Transformations
+
+Ossia staves (alternative passages or cues) present a unique layout challenge: they exist parallel to the main timeline but are rendered at a significantly reduced scale (typically $66\%$ or $\frac{2}{3}$ of standard size).
+
+### 16.1 ECS Scaling Components
+To handle this elegantly without duplicating layout logic, `tenuto-engrave` utilizes the ECS architecture.
+*   **The Component:** The `StaffId` entity is granted a `scale_factor` component. For a standard staff, this is `1.0`. For an Ossia, it is `0.66`.
+*   **The Application:** When the engine's Realization System queries the SMuFL `metadata.json` for bounding boxes and anchor coordinates, it immediately multiplies the resulting vectors by the parent staff's `scale_factor`.
+
+### 16.2 Skyline Integration for Scaled Staves
+Because the Ossia is mathematically scaled *before* collision detection, it seamlessly drops into the standard Skyline algorithm. 
+*   **Interlocking:** The small Ossia staff possesses its own Top and Bottom skylines. The vertical spacing algorithm treats it exactly like a standard staff. Because its bounding boxes are smaller, it naturally tucks much tighter against the main staff, creating the expected dense, nested look of professional cues without any custom "Ossia-specific" collision logic.
+*   **Timeline Anchoring:** The Ossia's `TimeColumnId`s remain strictly linked to the main measure grid, ensuring horizontal alignment with the parent staff is perfectly preserved regardless of the visual scaling.
+
+---
+
+## 17. Error Handling & Constraint Fallbacks
+
+A robust layout engine must never panic when presented with an "impossible" score (e.g., a user forces 20 complex measures onto a single system via a manual `break: none` override). When the Cassowary solver encounters unsolvable constraints, it must rely on a strict fallback hierarchy.
+
+### 17.1 Soft vs. Hard Constraints
+In the Cassowary algorithm, constraints are assigned weights (`Required`, `Strong`, `Medium`, `Weak`). 
+*   Normally, Rods (minimum physical widths) are `Required` ($\infty$ weight). 
+*   If the required page margin forces the total width to be less than the sum of the Rods, the Cassowary solver throws an `Overconstrained` error.
+
+### 17.2 The Resolution Hierarchy
+When an `Overconstrained` state is detected, the engine executes the following recovery protocol:
+
+1.  **Padding Relaxation:** The engine downgrades the optical padding constants ($P_{padding}$) to `Weak` constraints, allowing elements to sit uncomfortably close, but not touching.
+2.  **Spring Compression Limit Violation:** If still unsolvable, the engine allows Springs to compress below their mathematical zero-point. 
+3.  **Controlled Overlap (Rod Violation):** As a last resort, the engine downgrades Rods from `Required` to `Strong`. This allows graphical glyphs (like accidentals and noteheads) to physically overlap and crash into each other. *Rationale: It is better to emit a cluttered, overlapping SVG that the user can manually debug than to crash the compiler and output nothing.*
+
+### 17.3 Slur & Tie Resolution Fallbacks
+If the `kurbo` Bezier router fails to find *any* candidate curve that clears the Skyline intersection demerits (Section 8.2), it executes a hardcoded fallback sequence:
+1.  **Anchor Inversion:** It flips the $P_0$ and $P_3$ anchors to the opposite vertical side of the note group (e.g., drawing the slur under the noteheads instead of over the stems).
+2.  **Apex Flattening:** It drastically reduces the Y-coordinates of $P_1$ and $P_2$, creating a nearly flat line that snakes between obstacles.
+3.  **Skyline Penetration:** If the chord is so dense that no path exists, the engine temporarily removes ledger lines and stems from the Skyline array and recalculates, allowing the slur to slice through stems (which is typographically acceptable in extreme edge cases) while still avoiding noteheads and accidentals.
+
+
+## 18. Extensibility & Graphic Notation
+
+Western music notation is not a static monolith; contemporary composers frequently invent new symbols and visual paradigms (e.g., spectral music, indeterminate pitch, or graphic scores). A modern layout engine must be extensible without requiring a hard fork of the compiler codebase.
+
+### 18.1 SMuFL Private Use Area (PUA) & Custom Glyphs
+The SMuFL specification officially reserves ranges within the Unicode Private Use Area for font-specific and user-defined glyphs.
+*   **The Injection API:** `tenuto-engrave` exposes an API to register a `CustomGlyph`. The user provides a raw SVG `<path>` and a manual `BoundingBox` mapping.
+*   **ECS Integration:** This custom object is assigned a standard `GlyphId` and dropped into the ECS. Because the engine's algorithms (Spring-Mass and Skyline) operate strictly on abstract bounding boxes and cut-out polygons, the custom glyph interacts with the layout physics exactly like a native notehead, automatically dodging slurs and displacing neighboring columns.
+
+### 18.2 Arbitrary Spanners (Vector Graphic Injections)
+Contemporary scores often require arbitrary lines indicating air-noise, gradual bow pressure, or spatial panning.
+*   **Custom `SpannerId`:** The engine allows users to define custom continuous lines anchored to `TimeColumnId`s. 
+*   **The `kurbo` Pipeline:** A user defines a generic mathematical curve (e.g., a sine wave indicating vibrato speed). The engine anchors the start of the wave to $X_{start}$ and the end to $X_{end}$. As the Cassowary solver stretches the measure, the $X_{end}$ coordinate updates, and the `kurbo` subsystem dynamically recalculates the Bezier control points to smoothly stretch the wave across the new visual space without distorting its Y-amplitude.
+
+---
+
+## 19. Interactive DOM & Playback Synchronization
+
+Tenuto's ultimate goal is to power the "Living Score"—sheet music that lives natively in the browser, perfectly synchronized with audio playback (Web MIDI or Web Audio API). The SVG backend is explicitly architected to facilitate this.
+
+### 19.1 Embedded Metrical Metadata (`data-*` attributes)
+Because the visual layout is derived directly from the absolute `Timeline` IR, the engine possesses the exact mathematical tick for every pixel of ink. The SVG exporter permanently embeds this temporal data into the DOM hierarchy.
+
+```xml
+<!-- Measure wrapper knows its exact chronological boundaries -->
+<g class="tenuto-measure" data-measure="5" data-start-tick="30720" data-end-tick="38400">
+    
+    <!-- A specific chord group knows its exact trigger time and duration -->
+    <g class="tenuto-chord" data-tick="32640" data-duration="1920">
+        <path class="notehead" d="..." />
+        <path class="accidental" d="..." />
+    </g>
+
+</g>
+```
+
+### 19.2 The Playhead & CSS Integration
+By strictly avoiding `<canvas>` and utilizing a highly structured SVG DOM, front-end developers can achieve 60 FPS synchronized playback with trivial JavaScript.
+*   **The Playhead:** A developer simply queries the current audio tick from their Web Audio context, loops through the `<g class="tenuto-measure">` tags, and calculates an exact X-coordinate interpolation for a moving vertical playhead line.
+*   **Visual Feedback:** When the audio tick matches a `data-tick` on a `tenuto-chord`, JavaScript can toggle a CSS class (`.playing { fill: #FF0000; }`), instantly highlighting the notes currently sounding without recalculating any layout logic.
+
+---
+
+## 20. Memory Management at Scale (The 100-Page Symphony)
+
+For massive orchestral scores containing millions of discrete `AtomicEvent`s, keeping the entire `EcsWorld` and SMuFL metadata active in primary memory could exhaust consumer hardware or WebAssembly memory limits.
+
+### 20.1 Spatial Chunking & Paging
+`tenuto-engrave` mitigates memory pressure by treating **Pages** as isolated spatial chunks within the ECS.
+*   Once the Viterbi line-breaking algorithm determines the system and page boundaries (Section 15), the mathematical layout of "Page 1" has absolutely no topological effect on "Page 2".
+*   **Memory Eviction:** The ECS can serialize the solved spatial coordinates for Page 1, write the SVG string to disk (or cache), and immediately drop the heavy `GlyphId` bounding boxes and `Skyline` arrays for those measures from memory, drastically reducing peak RAM utilization.
+*   **Parallel Rendering:** Because pages are mathematically isolated after line-breaking, the actual generation of Bezier curves and SVG strings is embarrassingly parallel. The engine utilizes the `rayon` crate to spawn worker threads, drawing Page 1 through Page 100 simultaneously across all available CPU cores.
+
+***
+
+**End of TEAS Addendum A.** 
