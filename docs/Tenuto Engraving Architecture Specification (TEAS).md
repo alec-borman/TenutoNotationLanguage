@@ -532,6 +532,240 @@ For massive orchestral scores containing millions of discrete `AtomicEvent`s, ke
 *   **Memory Eviction:** The ECS can serialize the solved spatial coordinates for Page 1, write the SVG string to disk (or cache), and immediately drop the heavy `GlyphId` bounding boxes and `Skyline` arrays for those measures from memory, drastically reducing peak RAM utilization.
 *   **Parallel Rendering:** Because pages are mathematically isolated after line-breaking, the actual generation of Bezier curves and SVG strings is embarrassingly parallel. The engine utilizes the `rayon` crate to spawn worker threads, drawing Page 1 through Page 100 simultaneously across all available CPU cores.
 
-***
 
-**End of TEAS Addendum A.** 
+# TEAS Addendum B: Vocal, Semantic, and System-Level Typographical Paradigms
+
+## 21. The Vocal Typography Subsystem (Lyrics)
+
+Vocal music introduces a secondary layout engine running parallel to the musical notes. Lyrics possess their own horizontal justification rules, hyphenation spacing, and vertical stacking constraints. `tenuto-engrave` treats lyrics as a native subsystem within the ECS, avoiding the collision nightmares of legacy GUI applications.
+
+### 21.1 The ECS Lyric Hierarchy
+Lyrics are not stored as mere attributes of a note. They are instantiated as discrete relational entities:
+*   **`LyricVerseId`:** Represents a single horizontal line of text (e.g., Verse 1, Verse 2).
+*   **`SyllableId`:** A specific chunk of text (or SMuFL elision glyph) anchored to a `TimeColumnId`.
+
+### 21.2 Horizontal Alignment & The "Syllable Spring"
+A syllable fundamentally alters the Cassowary constraints of its parent `TimeColumnId`.
+*   **Alignment:** By default, the optical center of the syllable’s bounding box is aligned with the `opticalCenter` of the target notehead. However, if a syllable initiates a melisma, it is natively left-aligned to the notehead.
+*   **The Text Rod:** The width of the text string is converted into an absolute physical Rod. If a whole note is sung with the word "Hallelujah", the measure cannot horizontally compress smaller than the width of the text, overriding the ideal musical Spring length.
+
+### 21.3 Hyphens, Melismas, and Elisions
+These elements are not static text; they are dynamic graphical objects reacting to the layout physics.
+*   **Hyphens (`-`):** Injected as specialized `SpannerId` objects spanning between two `SyllableId`s. As the Cassowary solver stretches the measure, the hyphen dynamically centers itself in the resulting whitespace. If the space exceeds a predefined maximum threshold, the engine instantiates *multiple* equidistant hyphens.
+*   **Melisma Lines (`_`):** Modeled as `SpannerId` straight lines. They begin at the right bounding edge of the originating syllable and terminate at the `TimeColumnId` of the final note in the melisma, rendering a standard baseline underscore, optionally terminating with a vertical SMuFL hook.
+*   **Elisions (`~`):** Requires the SMuFL `lyricElisionNarrow` or `lyricElisionWide` glyphs. The engine calculates the bounding box of both syllables, places them tightly adjacent, and anchors the elision glyph between them, treating the entire composite as a single `SyllableId` constraint.
+
+### 21.4 Vertical Stacking & Verse Skylines
+Multiple verses must stack perfectly vertically without colliding with descending ledger lines or low dynamics.
+*   **Layered Skylines:** The engine generates a localized `BottomSkyline` specifically for the music staff. `Verse 1` is placed below it, acting as a flat rectangular block (calculated from font ascenders/descenders). 
+*   **Push-Down Mechanism:** The bottom of `Verse 1` becomes the new skyline for `Verse 2`. This guarantees perfectly equidistant text lines that gracefully dodge descending musical elements.
+
+---
+
+## 22. Semantic & Harmonic Annotations
+
+Standard musical text (Dynamics, Tempos) and harmonic structures (Chord Symbols, Figured Bass) require unified handling. They represent a fusion of standard font typography and SMuFL musical symbols.
+
+### 22.1 The Unified Text Model
+Arbitrary text (e.g., "Allegro ♩ = 120" or rehearsal mark "A") is instantiated as an `AnnotationId`.
+*   **Rich Bounding Boxes:** The engine utilizes standard font metric libraries (e.g., `rusttype` or `swash`) to calculate the exact extents of standard text, while querying the SMuFL metadata for the injected musical glyphs. The engine merges these into a single composite AABB.
+*   **The Annotation Skyline:** To prevent a tempo marking from overlapping with a crescendo hairpin above the staff, annotations are dropped into the staff's `TopSkyline` or `BottomSkyline` *sequentially*, prioritized by semantic importance.
+
+### 22.2 Chord Symbols
+Jazz and pop chord symbols (e.g., `Cmaj7/G`) are highly structured semantic tags.
+*   **Alignment:** Treated as zero-duration columns sitting strictly above the `TopSkyline`. Their X-coordinate is horizontally locked to the associated beat.
+*   **Vertical Stacking:** If a piece includes original and alternate chords (e.g., Coltrane changes), they are grouped into a `ChordStackId`. The engine applies a vertical spring-rod constraint between them to ensure optical separation.
+
+### 22.3 Figured Bass
+Figured bass is highly complex, acting as a vertical micro-layout engine operating beneath the staff.
+*   **The Figure Stack:** Modeled as a specialized `AnnotationId` attached to a bass note `TimeColumnId`.
+*   **Alignment:** The numerals (e.g., `6`, `4`, `2`) and accidentals (e.g., `♯3`) are vertically aligned by their central axes.
+*   **Continuation Lines:** Modeled as `SpannerId` elements. The engine routes a horizontal line from the right bounding edge of a specific digit to the target `TimeColumnId`, dynamically adjusting its length as the Cassowary solver stretches the parent measures.
+
+## 23. System-Level Topology & Prefatory Bounds
+
+An orchestral score is not just a collection of staves; it is a highly structured hierarchy of instrument families grouped by brackets, braces, and systemic barlines. These elements exist outside the standard temporal grid but exert massive physical constraints on the page layout.
+
+### 23.1 Instrument Names and the Left Margin
+Instrument names (e.g., "Violin I", "Vln. I") sit to the left of the system. They are not tied to a `TimeColumnId`.
+*   **The Margin Rod:** The engine evaluates the bounding boxes of all active instrument names within a system. It calculates the maximum width $W_{names}$.
+*   **Cassowary Integration:** A global `SystemMarginId` is instantiated as a structural entity. The engine injects a rigid `Required` constraint into the Cassowary solver: `FirstMeasure.X >= LeftPageMargin + W_{names} + Padding`. This automatically indents the entire musical system to perfectly accommodate the longest instrument name.
+
+### 23.2 Brackets, Braces, and Sub-Brackets
+Grouping symbols must dynamically stretch to encompass multiple staves, reacting to the vertical Spring-Mass justification (Section 15.1).
+*   **The Grouping Entity:** Modeled as a `SystemBracketId` in the ECS, containing an array of `StaffId`s it encompasses.
+*   **Dynamic Vertical Routing:** After the vertical Cassowary solver finalizes the Y-coordinates of all staves, the engine computes the $Y_{top}$ of the highest staff in the group and the $Y_{bottom}$ of the lowest staff.
+*   **SMuFL Implementation:** For braces (piano), the engine scales a specific SMuFL brace glyph (`brace`) to fit the $Y_{top} - Y_{bottom}$ delta. For orchestral brackets, it draws a continuous thick vertical vector line with SMuFL top/bottom hooks (`bracketTop`, `bracketBottom`), ensuring perfect resolution regardless of how far the staves are stretched apart.
+
+---
+
+## 24. Macro-Document Structure (Multi-Movement)
+
+A complete Tenuto document may contain multiple movements (e.g., a 4-movement symphony), each with distinct titles, differing instrumentations, and independent measure number sequences, all flowing continuously across physical pages.
+
+### 24.1 The Movement DAG Isolation
+Gourlay's dynamic programming line-breaking algorithm (Section 6) becomes exponentially slower ($O(n^2)$ or worse) if asked to calculate the entire path for a 2,000-measure opera at once. 
+*   **Structural Partitioning:** The engine treats each Movement as an independent structural `FlowId`. 
+*   **Isolated Solvers:** The Viterbi DAG is strictly bounded within a single `FlowId`. The layout of Movement 2 has no mathematical impact on the line-breaking of Movement 1, drastically reducing computational overhead.
+
+### 24.2 Continuous Page Flow and Header State Machines
+Despite isolated line-breaking, movements must share global page formatting.
+*   **The Flow-Merge System:** Once all movements are line-broken into rigid `SystemId`s, a master Page-Breaking pass evaluates them sequentially. If Movement 1 ends halfway down Page 14, Movement 2 can begin on the same page, separated by a localized `SpacerRod`.
+*   **Header/Footer ECS System:** Titles and page numbers are managed by a localized state machine. The engine checks the `PageId`: if it contains the start of a new `FlowId`, it triggers the "First Page Template" (large title, composer name). Otherwise, it triggers the "Subsequent Page Template" (small header, instrument name).
+
+---
+
+## 25. Alternative Staff Notations
+
+The Tenuto syntax abstractly handles tab (`0-6`) and percussion (`k`), but the layout engine must physically mutate its rendering rules to accommodate these specialized formats, as well as historical notations like Gregorian chant.
+
+### 25.1 Percussion Grids (Variable Line Counts)
+Percussion is often engraved on 1-line, 2-line, or 5-line staves. 
+*   **Staff Override Component:** The `StaffId` is granted a `line_count` property. 
+*   **Y-Axis Recalculation:** The standard 5-line staff uses Y-coordinates from $-2.0\text{ss}$ to $+2.0\text{ss}$. If `line_count = 1`, the engine dynamically remaps all `absolute_y` queries to anchor to $0.0\text{ss}$.
+*   **Glyph Substitution:** The realization system intercepts standard noteheads and replaces them with SMuFL percussion variants (e.g., `noteheadCross`, `noteheadCircle`) based on the Tenuto `.head("x")` attribute.
+
+### 25.2 Lute & Historical Tablature
+While standard guitar tab uses numbers, historical tabs (French/Italian) use letters (a, b, c) positioned *between* staff lines, with rhythmic flags hovering above the staff.
+*   **The Tablature Translation System:** The engine flags the `StaffId` as `Style::Tablature(Historical)`. 
+*   **Coordinate Re-mapping:** Instead of drawing noteheads on lines, the engine renders SMuFL letter glyphs. The vertical Y-offset is mathematically locked to the center of the spaces between lines.
+*   **Detached Rhythmic Flags:** Standard stems are suppressed. Instead, the engine instantiates separate `GlyphId` entities for rhythmic duration (e.g., `luteDurationEighth`) and locks their X-coordinates to the `TimeColumnId`, pushing them vertically above the `TopSkyline`.
+
+### 25.3 Gregorian Chant (Neumatic Notation)
+Chant notation breaks almost every rule of modern engraving. It uses a 4-line staff, square neumes, no barlines, and is horizontally spaced almost entirely by the lyrics, not mathematical time.
+*   **Disabling the Metric Spring:** For a `StaffId` flagged as `Style::Chant`, the engine bypasses the standard $S_{ideal} = f(\text{duration})$ metric spring calculations (Section 5.1). 
+*   **Lyric-Driven Constraints:** The horizontal Cassowary constraints are driven strictly by the width of the `SyllableId` Rods. The neumes (musical symbols) are treated as zero-width followers, visually centering themselves over the text rather than dictating the flow of time.
+*   **Custom Neume Composites:** The engine utilizes the SMuFL `medRen` (Medieval/Renaissance) class to construct complex ligatures (stacked squares) using localized vertical bounding box intersections, entirely bypassing standard stem/flag logic.
+
+
+## 26. Advanced Slur & Tie Interactions
+
+While Section 8 defined the core `kurbo` Bezier routing over a standard skyline, real-world music engraving introduces extreme topological edge cases where continuous lines must break, cross spatial voids, or anchor to empty space.
+
+### 26.1 System Break Fragmentation
+When a tied note or a phrasing slur spans across a line break (or page break), the single logical `SpannerId` must be visually bifurcated into two distinct graphical paths.
+*   **The Bifurcation System:** During the Line-Breaking phase (Section 6), the engine detects if a `SpannerId`'s start and end `TimeColumnId`s sit on different `SystemId`s. If so, it dynamically spawns two transient `RenderSpanner` entities.
+*   **Trailing Edge (System 1):** The first curve anchors at $P_0$ (the start note) and routes to a calculated $P_3$ hovering slightly past the right barline of the system. The curve's trajectory is artificially flattened to indicate continuation.
+*   **Leading Edge (System 2):** The second curve anchors at a new $P_0$ positioned immediately after the prefatory glyphs (clef/key) of the new system, routing to $P_3$ (the target note).
+*   **SMuFL Integration:** For ties, the engine optionally utilizes the SMuFL `tieEndpoint` and `tieStart` glyphs or constructs equivalent tapered Beziers that mimic the traditional "fade out" ink bleed at the system margins.
+
+### 26.2 Cross-Staff Bezier Routing
+When a slur connects a note in the Bass staff to a note in the Treble staff, the Bezier curve must traverse the vertical gap (`staff-staff-spacing`) without colliding with dynamics, lyrics, or tempo markings occupying that space.
+*   **Absolute System Coordinates:** The `kurbo` router temporarily lifts the control points ($P_0$ through $P_3$) out of the local `StaffId` coordinate space and maps them to the absolute `SystemId` coordinate space.
+*   **S-Curve Inflection:** Because the vertical delta ($\Delta Y$) is massive compared to a standard slur, the engine adjusts the internal control points ($P_1, P_2$). Instead of a simple arch, it generates an S-curve or a steep diagonal trajectory. 
+*   **Composite Skyline:** The curve is evaluated against a temporary *Composite Skyline* (the `TopSkyline` of the Bass staff merged with the `BottomSkyline` of the Treble staff) to navigate the negative space safely.
+
+### 26.3 Atypical Anchors (Laissez Vibrer & Rests)
+*   **Laissez Vibrer (Let Ring):** Triggered by the `.letring` attribute. The engine generates a tie where $P_0$ anchors to the notehead, but $P_3$ anchors to an empty spatial offset $+1.5\text{ss}$ to the right, floating in the void.
+*   **Slurs to Rests:** While rare, phrasing slurs occasionally encompass rests. Because rests lack stems, the engine calculates the bounding box of the rest, finds its optical center top, and anchors the Bezier curve directly to that coordinate.
+
+---
+
+## 27. Accessibility & Alternative Formats
+
+A truly modern compiler must output data that is universally accessible. Because `tenutoc` separates logic from physics, generating alternative formats for visually impaired musicians requires zero reverse-engineering.
+
+### 27.1 Semantic SVG & ARIA Roles
+The `tenutoc::svg` backend is designed to be natively readable by screen readers. 
+*   **ARIA Injection:** Instead of emitting silent paths, the engine wraps logical musical groups in `<g>` tags enriched with `role="group"` and ARIA labels.
+*   **Example Output:** 
+    ```xml
+    <g role="listitem" aria-label="Measure 5, Beat 1: Quarter note C 4, forte.">
+        <path d="..." /> <!-- Notehead -->
+        <path d="..." /> <!-- Stem -->
+    </g>
+    ```
+*   This allows visually impaired users to "tab" through an SVG score on the web and hear a perfectly accurate, semantic description of the music.
+
+### 27.2 Braille Music Translation
+Braille music notation is a highly complex, linear, non-spatial code. Traditional GUI software struggles to generate it because they rely on visual screen coordinates. 
+*   **The Braille Exporter (`tenutoc::braille`):** Because Tenuto's IR is a flattened, absolute-time stream of `AtomicEvent`s, it maps natively to Braille formatting. 
+*   **Execution:** A future backend module can traverse the `Timeline` IR, applying standard Braille music syntax rules (e.g., combining pitch and duration into single Braille cells, placing octave markers only when leaps occur) and outputting a standard `.brf` (Braille Ready Format) file directly from the `.ten` source code.
+
+---
+
+## 28. Engine Validation & Testing Architecture
+
+To guarantee the stability of the Cassowary constraint solver and the Skyline algorithms across infinite musical possibilities, the `tenuto-engrave` crate utilizes a highly aggressive Quality Assurance pipeline.
+
+### 28.1 Property-Based Testing (`proptest`)
+The layout math must never panic (`unwrap()` failures). We utilize the `proptest` crate to generate thousands of randomized, chaotic measures (e.g., a 128th note stacked against a septuplet, with random accidental clusters). The test suite verifies that the Cassowary solver can *always* find a mathematically valid fallback (even if it involves controlled overlap, as defined in Section 17) without crashing the compiler.
+
+### 28.2 Visual Snapshot Regression (`insta`)
+Because a single tweak to the Spring-Mass ratio can subtly alter the layout of a 100-page score, the engine uses the `insta` snapshot testing crate.
+*   The CI/CD pipeline compiles a suite of "Golden Master" `.ten` files into SVGs.
+*   It cryptographically hashes the SVG strings. If a developer's pull request alters the layout logic and changes the hash of a Golden Master, the PR is flagged for manual visual review, ensuring zero unintended typographical regressions.
+
+
+# TEAS Addendum D: The Avant-Garde, Historical, & Scholarly Frontier
+
+## 34. Aleatoric, Proportional, & Electroacoustic Notation
+
+Contemporary and electroacoustic scores frequently abandon rigid metrical grids in favor of spatial or graphic representations of time and texture.
+
+### 34.1 Strict Proportional Layout (Space = Time)
+When a composer specifies `layout @{ proportional: true }`, the Cassowary solver abandons the logarithmic optical Spring formula (Section 5.1).
+*   **The Constraint:** The ideal spring length $S_{ideal}$ becomes strictly linear: $S_{ideal} = k \times \Delta t$, where $\Delta t$ is the exact tick duration.
+*   **Barline Suppression:** Barlines are either hidden or converted to dashed tick-marks, allowing notes to float in pure physical relation to their absolute time.
+
+### 34.2 Aleatoric Clusters and Indeterminate Pitch
+*   **Cluster Bars:** Triggered by `[c4 c5]:4.cluster`. The engine calculates the $Y_{bottom}$ of C4 and the $Y_{top}$ of C5. Instead of rendering discrete noteheads, it emits a `SpannerId` rendering a thick SVG `<polygon>` or `<rect>` spanning the pitch range and the temporal width of the column.
+*   **Indeterminate Pitch Boxes:** Rendered via a `BoxSpannerId`. The ECS anchors the four corners to $(Time_{start}, Pitch_{high})$ and $(Time_{end}, Pitch_{low})$, drawing a bounding box (often with SMuFL wavy lines) that strictly repels the Top/Bottom Skylines.
+
+### 34.3 Audio Waveforms & Embedded Graphics
+For live electronics, performers require visual cues of the audio buffer.
+*   **The Asset Entity:** `AssetId` entities contain base64-encoded SVG or PNG data. 
+*   **Timeline Anchoring:** The asset is anchored to a `TimeColumnId`. The Cassowary solver scales the graphic horizontally so its width exactly matches the temporal duration of the electronic cue, ensuring the waveform physically aligns with the acoustic instruments above it.
+
+---
+
+## 35. Advanced Metric topologies & Extreme Microtonality
+
+### 35.1 Composite and Additive Meters
+Time signatures like `3+2+3/8` require complex horizontal assembly.
+*   **The Composite Glyph:** The engine instantiates a `TimeSignatureId` that holds an array of numerators. 
+*   **SMuFL Assembly:** It queries SMuFL for the digits and the `timeSigPlus` glyph, kerning them horizontally into a single, unified AABB before injecting them into the Prefatory Column Rod constraint.
+
+### 35.2 Metric Modulation
+Equations like `[Quarter] =[Dotted Eighth]` must be assembled from text and font characters.
+*   **The Tempo Equation Entity:** A specialized `AnnotationId`. The engine fetches the SMuFL `metNoteQuarter`, the text `=`, and `metNoteEighth` + `metAugmentationDot`. These are packed into a single bounding box and dropped into the `TopSkyline` above the measure boundary.
+
+### 35.3 Sagittal and Ratio-Based Microtonality
+To support Just Intonation (Ben Johnston) or the Sagittal accidental system, standard `alter` arrays are insufficient.
+*   **The Extensible Accidental:** The `SpelledPitch` struct's `display` field is upgraded to accept a generic `SmuflCodepoint`.
+*   **Execution:** If a user writes `c4.sagittal("U+E300")`, the engine bypasses the Gould State Machine and forcibly injects the specific Sagittal glyph into the `AccidentalColumnId`, utilizing its unique SMuFL cut-outs for collision detection.
+
+---
+
+## 36. Scholarly, Analytical, and Legal Frameworks
+
+Scores published for academia or copyright require meta-typographical elements that sit entirely outside the musical flow.
+
+### 36.1 Schenkerian Analysis
+Schenkerian graphs use notes and slurs to represent harmonic hierarchy, not performance timing.
+*   **Stemless & Scaled Notes:** Noteheads are stripped of stems (`.stem(none)`) or scaled down.
+*   **Hierarchical Slurs:** Slurs in Schenkerian analysis nest deeply. The `kurbo` router calculates the intersection of *other slurs*, forcing background structural slurs to draw massively flattened, sweeping Bezier arches that encapsulate foreground slurs without touching them.
+
+### 36.2 Critical Commentary and Footnotes
+*   **The Footnote Entity:** A text annotation marked with an asterisk `*` in the score. 
+*   **Page-Level Routing:** The line-breaking DAG identifies the `FootnoteId`. During the Page-Breaking phase (Section 15.2), the engine subtracts the height of the footnote text block from the physical page's $Y_{max}$, forcing the Cassowary solver to compress the musical systems slightly upward to leave room at the bottom of the page.
+
+### 36.3 Copyright and Legal Metadata
+*   **The Metadata Block:** Multi-line text arrays defined in `meta @{ copyright:["© 2026", "ISMN 979-0..."] }`.
+*   **Absolute Placement:** Injected into the final SVG generation phase at absolute page coordinates (e.g., bottom center of Page 1), entirely decoupled from the musical skyline.
+
+---
+
+## 37. Orchestral and Historical Edge Cases
+
+### 37.1 Divisi and Orchestral Grouping
+When two flutes share a staff, they frequently switch between playing in unison (`a2`) and splitting into chords (`divisi`).
+*   **Stateful Annotations:** When the IR detects `v1` and `v2` collapsing into identical unison pitches, it automatically generates a `TextAnnotation` reading "a2" positioned above the `TopSkyline`.
+*   **Double Stops vs. Divisi:** The engine analyzes the voice assignments. If two notes belong to `v1`, it stems them together (double stop). If they belong to `v1` and `v2`, it stems them oppositely (up/down) to indicate divided players.
+
+### 37.2 Mensural and Advanced Neumatic Notation
+For Medieval and Renaissance music, standard metric ticks do not apply.
+*   **Coloration and Prolation:** Parsed via specific `.head()` and `.color()` attributes. 
+*   **Ligatures:** Rendered by substituting standard notes with SMuFL `mensural` and `medRen` compound glyphs. The Cassowary solver disables the standard Spring entirely, spacing the ligatures based strictly on optical padding and lyric syllable widths.
+
+***
