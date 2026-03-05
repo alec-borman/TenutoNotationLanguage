@@ -959,3 +959,91 @@ tenuto "3.0" {
   }
 }
 
+# Addendum A: Ecosystem Integrations (The Universal Semantic Conductor)
+
+**Version:** 1.0 (Extension to Tenuto 3.0.0)
+**Status:** Normative / Final
+**Scope:** SuperDirt (OSC) Backend, ChucK Delegation, Ableton Link Synchronization, and Live-Coding Transpilation.
+
+## A.1 Architectural Philosophy
+The Tenuto 3.0 language natively resolves the "Semantic Gap" between acoustic composition and modern electronic production. However, to maintain maximum token efficiency for AI generation and human readability, the Tenuto compiler (`tenutoc`) **MUST NOT** attempt to internally replicate the low-level digital signal processing (DSP) engines of highly specialized audio languages. 
+
+Instead, compliant Tenuto runtimes **SHOULD** implement a **Delegation Architecture**. Tenuto acts as the master logic layer—calculating the absolute rational timeline and structural semantics—and dynamically orchestrates external physical engines (SuperCollider, ChucK) via Open Sound Control (OSC) and Ableton Link.
+
+---
+
+## A.2 The SuperDirt / SuperCollider Backend
+SuperCollider provides unparalleled synthesis capabilities, while SuperDirt (the default audio engine for TidalCycles) provides a robust, pre-built framework for sample playback, Euclidean routing, and DSP effects. Tenuto utilizes SuperDirt as the primary native audio backend for the `style=concrete` and `style=synth` engines.
+
+### A.2.1 OSC Translation & Look-Ahead Scheduling
+To guarantee absolute, drift-free temporal playback, the Tenuto runtime daemon (`tenutod`) **MUST NOT** rely on local real-time `sleep()` triggers, which are prone to CPU jitter. 
+*   **Protocol:** The compiler packages the linearized `AtomicEvent` structures from the Intermediate Representation (IR) into OSC bundles equipped with absolute NTP timestamps.
+*   **Routing:** Messages **MUST** be routed to the SuperDirt listener (default UDP port `57120`) via the `/dirt/play` address.
+*   **Look-Ahead:** The daemon **SHOULD** transmit bundles at least 200ms ahead of their physical execution time, allowing SuperCollider's internal server (`scsynth`) to render the DSP graph flawlessly.
+
+### A.2.2 Normative Attribute Mapping (The Rosetta Stone)
+The compiler translates Tenuto's semantic dot-chained attributes directly into SuperDirt's expected OSC parameters.
+
+| Tenuto 3.0 Syntax | SuperDirt OSC Parameter | Compiler Execution Behavior |
+| :--- | :--- | :--- |
+| `style=concrete map=@{...}` | `s` (Sample folder) | Targets specific audio buffers loaded into SuperDirt RAM. |
+| `:Duration` (Logical Time) | `sustain` | Mathematically scales the overall duration of the synthesis or sample envelope. |
+| `.stretch` / `.slice(N)` | `speed` / `begin` / `end` | Translates rational tuplets into strict buffer playback bounds and rate adjustments. |
+| `.glide(TimeVal)` / `.accelerate`| `accelerate` | Translates pitch dives (e.g., 808 drops) into SuperDirt's native parameter for continuous frequency modulation. |
+| `cut_group=1` | `cut` | Triggers monophonic choke groups across the SuperDirt engine, silencing the previous event. |
+| `meta @{ swing: 66 }` | `nudge` | Translates micro-timing grid displacements into absolute OSC timestamp offsets. |
+
+---
+
+## A.3 ChucK Delegation (`style=chuck`)
+ChucK is a "strongly-timed" audio programming language that allows developers to write custom physical models and manipulate time on a sample-by-sample basis. Tenuto delegates the "micro-physics" of custom instrument design to ChucK while retaining macro-structural control.
+
+### A.3.1 The `style=chuck` Engine
+Composers or AI models can define external ChucK files (`.ck`) as instruments in the Tenuto Global Symbol Table.
+
+**Definition Syntax:**
+```tenuto
+def phys_bass "Plucked String" style=chuck src="karplus_strong.ck"
+```
+
+### A.3.2 Shred Spawning and Concurrency
+ChucK achieves concurrency through lightweight, user-level parallel processes called "shreds". When the Tenuto IR evaluates an event assigned to a `style=chuck` staff, it executes the following protocol:
+1.  The Tenuto compiler fires an OSC trigger to the active ChucK Virtual Machine.
+2.  The OSC message instructs the VM to dynamically `spork ~` a new shred of the designated `.ck` source file.
+3.  Tenuto calculates the precise pitch (in Hz) and dynamic velocity (0.0 - 1.0 float), passing them as continuous arguments to the ChucK shred.
+
+*Result:* The AI composes sweeping orchestral structures in highly efficient Tenuto code, while relying on the raw DSP power of ChucK to render individual, sample-accurate physical models in parallel.
+
+---
+
+## A.4 Ableton Link Synchronization
+To facilitate live algorithmic performances (Algoraves) where a Tenuto-generating AI collaborates with human musicians using TidalCycles, Sonic Pi, or Ableton Live, Tenuto implements peer-to-peer network synchronization.
+
+### A.4.1 Phase and Tempo Sync
+The `tenutod` runtime daemon **MUST** integrate the Ableton Link open-standard API. Link converts between logical beats on a shared network timeline and the exact system clock time.
+*   **The Shared Heartbeat:** The compiler's internal Measure Grid (defined in Section 15.1) calculates its absolute tick boundaries relative to the shared Link session phase, overriding local `meta @{ tempo: X }` declarations if Link is active.
+*   **Quantized Injection:** If an AI dynamically generates and injects a new `measure` block during live playback, the Tenuto daemon aligns the start-tick over the shared bar boundaries, mathematically guaranteeing the AI's generation lands perfectly on the downbeat alongside human performers.
+
+---
+
+## A.5 Live-Coding Transpilation & Export
+Because Tenuto acts as the universal logic layer bridging the "Semantic Gap", compliant compilers **SHOULD** support transpiling the deterministic AST directly into the syntax of specialized live-coding languages. 
+
+### A.5.1 TidalCycles Export (`--target tidal`)
+When exporting to TidalCycles, Tenuto algorithmically translates its Euclidean engines (Section 13.2) and Percussion maps into Haskell-based mini-notation.
+
+**Tenuto Source:**
+```tenuto
+measure 1 {
+  drm: (k):3/8 (s):2/8.pull(15ticks) |
+}
+```
+
+**TidalCycles Transpilation Output:**
+```haskell
+d1 $ stack [
+  sound "bd(3,8)",
+  sound "~ sn ~ sn" # nudge "0.03"
+]
+```
+*Implementation Note:* This 1:1 mathematical translation allows an AI to map complex architectural rhythm structures in native Tenuto, which a human live-coder can subsequently manipulate, reverse, or deform on the fly in TidalCycles.
