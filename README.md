@@ -1,44 +1,54 @@
-# Tenuto Reference Compiler (`tenutoc`)
-
-> **A programming language for music.** > What HTML did for documents, what Markdown did for writing, what Mermaid did for diagrams — Tenuto does for music.
-
----
-
 ## The Vision
 
-Music notation has been stuck for centuries. First, it was trapped on paper. Then it got locked inside bloated, machine‑generated XML that no human can read or write. MIDI captured performances but threw away the music's structure — its measures, key signatures, and tuplets. Modern DAWs gave us total control over audio but locked our compositions inside proprietary, unreadable black boxes. Every digital music format forced a compromise between the acoustic and the electronic.
+Music notation has been stuck for centuries. First, it was trapped on paper. Then it got locked inside bloated, machine‑generated XML that no human can read or write. MIDI captured performances but threw away the music's structure. Modern DAWs gave us total control over audio but locked our compositions inside proprietary, unreadable black boxes.
+
+And now, AI music generation has arrived as a "slot machine." You prompt a model, and it spits out a flattened, uneditable `.wav` file. If the vibe is perfect but the snare is slightly too loud, or you want to change a specific chord inversion in the chorus? You can't. You have to reroll the prompt and pray the black box gives you something usable.
 
 **Tenuto v3.0.0 changes everything.**
 
-This isn't just another file format. It's a complete reimagining of how we write, share, and understand music. It unifies the classical sheet music paradigm with modern electronic digital signal processing (DSP). It's:
+Tenuto is a deterministic, declarative language that unifies classical sheet music with modern electronic digital signal processing (DSP). It is designed to be the ultimate bridge between human composers, software compilers, and Artificial Intelligence.
 
-* **A language** — clean, expressive, and designed for humans.
-* **A compiler** — turning your ideas into sound, MIDI, and ink with mathematical precision.
-* **A philosophy** — separating *what* the music is from *how* it looks or sounds.
-* **A bridge** — connecting composers to producers, AI collaborators to human performers, and the past to the future.
+## The Holy Grail of AI Music
 
-Tenuto is to music what HTML is to the web: the foundation everyone builds on. It's what every composer and producer who ever dreamed of writing music as code has been waiting for.
+Large Language Models (LLMs) think in tokens. Every token is precious.
+
+Where MusicXML burns over a thousand tokens on a single measure of music, Tenuto uses twenty. Because Tenuto is incredibly token-efficient and semantically dense, **an LLM can hold an entire multi-track song's logic in its working memory without losing the plot.**
+
+Tenuto turns AI from a random audio generator into a deterministic, collaborative studio engineer. Imagine the workflow:
+
+1. **The Prompt:** You ask an LLM for a funky, Daft Punk-style track.
+2. **The Generation:** The AI writes Tenuto code. It sets up a 110 BPM pocket groove, defines a `style=synth` sub-bass with a heavy sidechain mapped to the kick, and uses Euclidean tuplets for a syncopated hi-hat pattern.
+3. **The Playback:** You compile it instantly to hear the track.
+4. **The Iteration:** You tell the AI, *"The groove is too stiff, and the bass needs more glide."*
+5. **The Edit:** The AI doesn't hallucinate a new audio file. It simply edits the code—adding a global `swing: 66`, dropping a `.pull(15ms)` on the snare to drag it behind the beat, and adding `.glide(100ms)` to the bass notes.
+
+You get the infinite creative brainstorming of AI, paired with the absolute, surgical precision of a text-based DAW.
 
 ---
 
-## Why Tenuto?
+## Use Cases
 
-Let's look at the options we've had until now:
+Tenuto is built for anyone who believes music should be readable, editable, and future-proof.
 
-* **MusicXML** is a visual straitjacket. It cares about where ink sits on a page, not the music itself. It's incredibly verbose — a single measure of polyphony can take over a thousand tokens. You can't edit it by hand. You can't put it in version control and see what changed.
-* **MIDI** is a mechanical ghost. It records button presses and slider movements, but it forgets everything about musical structure. Measures? Gone. Key signatures? Gone.
-* **DAW projects** are proprietary black boxes. Open a project from ten years ago and it's gibberish. Open it in a different DAW and it's useless. Your music gets locked inside software that might not exist tomorrow.
-* **ASCII tab** is readable but rhythmically ambiguous. You can see the notes, but you can't tell exactly when to play them.
+### 🤖 AI-Assisted Composition
 
-Tenuto solves all of this by going back to first principles: **What does music actually need to represent?**
+For AI developers and prompt engineers, Tenuto is the missing native language for music generation. It provides a token-efficient, LL(1) parseable grammar that allows models to generate, analyze, and iteratively edit multi-track music deterministically.
 
-* Pitch — including microtones and continuous portamento glides.
-* Rhythm — as exact fractions, but with millisecond-accurate micro-timing for the "pocket."
-* Instrumentation — from classical violins to ADSR synth basses and granular audio samples.
-* Articulation, expression, and dynamic signal routing (sidechaining).
-* Structural flow — repeats, jumps, codas.
+### 🎛️ Electronic Producers & Beatmakers
 
-Nothing more. Nothing less.
+Write Euclidean rhythms (`(k):3/8`), trigger granular sample slices (`.slice(4)`), execute continuous 808 pitch glides (`.glide()`), and write invisible LFO automation curves for sidechain ducking—all directly from a text editor, without fighting a DAW piano roll.
+
+### 🎼 Classical Composers & Engravers
+
+Write your symphonies in plain text. Tenuto encodes musical intent natively, supporting microtonality, tuplets, polyphonic voices, and structural repeats. Compile your code directly into MusicXML for use in Dorico/Sibelius, or output pristine MIDI.
+
+### 👩‍🏫 Educators & Music Theorists
+
+Teach music theory using clean, readable code. Tenuto strips away graphical accidents and proprietary software, leaving only the pure logic of the music. It is perfect for algorithmic analysis and generating educational worksheets.
+
+### 💾 Archivists
+
+Proprietary DAW project files from ten years ago are often unopenable today. Tenuto is plain text. A century from now, musicians will be able to open a Tenuto file and see exactly what you intended to write.
 
 ---
 
@@ -46,7 +56,7 @@ Nothing more. Nothing less.
 
 ### 1. Define Your Instruments (The Physics)
 
-Each instrument gets its own "physics" — how it behaves, how it's notated, and how it sounds. Tenuto 3.0 natively supports standard notation, tablature, drum grids, audio samplers, and synthesizers.
+Each instrument gets its own "physics"—how it behaves, how it's notated, and how it sounds.
 
 ```tenuto
 %% Acoustic Instruments
@@ -98,75 +108,15 @@ tenutoc --input score.ten --strict
 
 ---
 
-## Key Features
-
-### Acoustic & Electronic Parity (v3.0)
-
-Abstract DSP manipulations are elevated to semantic primitives. Define ADSR envelopes, trigger granular sample slices (`.slice(N)`), execute continuous 808 pitch glides (`.glide()`), and write invisible LFO automation curves for sidechain ducking—all directly alongside standard notation.
-
-### Semantic, Not Visual
-
-Tenuto encodes musical intent, not graphical accidents. The same code can generate MIDI, MusicXML, and eventually beautifully engraved scores, Braille music, or direct audio buffers. Change the output — keep the music.
-
-### Sticky State (Inference)
-
-Like a human sight‑reader, Tenuto remembers the last duration, octave, and articulation. You write less and say more:
-
-```tenuto
-c4:4 d e f g a b c5
-
-```
-
-The `d` knows it's a quarter note. The `c5` knows it's in octave 5. No repetition needed.
-
-### Exact Rational Time & "The Pocket"
-
-Triplets are exactly 1/3. No floating‑point drift. No quantization errors. But music isn't rigid—Tenuto 3.0 allows you to physically offset notes using `.pull(15ms)` or `.push(10ticks)` to create unquantized human grooves without destroying the underlying sheet music grid.
-
-### Euclidean Rhythms
-
-Generate complex, algorithmic syncopations instantly. `(k):3/8` mathematically distributes 3 kick drum hits as evenly as possible across an 8-step grid (the classic *tresillo* pattern), replacing tedious manual placement.
-
-### Macros and Variables
-
-```tenuto
-var verse_velocity = 90
-macro arpeggio(root) = { $root:16 e g b c5 }
-
-piano: $arpeggio(c4).vol($verse_velocity)
-
-```
-
----
-
 ## What Makes Tenuto Different
 
-| Format | Human Readable | Musical Structure | Version Control Friendly | Compact | Electronic/DSP Native |
+| Format | Editable by Humans | AI Context-Friendly | Semantic Structure | Electronic/DSP Native | Future-Proof |
 | --- | --- | --- | --- | --- | --- |
-| MusicXML | ❌ | ✅ | ❌ | ❌ | ❌ |
-| MIDI | ❌ | ❌ | ❌ | ✅ | ❌ |
-| DAW Project | ❌ | ✅ | ❌ | ❌ | ✅ |
-| ASCII Tab | ✅ | ❌ | ✅ | ✅ | ❌ |
+| MusicXML | ❌ | ❌ | ✅ | ❌ | ✅ |
+| MIDI | ❌ | ❌ | ❌ | ❌ | ✅ |
+| DAW Project | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Audio (.wav) | ❌ | ❌ | ❌ | ✅ | ✅ |
 | **Tenuto 3.0** | ✅ | ✅ | ✅ | ✅ | ✅ |
-
----
-
-## Built for the AI Age
-
-Large Language Models think in tokens. Every token is precious. Every bit of context matters.
-
-**Tenuto was designed for this moment.**
-
-Where MusicXML burns over a thousand tokens on a single measure, Tenuto uses twenty. Where other formats bury musical relationships under layers of cruft, Tenuto exposes them in clean, parseable grammar. Where AI struggles to generate coherent music in bloated formats, Tenuto gives it a native language for musical thought.
-
-This is by design. Tenuto was built from the ground up to be:
-
-* **Token‑efficient** — more music, less noise.
-* **Semantically rich** — microtonality, sidechaining, and expressive gestures are all first‑class citizens.
-* **Algorithmically friendly** — `$macro` and `$variable` systems turn musical motifs into parameterized functions.
-* **Deterministically parseable** — an LL(1) grammar means no surprises, no ambiguity.
-
-The AI revolution in music won't be built on MIDI bytes or XML bloat. It will be built on Tenuto.
 
 ---
 
@@ -196,25 +146,11 @@ Currently, the `main` branch compiler can:
 
 * **`tenuto-lsp`** — A Language Server for VS Code, Neovim, and more. Real‑time error checking, hover documentation, auto‑completion.
 * **`tenuto-fmt`** — An opinionated code formatter that aligns bar lines and indents voices consistently.
-* **`tenuto-playground`** — A web editor where anyone can write Tenuto, hear it instantly, and share it with a URL.
+* **`tenuto-playground`** — A web editor where anyone can write Tenuto, hear it instantly, and edit collaboratively with an AI assistant.
 
 ### Phase VII: Native Engraving — `tenuto-engrave` (Spec Complete)
 
-**The crown jewel.** A native Rust engraving engine that renders publication‑ready sheet music directly from Tenuto source — no MusicXML required.
-
-The **Tenuto Engraving Architecture Specification (TEAS)** is 100% complete — a 150‑page architectural blueprint that solves every major problem in music typography using ECS memory models, Cassowary constraint solvers, and Bezier routing. **`tenuto-engrave` will be the Typst of music.** ---
-
-## Who Is Tenuto For?
-
-**Producers** who want exact mathematical control over granular sampling and LFO sidechaining without fighting DAW GUIs.
-
-**Composers** who want to work in text, fight fewer constraints, and version control their scores.
-
-**AI/ML engineers** training models on a token‑efficient representation of music.
-
-**Developers** building music applications who need a clean, parseable music format.
-
-**The Future** — A century from now, musicians will open Tenuto files and see exactly what you intended, because Tenuto encodes *intent*, not the quirks of some long‑dead software.
+**The crown jewel.** A native Rust engraving engine that renders publication‑ready sheet music directly from Tenuto source — no MusicXML required. Built on ECS memory models and Cassowary constraint solvers, **`tenuto-engrave` will be the Typst of music.**
 
 ---
 
@@ -262,6 +198,7 @@ This is bigger than one person. Tenuto is an open standard, an open source compi
 We need:
 
 * **Rust developers** to help with the compiler, audio backend, and engraving engine.
+* **AI / ML Researchers** to fine-tune open-source models on Tenuto syntax.
 * **Music theorists & Producers** to ensure the language captures every nuance of both classical and electronic paradigms.
 * **Tool builders** to create editor plugins, web apps, and more.
 
