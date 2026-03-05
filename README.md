@@ -110,11 +110,11 @@ graph TD
         direction TB
         Composer[Human / AI Composer] -->|Writes Logic & Pointers| Source[(score.ten)]
         
-        %% The multi-way pointers
-        Source -.->|src="amen.wav"| Samples[(Audio Samples .wav)]
-        Source -.->|tuning="maqam.scl"| Tuning[(Scala Tuning Maps .scl)]
-        Source -.->|src="string.ck"| Scripts[(ChucK DSP Scripts .ck)]
-        Source -.->|src="plugin://ai"| Plugins((AI Generative URIs))
+        %% The multi-way pointers (Quotes removed for Mermaid syntax safety)
+        Source -.->|src: amen.wav| Samples[(Audio Samples .wav)]
+        Source -.->|tuning: maqam.scl| Tuning[(Scala Tuning Maps)]
+        Source -.->|src: string.ck| Scripts[(ChucK DSP Scripts)]
+        Source -.->|src: plugin://ai| Plugins((AI Generative URIs))
     end
 
     %% --- 2. THE COMPILER (Linker & Decompressor) ---
@@ -122,15 +122,21 @@ graph TD
         Source --> Parse[Lexer & AST Parser]
         
         Parse --> AssetMgr{Asset Manager & Buffer}
-        Samples & Tuning & Scripts & Plugins -->|Loads into RAM| AssetMgr
+        
+        %% Split paths for maximum parser compatibility
+        Samples -->|Loads into RAM| AssetMgr
+        Tuning -->|Loads into RAM| AssetMgr
+        Scripts -->|Loads into RAM| AssetMgr
+        Plugins -->|Loads into RAM| AssetMgr
         
         AssetMgr --> Unroller[Graph Unroller & Slicer]
-        Unroller -->|Decompresses 10 tokens into 10,000 events| IR[Absolute Timeline IR]
+        Unroller -->|Decompresses 10 tokens to 10k events| IR[Absolute Timeline IR]
     end
 
     %% --- 3. THE EXECUTION DOMAIN (Machines) ---
     subgraph Execution [3. The Execution Environment]
-        IR -->|Logical Time Grid| Vis[Visual Engine] --> XML[MusicXML / PDF]
+        IR -->|Logical Time Grid| Vis[Visual Engine] 
+        Vis --> XML[MusicXML / PDF]
         
         IR -->|Absolute Ticks + Sliced Audio Buffers| AudioRouter{Execution Router}
         
@@ -149,7 +155,6 @@ graph TD
     class Compiler,Parse,AssetMgr,Unroller,IR compiler;
     class Execution,Vis,XML,AudioRouter,MIDI,SC,ChucK execution;
     class Samples,Tuning,Scripts,Plugins assets;
-
 ```
 
 ### How to Read the Architecture:
