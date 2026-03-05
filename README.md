@@ -1,3 +1,9 @@
+# Tenuto Reference Compiler (`tenutoc`)
+
+> **A programming language for music.** > What HTML did for documents, what Markdown did for writing, what Mermaid did for diagrams — Tenuto does for music.
+
+---
+
 ## The Vision
 
 Music notation has been stuck for centuries. First, it was trapped on paper. Then it got locked inside bloated, machine‑generated XML that no human can read or write. MIDI captured performances but threw away the music's structure. Modern DAWs gave us total control over audio but locked our compositions inside proprietary, unreadable black boxes.
