@@ -105,66 +105,43 @@ To understand how Tenuto seamlessly bridges sheet music, electronic DSP, and gen
 
 ```mermaid
 graph TD
-    %% 1. Authorship
-    subgraph Input [1. Authorship Layer]
-        H[Human Composer / Producer] -->|Writes .ten code| SRC[(score.ten)]
-        AI[LLM / AI Agent] -->|Generates/Edits code| SRC
+    %% --- TOKEN EFFICIENT DOMAIN (The Brains) ---
+    subgraph TokenDomain [1. The Token-Efficient Domain]
+        direction LR
+        H[Human Composer] -->|Writes minimal code| SRC[(score.ten)]
+        AI_Comp[LLM Composer] -->|Generates/Edits code| SRC
     end
 
-    %% 2. The Brain (Compiler/Daemon)
-    subgraph Core [2. The Universal Conductor: tenutoc / tenutod]
-        SRC --> Lex[Lexer & LL 1 Parser]
-        Lex --> AST[Abstract Syntax Tree]
-        AST --> Pre[Preprocessor: Macros, Imports, Variables]
-        Pre --> IR[IR Linearization: Rational Time Grid]
+    %% --- THE DECOMPRESSION ENGINE (The Compiler) ---
+    subgraph Compiler [2. The Decompression Engine: tenutoc]
+        SRC -->|10 Tokens| Parse[Lexer & AST]
+        Parse -->|Resolves Macros & Repeats| Unroller[The Graph Unroller]
+        Unroller -->|Expands to 10,000 Events| IR[Absolute Timeline IR]
+    end
+
+    %% --- THE UNROLLED DOMAIN (The Machines) ---
+    subgraph MachineDomain [3. The Unrolled Machine Domain]
+        IR -->|Tick Data| Vis[Visual Engine] --> XML[MusicXML]
         
-        %% The core split: Visual vs Audio
-        IR -->|Logical Grid Time| VisLayer[Visual Translation Engine <br> Rebarring & Pitch Spelling]
-        IR -->|Physical Playback Time| PhysLayer[Execution Graph <br> Absolute Ticks & Micro-Timing]
-    end
-
-    %% 3. Classical / Visual Outputs
-    subgraph Visual [3. Acoustic & Visual Targets]
-        VisLayer --> XML[MusicXML Exporter]
-        XML --> SheetMusic[Dorico, Sibelius, MuseScore]
-        VisLayer --> Engrave[tenuto-engrave <br> Native PDF/SVG Rendering]
-    end
-
-    %% 4. AI Plugin Integration (The Loop)
-    subgraph Generative [4. AI Audio Plugins]
-        PhysLayer -->|1. URI Handoff: Pitch, Rhythm, Lyrics| AI_Gen[[External AI Vocal/Audio Model]]
-        AI_Gen -.->|2. Returns .wav Buffer & Slice Map| PhysLayer
-    end
-
-    %% 5. Electronic & DSP Outputs
-    subgraph AudioDSP [5. Electronic DSP Targets]
-        PhysLayer -->|style=standard| MIDI[Standard MIDI File] --> DAW_Trad[Standard DAW / Hardware Synth]
+        IR -->|Absolute Timestamps| AudioRoute{Audio Router}
         
-        PhysLayer -->|style=synth / concrete| OSC1[OSC Look-Ahead Bundles]
-        OSC1 --> SC[[SuperCollider / SuperDirt <br> Renders audio buffers natively]]
+        AudioRoute -->|MIDI Bytes| MIDI[Standard MIDI]
+        AudioRoute -->|OSC Bundles| SC[[SuperCollider / SuperDirt]]
+        AudioRoute -->|OSC Spawns| ChucK[[ChucK VM]]
         
-        PhysLayer -->|style=chuck| OSC2[OSC Spawn Triggers]
-        OSC2 --> ChucK[[ChucK VM <br> Calculates physical resonance]]
+        %% The Plugin receives unrolled data, not Tenuto code
+        AudioRoute -->|Pitch, Time, Lyric Array| AI_Sing[[AI Vocal Render Plugin]]
+        AI_Sing -.->|Returns .wav| AudioRoute
     end
 
-    %% 6. Live Performance Integration
-    subgraph Live [6. Live Network & Transpilation]
-        PhysLayer <-->|Phase & Tempo Sync| Link((Ableton Link Network))
-        Link <-->|Keeps Tenuto locked to the room| DJ[[Human DJ / Ableton Live]]
-        
-        PhysLayer -->|--target tidal| Tidal[Haskell Mini-Notation] --> LiveCoder[[Human Live-Coder]]
-    end
-
-    %% Styling for clarity
-    classDef core fill:#2d3436,stroke:#74b9ff,stroke-width:2px,color:#fff;
-    classDef output fill:#0984e3,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef external fill:#00b894,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef ai fill:#6c5ce7,stroke:#fff,stroke-width:2px,color:#fff;
-
-    class Core,Lex,AST,Pre,IR,VisLayer,PhysLayer core;
-    class Visual,AudioDSP,Live,XML,Engrave,MIDI,OSC1,OSC2 output;
-    class SC,ChucK,DAW_Trad,DJ,LiveCoder,SheetMusic external;
-    class AI_Gen ai;
+    %% Styling
+    classDef tokens fill:#6c5ce7,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef compiler fill:#2d3436,stroke:#74b9ff,stroke-width:2px,color:#fff;
+    classDef machines fill:#00b894,stroke:#fff,stroke-width:2px,color:#fff;
+    
+    class TokenDomain,H,AI_Comp,SRC tokens;
+    class Compiler,Parse,Unroller,IR compiler;
+    class MachineDomain,Vis,XML,AudioRoute,MIDI,SC,ChucK,AI_Sing machines;
 
 ```
 
