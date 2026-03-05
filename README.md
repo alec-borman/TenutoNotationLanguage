@@ -28,7 +28,11 @@ Tenuto turns AI from a random audio generator into a deterministic, collaborativ
 4. **The Iteration:** You tell the AI, *"The groove is too stiff, and the bass needs more glide."*
 5. **The Edit:** The AI doesn't hallucinate a new audio file. It simply edits the code—adding a global `swing: 66`, dropping a `.pull(15ms)` on the snare to drag it behind the beat, and adding `.glide(100ms)` to the bass notes.
 
-You get the infinite creative brainstorming of AI, paired with the absolute, surgical precision of a text-based DAW.
+### Hybrid Generative Vocals (The Skeleton and the Flesh)
+
+Pure generative AI is brilliant at synthesizing the *timbre* of a human voice, but terrible at placing it exactly where you want it. Tenuto's extension architecture solves this.
+
+You write the exact melody, rhythm, and lyrics in Tenuto. A compiler plugin sends this mathematically perfect skeleton (pitch, duration, and phonetic mapping) to a generative vocal AI. The AI renders a hyper-realistic vocal performance, and Tenuto automatically imports it back into your project as a perfectly synchronized audio slice. **You get the realism of generative AI with the surgical precision of a text-based DAW.**
 
 ---
 
@@ -38,7 +42,7 @@ Tenuto is built for anyone who believes music should be readable, editable, and 
 
 ### 🤖 AI-Assisted Composition
 
-For AI developers and prompt engineers, Tenuto is the missing native language for music generation. It provides a token-efficient, LL(1) parseable grammar that allows models to generate, analyze, and iteratively edit multi-track music deterministically.
+For AI developers and prompt engineers, Tenuto is the missing native language for music generation. It provides a token-efficient, LL(1) parseable grammar that allows models to generate, analyze, iteratively edit, and invoke external audio-generation plugins for multi-track music deterministically.
 
 ### 🎛️ Electronic Producers & Beatmakers
 
@@ -67,12 +71,13 @@ Each instrument gets its own "physics"—how it behaves, how it's notated, and h
 ```tenuto
 %% Acoustic Instruments
 def violin "Violin I" style=standard clef=treble
-def guitar "Guitar" style=tab tuning=guitar_std
 
 %% Electronic & Producer Instruments
 def sub "808 Bass" style=synth env=@{ a: 5ms, d: 1s, s: 100%, r: 50ms } cut_group=1
-def vox "Vocal Chop" style=concrete src="./vocals.wav" map=@{ a:[0.0s, 1.2s] }
 def drums "Drum Kit" style=grid map=@{ k:[0,36], s:[2,38], h:[4,42] }
+
+%% AI Generative Plugin
+def lead_vox "Lead Singer" style=concrete src="plugin://ai-vocal-gen"
 
 ```
 
@@ -82,18 +87,13 @@ def drums "Drum Kit" style=grid map=@{ k:[0,36], s:[2,38], h:[4,42] }
 measure 1 {
   %% 808 Synth with a portamento glide
   sub: c2:2.glide(150ms) c3:2 |
-
-  %% Sampler applying granular slicing (4 equal cuts)
-  vox: a:2.slice(4) r:2 |
   
   %% Drums using Euclidean rhythm and micro-timing for the "pocket"
   drums: (k):3/8 s:4.pull(20ms) |
   
-  %% Acoustic Piano polyphony
-  piano: <[
-    v1: c5:8.stacc d e f g a b c6:2.ten |
-    v2: c3:4 c2:4                       |
-  ]>
+  %% Tenuto maps the lyrics and exact timing to the AI vocal generator
+  lead_vox: c4:4 d e f |
+  lead_vox.lyric: "Do- ing it right"
 }
 
 ```
@@ -146,6 +146,7 @@ Currently, the `main` branch compiler can:
 ### Phase V: The Producer Engines (In Progress)
 
 * Updating the AST and internal IR (Intermediate Representation) to resolve `style=synth` and `style=concrete`.
+* Building the plugin architecture for external AI synthesis pipelines.
 * Building the audio-buffer target for direct `.wav` export.
 
 ### Phase VI: Developer Experience
@@ -204,7 +205,7 @@ This is bigger than one person. Tenuto is an open standard, an open source compi
 We need:
 
 * **Rust developers** to help with the compiler, audio backend, and engraving engine.
-* **AI / ML Researchers** to fine-tune open-source models on Tenuto syntax.
+* **AI / ML Researchers** to fine-tune open-source models on Tenuto syntax and build vocal synthesis plugins.
 * **Music theorists & Producers** to ensure the language captures every nuance of both classical and electronic paradigms.
 * **Tool builders** to create editor plugins, web apps, and more.
 
