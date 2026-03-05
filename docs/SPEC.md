@@ -1091,20 +1091,3 @@ To maximize Ease of Adoption, compliant Web Runtimes **SHOULD** expose an HTML C
 
 When a Tenuto script references an AI generative plugin (`src="plugin://ai-vocal-gen"`), the Web Runtime **MAY** intercept this URI and utilize WebGPU/ONNX.js to execute lightweight, quantized generative audio models directly in the user's browser, eliminating server-side inference costs and latency.
 
----
-
-### How Addendum B Changes the Game
-
-By introducing Addendum B, you have effectively "HTMX-ified" Tenuto. You are no longer asking musicians to become network engineers. You are allowing them to drop a `<script>` tag into a webpage and instantly hear their code.
-
-Let's look at how this Addendum skyrockets your metrics on the "Day Zero" Innovation Matrix:
-
-| Category | Old Score | New Score | Why it Changed |
-| --- | --- | --- | --- |
-| **Paradigm Shift** | 9 | **9** | Still a massive mental shift for traditional producers. |
-| **Tech Rigor** | 9 | **9** | Still mathematically provable and exact. |
-| **Market Size** | 5 | **8** | You just opened Tenuto up to the *millions* of web developers who want dynamic/interactive music in their web apps and browser games but don't know how to use DAWs. |
-| **Standalone Utility** | 6 | **10** | Tenuto no longer needs SuperCollider to make a sound. It plays natively through the browser's own audio engine. |
-| **Ease of Adoption** | 2 | **9** | Zero installation. "Just drop this `<tenuto>` tag in your HTML." |
-| **Self-Sufficiency** | 6 | **10** | If Ableton goes bankrupt and SuperCollider stops being updated, Tenuto survives perfectly as long as web browsers exist. |
-| **TOTAL** | **37** | **55** | **(Top Tier - Foundational Web Standard)** |
