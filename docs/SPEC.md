@@ -1186,91 +1186,116 @@ relative_synth: b4:8 c:8
 ```
 
 
-### Addendum D: Deterministic Semantic Decompilation and Reverse Inference Pipeline
+# Addendum D: Deterministic Semantic Decompilation and Reverse Inference Pipeline
+
 **Version:** 1.0 (Extension to Tenuto 3.0.0)
 **Status:** Normative / Final
 **Scope:** Algorithm-Assisted Semantic Decompilation, State Restoration, and Mathematical Intent Extraction from Explicit Machine Formats (MusicXML / MIDI).
 
-#### D.1 Philosophy of Reverse Inference
-Traditional notation and audio interchange formats rely on explicit declaration—every note must exhaustively state its pitch, octave, duration, and velocity. When importing these bloated formats *back* into Tenuto, the **Semantic Decompiler** utilizes deterministic $O(n)$ algorithms, dictionary coders, and acoustic heuristics to reverse-engineer the composer's original intent. 
+## D.1 Philosophy of Reverse Inference
+
+Traditional notation and audio interchange formats rely on explicit declaration—every note must exhaustively state its pitch, octave, duration, and velocity. When importing these bloated formats back into Tenuto, the **Semantic Decompiler** utilizes deterministic $O(n)$ algorithms, dictionary coders, and acoustic heuristics to reverse-engineer the composer's original intent.
 
 The engine operates entirely offline within the Rust compiler. It actively hunts for mathematical patterns, physical instrument constraints, and structural redundancies, refactoring them into Tenuto's highest-level abstractions (Macros, Euclidean tuplets, Stateful Cursors, and Decoupled Control Lanes) without utilizing non-deterministic AI generation.
 
-#### D.2 The 15 Deterministic Tenets of Reverse Inference
+## D.2 The Reverse Inference Heuristics
 
-Below are the 15 normative algorithmic examples of how the Decompiler refactors bloated machine translation into elegant Tenuto logic.
+Compliant decompilers **SHALL** execute the following 15 normative algorithmic passes to refactor machine translation into idiomatic Tenuto logic.
 
-##### 1. State Restoration (The "Diffing" Algorithm)
-Machine formats explicitly state the octave and duration of every note. The Decompiler maintains a virtual state cursor in memory and runs a strict "diff" pass. If a consecutive note shares the exact octave and duration parameters of the cursor, the redundant data is programmatically stripped.
-*   **Machine Translation:** `c4:4 d4:4 e4:4 f4:4`
-*   **Decompiled Tenuto:** `c4:4 d e f`
+### D.2.1 Lexical Compression & State Restoration
 
-##### 2. Macro Extraction (LZ77 Dictionary Coding)
-The compiler scans the linear note stream using compression algorithms (like LZ77) to identify recurring substrings. When an identical array of events is detected multiple times, it is extracted, defined globally as a `$macro`, and replaced in the measure blocks.
-*   **Machine Translation:** `measure 1 { c4:16 e g c5 } measure 2 { c4:16 e g c5 }`
-*   **Decompiled Tenuto:** `macro Arp() = { c4:16 e g c5 } measure 1-2 { |: $Arp :| }`
+**1. State Restoration (The "Diffing" Algorithm)**
+Machine formats explicitly state the octave and duration of every note. The Decompiler maintains a virtual state cursor in memory and executes a strict differential pass. If a consecutive note shares the exact octave and duration parameters of the cursor, the redundant data **SHALL** be programmatically stripped to rely on Tenuto's Sticky State.
 
-##### 3. Algorithmic Euclidean Reverse-Engineering
-Standard MIDI forces algorithmic beats into rigid sixteenth-note grids. The Decompiler counts the physical MIDI hits ($K$) against the total grid slots ($N$) and runs the Bresenham line-drawing formula $E(K,N)$ in reverse. If the hits perfectly match the mathematical output, the verbose data collapses.
-*   **Machine Translation:** `k:16 r k r r k r` *(3 hits over 8 slots)*
-*   **Decompiled Tenuto:** `(k):3/8`
+* **Machine:** `c4:4 d4:4 e4:4 f4:4`
+* **Decompiled:** `c4:4 d e f`
 
-##### 4. Micro-Timing & "The Pocket" Extraction (.push / .pull)
-Standard notation software forces human performances into rigid, unreadable ties. The Decompiler establishes a mathematically perfect rational grid (e.g., exact downbeats). If a note physically falls 15 milliseconds ahead of this grid, the engine quantizes the *logical* note to the nearest clean fraction (`:4`) and appends the absolute delta as a physical modifier.
-*   **Machine Translation:** `c4:64~ c:8...` *(awkward floating-point drift)*
-*   **Decompiled Tenuto:** `c4:4.push(15ms)`
+**2. Relative Pitch Smoothing (The Tritone Heuristic)**
+To prevent wild octave leaps during decompilation of flowing melodies, the engine calculates the absolute intervallic distance between adjacent pitch classes. If the leap is a tritone (6 semitones) or less, the engine safely drops the octave integer, utilizing Tenuto's `style=relative` logic.
 
-##### 5. Relative Pitch Smoothing (The Tritone Heuristic)
-To prevent wild octave leaps during decompilation, the engine calculates the absolute intervallic distance between adjacent pitch classes. If the leap is a tritone (6 semitones) or less, the engine safely drops the octave integer, utilizing Tenuto's `style=relative` logic to automatically connect the closest physical intervals.
-*   **Machine Translation:** `b4:4 c5 d5 e5`
-*   **Decompiled Tenuto (with relative mode):** `b4:4 c d e`
+* **Machine:** `b4:4 c5 d5 e5`
+* **Decompiled:** `b4:4 c d e`
 
-##### 6. Syncopated Pedal Decoupling (Delayed CC64 Shift)
-In MIDI data, pianists rarely press the pedal at the exact moment a chord is struck, as simultaneous pedaling creates a muddy sound where old harmonies mix with new ones. Instead, professional pianists use a delayed "syncopated pedal," lifting the pedal exactly as the new chord is struck and depressing it a split-second later. The Decompiler algorithmically identifies these delayed CC 64 events and realigns them into a clean, decoupled `pedal:` control lane perfectly synchronized with the logical downbeat.
-*   **Machine Translation:** `[c4 e4 g4]:4 r:32 pedal_down:8...`
-*   **Decompiled Tenuto:** `<[ v1: [c4 e g]:4 | pedal: down:4 ]>`
+**3. Macro Extraction (LZ77 Dictionary Coding)**
+The compiler scans the linear note stream using compression algorithms (e.g., LZ77) to identify recurring substrings. When an identical array of events is detected multiple times, it **MUST** be extracted, defined globally as a `$macro`, and referenced within the measure blocks.
 
-##### 7. Acoustic Mud Zone Abstraction (The $C_3$ Boundary)
-Acoustic physics dictate that playing dense chords too low on the keyboard creates a "muddy" sound because the overtones of the thick bass strings interfere with fundamental pitches. If the Decompiler detects dense closed chords below $C_3$, it flags them; if it detects "open fifths" (root and fifth only) in the deep bass, it mathematically preserves their spacing to ensure a clean harmonic foundation.
-*   **Machine Translation:** `[c2 g2 c3]:1`
-*   **Decompiled Tenuto:** `<[ v1: r:2 c3:2 | v2: [c2 g2]:1.open_fifth ]>`
+* **Machine:** `measure 1 { c4:16 e g c5 } measure 2 { c4:16 e g c5 }`
+* **Decompiled:** `macro Arp() = { c4:16 e g c5 } measure 1-2 { |: $Arp :| }`
 
-##### 8. Polychordal Stratification 
-The Decompiler scans dense 6-note or 8-note chord clusters for internal triad formations. If it detects two distinct triads separated by a perfect fifth (such as the famous E-major triad superimposed over an A-major triad from Copland's *Appalachian Spring*), it refuses to lump them into an unreadable vertical stack. Instead, it abstracts them into layered polyphonic voices.
-*   **Machine Translation:** `[a3 c#4 e4 e5 g#5 b5]:1`
-*   **Decompiled Tenuto:** `<[ v1: [e5 g#5 b5]:1 | v2: [a3 c#4 e4]:1 ]>`
+### D.2.2 Temporal & Rhythmic Quantization
 
-##### 9. Ergonomic Hand-Span Refactoring (Mind-the-Gap)
-The physical anatomy of the human hand dictates that the gap between the thumb (finger 1) and the index finger (finger 2) is naturally wider than the space between other fingers. If the Decompiler encounters a chord requiring a massive stretch between fingers 2 and 5 (e.g., spanning a 10th), it evaluates if it is physically playable. If it exceeds the ergonomic threshold, the engine automatically refactors the static cluster into an arpeggiated spanner.
-*   **Machine Translation:** `[c3 g3 e4]:4` *(Span of a 10th)*
-*   **Decompiled Tenuto:** `[c3 g3 e4]:4.arp`
+**4. Algorithmic Euclidean Reverse-Engineering**
+Standard MIDI forces algorithmic beats into rigid sixteenth-note grids. The Decompiler counts the physical discrete hits ($K$) against the total grid slots ($N$) and runs the Bresenham line-drawing algorithm $E(K,N)$ in reverse. If the hit array perfectly matches the mathematical Euclidean output, the verbose data collapses.
 
-##### 10. Tremolo & Ratchet Compression (Repetition Division)
-When importing MIDI, drum rolls or fast strings appear as dozens of discrete 32nd notes. The Decompiler divides the total tick span by the number of identical consecutive events. If it yields a perfect subdivision, it compresses the array into a single semantic modifier.
-*   **Machine Translation:** `s:32 s:32 s:32 s:32 s:32 s:32 s:32 s:32`
-*   **Decompiled Tenuto:** `s:4.roll(3)`
+* **Machine:** `k:16 r k r r k r` *(3 hits over 8 slots)*
+* **Decompiled:** `(k):3/8`
 
-##### 11. Articulation Inference (Gate-Time Thresholds)
-MIDI represents staccato notes by physically halving the note duration and inserting a rest. The Decompiler evaluates the `gate_ticks` against the logical metric grid. If a quarter note occupies exactly 50% of its allotted time, the engine restores the full logical duration and applies the semantic `.stacc` modifier.
-*   **Machine Translation:** `c4:8 r:8 d:8 r:8`
-*   **Decompiled Tenuto:** `c4:4.stacc d.stacc`
+**5. Micro-Timing & "The Pocket" Extraction (`.push` / `.pull`)**
+The Decompiler establishes a mathematically perfect rational grid. If a physical note falls a discrete number of milliseconds ($t_{\Delta}$) ahead of this grid, the engine quantizes the logical note to the nearest clean fraction and appends the absolute delta as a physical modifier.
 
-##### 12. Polyrhythm Extraction (Greatest Common Divisor)
-Standard XML forces triplets into irrational tick lengths. The Decompiler uses GCD math to find the precise integer ratio of notes occupying a foreign grid space and wraps them in a standard tuplet.
-*   **Machine Translation:** `c4:2.666 d:2.666 e:2.666`
-*   **Decompiled Tenuto:** `(c4:8 d e):3/2`
+* **Machine:** `c4:64~ c:8...` *(floating-point drift)*
+* **Decompiled:** `c4:4.push(15ms)`
 
-##### 13. Ornament Compression (Alternating Pitch Detection)
-If the Decompiler identifies a rapid, alternating sequence of major or minor second neighbor tones (e.g., C-D-C-D-C-D), it compresses the entire block into a single logical duration decorated with the `.tr` (trill) attribute.
-*   **Machine Translation:** `c4:32 d c d c d c d c d c d`
-*   **Decompiled Tenuto:** `c4:4.tr`
+**6. Polyrhythm Extraction (Greatest Common Divisor)**
+Standard XML forces triplets into irrational tick lengths. The Decompiler utilizes GCD mathematics to find the precise integer ratio $\frac{P}{Q}$ of notes occupying a foreign grid space, wrapping them in a standard rational tuplet.
 
-##### 14. Glissando/Portamento Curve Fitting
-Dense MIDI pitch-bend streams are flattened into a continuous line graph. The Decompiler measures the starting pitch and the terminal target pitch, stripping the hundreds of intermediate CC messages and replacing them with a single semantic spanner.
-*   **Machine Translation:** `c4:64 c# d d# e f f# g`
-*   **Decompiled Tenuto:** `c4:4.gliss g`
+* **Machine:** `c4:2.666 d:2.666 e:2.666`
+* **Decompiled:** `(c4:8 d e):3/2`
 
-##### 15. Structural Loop Recognition (Graph Folding)
-A DAW will copy and paste audio/MIDI regions linearly. The Decompiler's Graph Unroller works in reverse, generating a cryptographic hash for every measure. When it detects a sequential array of identical measure hashes, it folds the timeline back into itself, wrapping the code in standard barline repeat tokens (`|:` and `:|`).
-*   **Machine Translation:** `measure 1-8 { ... } measure 9-16 { [Exact copy of 1-8] }`
-*   **Decompiled Tenuto:** `measure 1-8 { |: ... :| }`
+**7. Tremolo & Ratchet Compression (Repetition Division)**
+When importing MIDI, drum rolls appear as dozens of discrete 32nd notes. The Decompiler divides the total tick span by the number of identical consecutive events. If it yields a perfect subdivision, it compresses the array into a single semantic modifier.
+
+* **Machine:** `s:32 s:32 s:32 s:32 s:32 s:32 s:32 s:32`
+* **Decompiled:** `s:4.roll(8)`
+
+### D.2.3 Acoustic & Physical Execution Heuristics
+
+**8. Syncopated Pedal Decoupling (Delayed CC64 Shift)**
+Professional pianists use a delayed "syncopated pedal," lifting the pedal exactly as a new chord is struck and depressing it a split-second later. The Decompiler algorithmically identifies these delayed CC 64 events and realigns them into a clean, decoupled `pedal:` control lane synchronized with the logical downbeat.
+
+* **Machine:** `[c4 e4 g4]:4 r:32 pedal_down:8...`
+* **Decompiled:** `<[ v1: [c4 e g]:4 | pedal: down:4 ]>`
+
+**9. Acoustic Mud Zone Abstraction (The C3 Boundary)**
+Acoustic physics dictate that dense chords below C3 create muddy overtones. If the Decompiler detects dense closed chords below C3, it flags them; if it detects "open fifths" in the deep bass, it mathematically preserves their spacing to ensure a clean harmonic foundation.
+
+* **Machine:** `[c2 g2 c3]:1`
+* **Decompiled:** `<[ v1: r:2 c3:2 | v2: [c2 g2]:1.open_fifth ]>`
+
+**10. Ergonomic Hand-Span Refactoring (Mind-the-Gap)**
+The physical anatomy of the human hand dictates ergonomic limits. If the Decompiler encounters a chord spanning greater than a 10th (exceeding maximum static human reach), it **SHOULD** automatically refactor the static cluster into an arpeggiated spanner.
+
+* **Machine:** `[c3 g3 e4]:4` *(Span of a 10th)*
+* **Decompiled:** `[c3 g3 e4]:4.arp`
+
+**11. Polychordal Stratification**
+The Decompiler scans dense 6-note or 8-note chord clusters for internal triad formations. If it detects distinct triads separated by a perfect fifth, it **SHALL** abstract them into layered polyphonic voices rather than unreadable vertical stacks.
+
+* **Machine:** `[a3 c#4 e4 e5 g#5 b5]:1`
+* **Decompiled:** `<[ v1: [e5 g#5 b5]:1 | v2: [a3 c#4 e4]:1 ]>`
+
+**12. Articulation Inference (Gate-Time Thresholds)**
+MIDI represents staccato notes by halving the note duration and inserting a rest. The Decompiler evaluates the `gate_ticks` against the logical metric grid. If an event occupies exactly $\le 50\%$ of its allotted grid time, the engine restores the full logical duration and applies the semantic `.stacc` modifier.
+
+* **Machine:** `c4:8 r:8 d:8 r:8`
+* **Decompiled:** `c4:4.stacc d.stacc`
+
+### D.2.4 Line & Graph Folding
+
+**13. Glissando/Portamento Curve Fitting**
+Dense MIDI pitch-bend streams are flattened into a continuous line graph. The Decompiler measures the starting pitch and the terminal target pitch, stripping the intermediate CC messages and replacing them with a single semantic spanner.
+
+* **Machine:** `c4:64 c# d d# e f f# g`
+* **Decompiled:** `c4:4.gliss g`
+
+**14. Ornament Compression (Alternating Pitch Detection)**
+If the Decompiler identifies a rapid, alternating sequence of major or minor second neighbor tones, it compresses the entire block into a single logical duration decorated with the `.tr` (trill) attribute.
+
+* **Machine:** `c4:32 d c d c d c d c d c d`
+* **Decompiled:** `c4:4.tr`
+
+**15. Structural Loop Recognition (Graph Folding)**
+The Decompiler generates a cryptographic hash for the absolute data of every measure block. When it detects a sequential array of identical measure hashes, it folds the timeline back into itself, wrapping the code in standard barline repeat tokens.
+
+* **Machine:** `measure 1-8 { ... } measure 9-16 { [Exact copy of 1-8] }`
+* **Decompiled:** `measure 1-8 { |: ... :| }`
