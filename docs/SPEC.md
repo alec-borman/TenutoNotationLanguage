@@ -1091,3 +1091,97 @@ To maximize Ease of Adoption, compliant Web Runtimes **SHOULD** expose an HTML C
 
 When a Tenuto script references an AI generative plugin (`src="plugin://ai-vocal-gen"`), the Web Runtime **MAY** intercept this URI and utilize WebGPU/ONNX.js to execute lightweight, quantized generative audio models directly in the user's browser, eliminating server-side inference costs and latency.
 
+# Addendum C: Generative Ergonomics & Smart Compilation
+
+**Version:** 1.0 (Extension to Tenuto 3.0.0)
+**Status:** Normative / Final
+**Scope:** Polyphonic Auto-Padding, Decoupled Control Lanes, and Relative Pitch Heuristics.
+
+## C.1 Polyphonic Auto-Padding (E3002 Mitigation)
+
+The standard Tenuto 3.0 compiler enforces strict mathematical synchronization across polyphonic voices (`<[ ... ]>`). If the total tick duration of $v_1$ does not equal $v_2$, the compiler throws a fatal `E3002: Voice Sync Failure`. While ideal for strict archival engraving, this strictness breaks linear, single-pass generative AI workflows.
+
+### C.1.1 The `auto_pad` Directive
+
+Compliant compilers **SHALL** support a global or local meta directive to relax this constraint.
+
+**Syntax:**
+
+```tenuto
+meta @{ auto_pad_voices: true }
+
+```
+
+### C.1.2 Compiler Execution Behavior
+
+When `auto_pad_voices` is enabled, the compiler intercepts the `]>` closure token and executes the following resolution logic:
+
+1. Calculates the absolute maximum tick duration ($D_{max}$) across all voices within the block.
+2. Identifies any voice ($v_i$) where its total duration ($D_i$) is less than $D_{max}$.
+3. Automatically injects a terminal rest node `r` with a duration exactly equal to $(D_{max} - D_i)$ into the Abstract Syntax Tree (AST) for that voice.
+4. Suppresses the `E3002` error and proceeds with IR unrolling.
+
+## C.2 Decoupled Control Lanes (The Pedaling Track)
+
+In traditional acoustic engraving, piano pedaling is often notated as a continuous line completely independent of the left-hand finger logic.
+
+In Tenuto 3.0, chaining `.ped` to pitch events bloated the AST and made rhythm edits destructive to the pedaling logic. Addendum C introduces decoupled control lanes.
+
+### C.2.1 The `pedal` Identifier
+
+Within any polyphonic block or staff, composers **MAY** declare a `pedal:` lane. This lane does not generate acoustic pitch events; it exclusively maps logical durations to Continuous Controller (CC 64) execution commands.
+
+### C.2.2 Syntax and Execution
+
+The `pedal:` lane utilizes absolute durations to trigger state changes (`down`, `up`, `half`).
+
+```tenuto
+measure 1 {
+    piano: <[ 
+        v1:    [c3 g3 c4]:4.marc [f3 a3 c4]:8 [g3 b3 d4]:2 |
+        pedal: down:4            up:8         down:2       | 
+    ]>
+}
+
+```
+
+**Compiler Behavior:** The compiler translates `down:4` into a MIDI CC 64 value of 127 at the start of the event, holding that state for exactly one quarter note before reading the next instruction. This allows an AI to map sweeping, syncopated pedal changes without interfering with the complex rhythmic generation of the pitch tracks.
+
+## C.3 Relative Pitch Heuristics (`style=relative`)
+
+The "Sticky State" architecture of Tenuto 3.0 assumes absolute octave retention. If a user writes `b4 c`, the compiler assumes `c4`, resulting in a massive downward leap of a Major 7th. To prevent AI context drift over long horizontal arpeggios, Tenuto introduces the Relative Pitch heuristic.
+
+### C.3.1 The `style=relative` Declaration
+
+Instruments can be instantiated with `style=relative` to alter the compiler's semantic inference engine.
+
+**Syntax:**
+
+```tenuto
+def lead_synth "Lead" style=relative clef=treble
+
+```
+
+### C.3.2 The "Closest Interval" Rule
+
+When compiling a `style=relative` track, if an event omits the octave integer (e.g., `c`), the compiler **MUST NOT** blindly inherit the previous octave integer. Instead, it **SHALL** calculate the absolute intervallic distance to the nearest matching pitch class.
+
+**Execution Logic:**
+
+* The compiler calculates the distance up and the distance down to the specified pitch class.
+* The compiler assigns the octave integer that results in a leap of a **Tritone (6 semitones) or less**.
+* If the leap is exactly a Tritone (e.g., `f` to `b`), the compiler defaults to the ascending interval.
+
+**Example Comparison:**
+
+```tenuto
+%% Standard Mode (Absolute Sticky State)
+%% Output: B4 -> C4 (Leaps DOWN a Major 7th)
+standard_synth: b4:8 c:8 
+
+%% Relative Mode (Smart Voice Leading)
+%% Output: B4 -> C5 (Steps UP a Minor 2nd because it is the closest 'C')
+relative_synth: b4:8 c:8 
+
+```
+
