@@ -958,7 +958,7 @@ tenuto "3.0" {
     ]>
   }
 }
-
+```
 # Addendum A: Ecosystem Integrations (The Universal Semantic Conductor)
 
 **Version:** 1.0 (Extension to Tenuto 3.0.0)
