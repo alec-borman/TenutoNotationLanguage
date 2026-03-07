@@ -35,6 +35,53 @@ A compliant Tenuto compiler **MUST** implement a rigid 6-stage transformation ar
 ### 1.3 Conformance & Terminology
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
+This is exactly how a professional, industry-standard language specification handles scope creep. By formalizing this section, you protect the AI's ability to "think" in advanced concepts while protecting the compiler developer from having to build a DAW from scratch.
+
+Here is the formal draft for **Section 1.4** to insert directly into your specification's Introduction.
+
+---
+
+### 1.4 Conformance Profiles & Graceful Degradation
+
+Because Tenuto 3.0 spans the absolute limits of discrete visual notation and continuous digital signal processing, it is not strictly necessary for every implementation to support all rendering targets. To foster a modular open-source ecosystem, the Tenuto Working Group defines three progressive **Conformance Profiles**.
+
+Compiler authors **MUST** clearly declare their supported profile.
+
+#### 1.4.1 The Golden Rule of Parsing (Frontend Universality)
+
+Regardless of the declared Conformance Profile, **ALL** compliant Tenuto 3.0 compilers **MUST** implement the complete Lexer and LL(1) Parser for the entire v3.0 grammar.
+
+If an AI or composer writes a `style=synth` track with `.accelerate(-12)` pitch dives, a basic sheet-music-only compiler **MUST NOT** crash or throw a fatal `E1000` Syntax Error. The frontend must successfully ingest the tokens and build the complete Abstract Syntax Tree (AST). Feature exclusion happens strictly during the Backend Emitting phase.
+
+#### 1.4.2 Profile A: Core Conformance (The Logic Layer)
+
+This is the minimum viable implementation required to be considered a Tenuto 3.0 Compiler.
+
+* **Required Features:** * The Stateful Cursor (Sticky State).
+* Rational Temporal Engine (Tuplets and Euclidean `(k):3/8`).
+* Polyphonic Voice Isolation (`<[ ]>`).
+* Micro-timing math (`.pull`, `.push`) applied to absolute tick execution.
+
+
+* **Required Targets:** MIDI 1.0 (or 2.0) and/or MusicXML 4.0.
+* **Degradation Behavior:** A Profile A compiler encountering `style=concrete`, `style=synth`, or advanced audio attributes (e.g., `.slice`, `sidechain`) **SHALL** bypass those AST nodes during the emitting phase and output a non-fatal warning:
+* `W4001: Unsupported Extended Feature. Track 'vox' utilizes 'style=concrete', which is bypassed in Profile A compilers.`
+
+
+#### 1.4.3 Profile B: Native Audio Conformance (The DSP Layer)
+
+Compilers implementing Profile B function as standalone audio-rendering engines.
+
+* **Required Features:** All Profile A features, plus native execution of `style=concrete` (audio buffer slicing, `.stretch`) and `style=synth` (ADSR envelopes, continuous portamento interpolation).
+* **Required Targets:** Native audio file generation (`.wav`, `.flac`) or direct browser Web Audio API execution (Wasm).
+* **Degradation Behavior:** If a track utilizes `style=chuck` or external OSC delegation, a Profile B compiler safely warns and bypasses the external routing.
+
+#### 1.4.4 Profile C: Delegation Conformance (The Network Layer)
+
+The most advanced implementation tier, designed for live-coding and external hardware orchestration.
+
+* **Required Features:** All Profile A and B features, plus network protocol implementations.
+* **Required Targets:** OSC (Open Sound Control) bundle transmission to external runtimes (e.g., SuperCollider, TidalCycles) and peer-to-peer phase synchronization via Ableton Link.
 
 ## 2. Lexical Structure & Tokenization
 
