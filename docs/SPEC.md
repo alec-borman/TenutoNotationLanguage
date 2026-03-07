@@ -1299,3 +1299,71 @@ The Decompiler generates a cryptographic hash for the absolute data of every mea
 
 * **Machine:** `measure 1-8 { ... } measure 9-16 { [Exact copy of 1-8] }`
 * **Decompiled:** `measure 1-8 { |: ... :| }`
+
+
+# Addendum E: Target Bounds & Fallback Rendering (The Visual-Acoustic Demarcation)
+
+**Version:** 1.0 (Extension to Tenuto 3.0.0)
+**Status:** Normative / Final
+**Scope:** AST Pruning, Graphic Notation Fallbacks, and Target-Specific Compilation Directives.
+
+## E.1 Architectural Philosophy & The Demarcation Problem
+
+Tenuto 3.0 unifies the discrete (sheet music) and the continuous (DSP/audio) into a single Abstract Syntax Tree (AST). However, when a compiler is executed with a discrete visual target (e.g., `tenutoc --target musicxml` or `--target svg`), it encounters **Unprintable Physics**—events and modifiers that possess absolute temporal geometry but zero diatonic visual spelling (e.g., a `.wav` file sliced via `style=concrete`, or an invisible `.cc` sidechain curve).
+
+To guarantee deterministic behavior, a compliant Tenuto compiler **MUST** execute a rigid Demarcation Pass prior to Phase 5 (Visual Translation). The compiler must explicitly decide whether to **Prune** (silently ignore), **Draw** (use avant-garde graphic notation), or **Halt** (throw a fatal error).
+
+## E.2 Staff-Level Resolution (The Style Filter)
+
+The rendering fate of an entire staff is dictated by its `style` declaration in the `def` block.
+
+### E.2.1 Native Visual Styles
+
+Staves defined as `style=standard`, `style=tab`, or `style=grid` are inherently **Printable**. The compiler routes them directly to the Rebarring and Spelling engines.
+
+### E.2.2 Unprintable Styles (`concrete`, `synth`, `chuck`)
+
+Staves representing raw audio buffers or continuous frequency algorithms lack diatonic pitch data. By default, the compiler applies **Implicit Masking**:
+
+* **Behavior:** When targeting XML/SVG, the compiler completely drops these staves from the global visual system, acting as if they were wrapped in an `if ($target == "audio")` directive.
+* **Override:** A user **MAY** force the compiler to print these staves by explicitly setting `print=true` in the definition block (e.g., `def vox "Vocal" style=concrete print=true`). This triggers the **Graphic Notation Fallback** (See Section E.4).
+
+## E.3 Attribute-Level AST Pruning
+
+Even within a highly traditional, printable staff (`style=standard`), a user may attach modern DSP modifiers (e.g., `c4:4.pull(15ms).stretch`). The Demarcation Pass executes an $O(n)$ traversal of the AST, actively pruning audio-exclusive attributes from the visual layout tree while preserving the logical metrical anchors.
+
+| Attribute Category | AST Action (Visual Target) | Visual Result (MusicXML/SVG) |
+| --- | --- | --- |
+| **Micro-Timing** (`.pull`, `.push`) | **Pruned** | Stripped entirely. The note renders perfectly quantized to its logical metrical grid fraction. |
+| **Audio-Manipulation** (`.stretch`, `.slice`, `.reverse`) | **Pruned** | Stripped. The logical duration sets the visual bounding box. |
+| **Physical ADSR Envelopes** (`env=@{...}`) | **Pruned** | Ignored by the layout engine. |
+| **Continuous Control / LFOs** (`.cc`) | **Evaluated** | If attached to a Spacer token (`s:4.cc`), the node is skipped (no ink). If attached to a visible note, the base note prints, but the curve is ignored unless mapped to a standard text directive (e.g., "expr."). |
+| **Monophonic Choke** (`cut_group`) | **Pruned** | Renders as standard, overlapping written durations; choke mechanics are purely acoustic. |
+
+## E.4 Graphic Notation Fallback (The Aleatoric Renderer)
+
+If a user explicitly forces a `style=concrete` or `style=synth` track to print via the `print=true` attribute, the compiler **MUST NOT** attempt to guess the diatonic pitch. Instead, it invokes the Graphic Notation Fallback, borrowing from 20th-century avant-garde typography.
+
+1. **The One-Line Staff:** The standard 5-line staff is replaced with a single, unpitched horizontal timeline.
+2. **Duration Blocks:** Events are drawn as thick, rectangular bounding boxes proportional to their exact logical duration.
+3. **Label Injection:** The mapped alphanumeric token (e.g., the `A` in `vox: A:4`) is printed in a sans-serif font directly inside or above the bounding box to cue the performer/producer to the specific sample trigger.
+4. **Curve Rendering (Continuous Pitch):** For `style=synth` executing `.glide(TimeVal)` or `.accelerate`, the compiler draws a continuous, interpolated Bezier curve corresponding to the frequency modulation, spanning across the visual measure space.
+
+## E.5 Explicit Compilation Directives & Error Codes
+
+To give the composer absolute control over the Demarcation Pass, Addendum E introduces specific compiler directives and a new 4000-Series error.
+
+### E.5.1 The `@print` Directive
+
+Users can manually override the AST Pruning engine on a per-node basis using the `@print` pseudo-attribute.
+
+* *Syntax:* `s:4.cc(7, [0, 127], "linear").@print("Volume Swell")`
+* *Execution:* The compiler prunes the raw MIDI CC data, but injects a standard `<direction><words>` text annotation reading *"Volume Swell"* into the MusicXML DOM at that exact absolute tick.
+
+### E.5.2 E4006: Unprintable Physics
+
+If the compiler is executed in `--strict` mode (which forbids Implicit Masking to ensure the user audits all output), and it encounters an unprintable staff without a `print=true` override, it throws a fatal error:
+
+* **`E4006: Visual Translation Impossible.`**
+* *Trigger:* Target is visual, `--strict` is enabled, and a `concrete` or `synth` staff is evaluated.
+* *Resolution:* The user must explicitly wrap the track in `if ($target == "audio")`, or append `print=true` to force graphic notation.
