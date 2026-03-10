@@ -29,11 +29,11 @@ Tenuto uses semantic inference to eliminate redundancy. A line like `c4:4 d e f`
 
 ### 2. Rational Temporal Execution
 
-Most sequencers suffer from floating‑point quantization drift. Tenuto’s Intermediate Representation (IR) calculates time using pure rational arithmetic (fractions), guaranteeing that complex tuplets and phase alignments remain mathematically perfect across thousands of measures.
+Most sequencers suffer from floating‑point quantization drift. Tenuto’s Intermediate Representation (IR) calculates time using pure rational arithmetic (fractions), guaranteeing that complex tuplets and Euclidean rhythms remain mathematically perfect across thousands of measures.
 
 ### 3. DSP Delegation & Live Sync
 
-Tenuto does not reinvent audio synthesis—it orchestrates it. Code can be compiled to Open Sound Control (OSC) bundles, triggering high‑performance engines like SuperCollider, ChucK, or Ableton Live. The `tenutod` runtime daemon integrates **Ableton Link**, allowing Tenuto scripts (and AI‑generated injections) to sync perfectly with shared network tempos during live performances.
+Tenuto does not reinvent audio synthesis—it orchestrates it. Code can be compiled to Open Sound Control (OSC) bundles, triggering high‑performance engines like SuperCollider, ChucK, or Ableton Live. The upcoming `tenutod` runtime daemon integrates **Ableton Link**, allowing Tenuto scripts (and AI‑generated injections) to sync perfectly with shared network tempos during live performances.
 
 ### 4. Zero‑Friction Web Runtime (Wasm)
 
@@ -49,7 +49,7 @@ Tenuto is built for the web. The parser compiles to WebAssembly (`wasm32-unknown
 
 ## How It Works: The Pipeline
 
-The `tenutoc` compiler transforms a Tenuto source file into absolute‑time instructions through a six‑stage pipeline:
+The `tenutoc` compiler transforms a Tenuto source file into absolute‑time instructions through a strict compilation pipeline:
 
 ```mermaid
 graph TD
@@ -77,7 +77,7 @@ graph TD
 
 1. **Authorship** – A human or AI writes a `.ten` file that references external assets (samples, AI plugins, etc.).
 2. **Compilation** – `tenutoc` parses the source, resolves all references, and generates an absolute‑timeline Intermediate Representation (IR) using rational arithmetic.
-3. **Execution** – The IR is routed to one or more targets: visual notation (MusicXML/PDF), hardware/software synthesis (OSC/MIDI), or the browser’s Web Audio API.
+3. **Execution** – The IR is routed to one or more targets: visual notation (MusicXML/SVG), hardware/software synthesis (OSC/MIDI), or the browser’s Web Audio API.
 
 ---
 
@@ -92,17 +92,17 @@ tenuto "3.0" {
   %% Define instruments and their physics
   def piano "Piano" style=standard clef=treble
   def sub "808 Bass" style=synth env=@{ a: 5ms, d: 1s, s: 100%, r: 50ms }
-  def vox "Lead AI" style=concrete src="plugin://ai-vocal-gen"
+  def vox "Lead AI" style=concrete src="plugin://ai-vocal-gen" map=@{ a:[0s, 1.2s] }
 
   measure 1 {
     %% Acoustic routing → sheet music / MIDI
     piano: c5:8.stacc d e f g a b c6:2.ten |
 
-    %% DSP synthesis → OSC glides for SuperCollider
-    sub: c2:2.glide(150ms) c3:2 |
+    %% DSP synthesis → Continuous 14-bit glides and Pitch dives
+    sub: c2:2.glide(150ms) c3:2.accelerate(-12) |
 
     %% AI generative mapping → passes lyrics and pitch to a local WebGPU model
-    vox: c4:4 d e f |
+    vox: a:4.slice(4) |
     vox.lyric: "He- llo a- gain"
   }
 }
@@ -112,20 +112,20 @@ tenuto "3.0" {
 
 ## Current Status & Roadmap
 
-The **Tenuto v3.0 Specification** is mathematically finalized. We are actively implementing the Rust infrastructure to bring this universal conductor to life.
+The **Tenuto v3.0 Specification** is finalized, and the core Rust compiler architecture is fully operational. 
 
-- **🟢 Available Now (v2.2.0 Stable):**  
-  The `main` branch contains a highly optimized Rust compiler (`tenutoc`) capable of parsing Tenuto syntax, evaluating rational time grids, and exporting to standard `.mid` (MIDI) and `.musicxml` (MusicXML 4.0) for immediate use in DAWs and engraving software.  
+- 🟢 **Available Now (v3.0.0 - The Producer Update):**  
+  The `main` branch contains the highly optimized Rust compiler (`tenutoc`). It is 100% core-compliant with the v3.0 Spec, capable of parsing Euclidean rhythms, generative auto-padding, concrete sampling, and synth physics. It currently exports to `.mid` (MIDI) and `.musicxml` (MusicXML 4.0) via a strict Visual-Acoustic Demarcation pass.  
   ```bash
   cargo install --path .
   tenutoc --input score.ten --output score.mid
   ```
 
-- **🔵 In Development (v3.0.0 Infrastructure):**
-  - **Phase V:** Upgrading the Rust AST to resolve `style=synth` and `style=concrete` URI fetching.
-  - **Phase VI:** Building the `tenutod` daemon, Ableton Link API integration, and OSC emitter backend.
-  - **Phase VII:** Compiling the parser to `wasm32-unknown-unknown` and building the `<tenuto-score>` Web Component.
-  - **Phase VIII:** `tenuto-engrave` — a native Rust engraving engine that renders publication‑ready sheet music directly from Tenuto source, bypassing third‑party XML software.
+- 🔵 **In Development (The TSA & TEDP Ecosystem):**
+  - **Phase VI (`tenutod`):** Building the background daemon, Ableton Link phase synchronization, and OSC emitter backend for SuperCollider/ChucK.
+  - **Phase VII (`wasm32`):** Compiling the parser to WebAssembly and building the `<tenuto-score>` HTML Web Component.
+  - **Phase VIII (`tenuto-engrave`):** A native Rust engraving engine utilizing the Cassowary constraint solver to render publication‑ready SVG sheet music directly from Tenuto source.
+  - **Phase IX (`tenuto-decompile`):** The $O(n)$ reverse-inference pipeline to algorithmically compress raw MIDI/XML back into idiomatic, human-readable Tenuto code.
 
 ---
 
@@ -133,13 +133,13 @@ The **Tenuto v3.0 Specification** is mathematically finalized. We are actively i
 
 Tenuto is an open standard and an open‑source project. We are actively seeking contributors in the following areas:
 
-- **Rust Engineering:** AST expansion, WebAssembly compilation, and network daemons (Ableton Link / OSC).
+- **Rust Engineering:** WebAssembly compilation, constraint-solving (Cassowary), and network daemons (Ableton Link / OSC).
 - **AI/ML Research:** Fine‑tuning LLMs on the Tenuto syntax and integrating generative audio plugin endpoints.
 - **Audio DSP:** Refining the SuperDirt and ChucK mapping protocols.
 
 - [Read the Full v3.0 Specification](https://github.com/alec-borman/TenutoNotationLanguage/blob/main/docs/SPEC.md)
 - [Join the Discussions](https://github.com/alec-borman/TenutoNotationLanguage/discussions)
-- [Report an Issue](https://github.com/alec-borman/TenutoNotationLanguage/issues)
+-[Report an Issue](https://github.com/alec-borman/TenutoNotationLanguage/issues)
 
 **License:** MIT
 
