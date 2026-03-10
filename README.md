@@ -106,30 +106,31 @@ graph TD
     %% LAYER 1: APPLICATION
     subgraph L1["Layer 1: Application (Ingestion & Frontends)"]
         direction LR
-        A1("👨‍💻 <b>Sketch Mode REPL</b><br/><i>(Zero-Friction Human Input)</i>"):::layer1
-        A2("🤖 <b>Sticky State API</b><br/><i>(15-Token/Measure LLM Input)</i>"):::layer1
-        A3("📂 <b>Semantic Decompiler</b><br/><i>(O(n) MIDI/XML Reverse Inference)</i>"):::layer1
+        A1["👨‍💻 <b>Sketch Mode REPL</b><br/><i>(Zero-Friction Human Input)</i>"]:::layer1
+        A2["🤖 <b>Sticky State API</b><br/><i>(15-Token/Measure LLM Input)</i>"]:::layer1
+        A3["📂 <b>Semantic Decompiler</b><br/><i>(O(n) MIDI/XML Reverse Inference)</i>"]:::layer1
     end
 
     %% LAYER 2: NETWORK (THE NARROW WAIST)
     subgraph L2["Layer 2: Network (The Narrow Waist)"]
-        IR{"<b>Tenuto Universal IR</b><br/><hr/><i>Strict Ontological Separation<br/>Rational Temporal Engine<br/>(0.00% Quantization Drift)</i>"}:::layer2
+        %% Changed from a diamond {} to a rounded rectangle () to fix text clipping
+        IR("<b>Tenuto Universal IR</b><br/><i>Strict Ontological Separation<br/>Rational Temporal Engine<br/>(0.00% Quantization Drift)</i>"):::layer2
     end
 
     %% LAYER 3: TRANSPORT
     subgraph L3 ["Layer 3: Transport (Execution & Protocols)"]
         direction LR
-        T1("📡 <b>TEDP (OSC)</b><br/><i>(Look-Ahead Packet Scheduling)</i>"):::layer3
-        T2("⏱️ <b>Ableton Link</b><br/><i>(Network Phase Synchronization)</i>"):::layer3
-        T3("🖨️ <b>TEAS Engine</b><br/><i>(Cassowary Layout Router)</i>"):::layer3
+        T1["📡 <b>TEDP (OSC)</b><br/><i>(Look-Ahead Packet Scheduling)</i>"]:::layer3
+        T2["⏱️ <b>Ableton Link</b><br/><i>(Network Phase Synchronization)</i>"]:::layer3
+        T3["🖨️ <b>TEAS Engine</b><br/><i>(Cassowary Layout Router)</i>"]:::layer3
     end
 
     %% LAYER 4: PHYSICAL
     subgraph L4 ["Layer 4: Physical (The Output Reality)"]
         direction LR
-        P1("🎛️ <b>Hardware / Pro Audio</b><br/><i>(SuperCollider / MIDI 2.0)</i>"):::layer4
-        P2("🌐 <b>Native Web Browser</b><br/><i>(Wasm / Web Audio API)</i>"):::layer4
-        P3("📄 <b>Classical Publication</b><br/><i>(SVG / MusicXML 4.0)</i>"):::layer4
+        P1["🎛️ <b>Hardware / Pro Audio</b><br/><i>(SuperCollider / MIDI 2.0)</i>"]:::layer4
+        P2["🌐 <b>Native Web Browser</b><br/><i>(Wasm / Web Audio API)</i>"]:::layer4
+        P3["📄 <b>Classical Publication</b><br/><i>(SVG / MusicXML 4.0)</i>"]:::layer4
     end
 
     %% Edge Connections (The Hourglass Flow)
