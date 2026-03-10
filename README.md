@@ -1,7 +1,3 @@
-Here is the ultimate, finalized `README.md` for Tenuto 3.0, preserving your brilliant Mermaid diagram tagline and integrating the full architectural scope of the new specification.
-
-***
-
 # Tenuto 3.0: The Universal Language for Music and Audio
 
 **What HTML did for documents and Mermaid did for diagrams, Tenuto does for music.**
