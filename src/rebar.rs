@@ -5,7 +5,7 @@
 //! and automatic rest padding.
 
 use std::collections::HashMap;
-use crate::ir::{Timeline, AtomicEvent, TabArticulation};
+use crate::ir::{Timeline, AtomicEvent, TabArticulation, LyricExtension};
 
 // ============================================================================
 // 1. VISUAL IR DATA STRUCTURES
@@ -22,6 +22,7 @@ pub struct VisualScore {
 #[derive(Debug, Clone)]
 pub struct VisualStaff {
     pub measures: Vec<VisualMeasure>,
+    pub print: bool, // --- V3.0 MASTER SLICE: Print flag inherited from the IR
 }
 
 /// A discrete box of time. Events inside MUST sum exactly to `end_tick - start_tick`.
@@ -130,7 +131,7 @@ impl MeasureGrid {
             let mut tie_stop = !is_first_slice;
             let mut tie_start = !is_last_slice;
 
-            if matches!(event.kind, crate::ir::EventKind::Rest) {
+            if matches!(event.kind, crate::ir::EventKind::Rest | crate::ir::EventKind::Space | crate::ir::EventKind::Concrete { .. }) {
                 tie_stop = false;
                 tie_start = false;
             }
@@ -190,13 +191,19 @@ impl VisualStaff {
                     filled_events.push(VisualEvent {
                         atomic: AtomicEvent {
                             tick: current_tick, duration_ticks: gap_duration, gate_ticks: gap_duration,
+                            physical_tick_offset: 0, 
                             kind: crate::ir::EventKind::Rest,
                             tuplet_state: None, 
                             is_grace: false, 
                             is_ghost: false, 
                             tremolo_slashes: None,
-                            cc_automations: vec![], // FIXED: Added missing CC field
-                            tab_articulation: TabArticulation::None, // FIXED: Added missing Tab field
+                            cc_automations: vec![],
+                            tab_articulation: TabArticulation::None,
+                            synth_glide_start_midi: None,
+                            synth_glide_ticks: None,
+                            synth_accelerate_semitones: None,
+                            lyric: None,
+                            lyric_extension: LyricExtension::None,
                         },
                         tie_start: false, tie_stop: false,
                     });
@@ -211,13 +218,19 @@ impl VisualStaff {
                 filled_events.push(VisualEvent {
                     atomic: AtomicEvent {
                         tick: current_tick, duration_ticks: gap_duration, gate_ticks: gap_duration,
+                        physical_tick_offset: 0, 
                         kind: crate::ir::EventKind::Rest,
                         tuplet_state: None, 
                         is_grace: false, 
                         is_ghost: false, 
                         tremolo_slashes: None,
-                        cc_automations: vec![], // FIXED: Added missing CC field
-                        tab_articulation: TabArticulation::None, // FIXED: Added missing Tab field
+                        cc_automations: vec![],
+                        tab_articulation: TabArticulation::None,
+                        synth_glide_start_midi: None,
+                        synth_glide_ticks: None,
+                        synth_accelerate_semitones: None,
+                        lyric: None,
+                        lyric_extension: LyricExtension::None,
                     },
                     tie_start: false, tie_stop: false,
                 });
@@ -226,7 +239,7 @@ impl VisualStaff {
             measure.events = filled_events;
         }
 
-        Self { measures }
+        Self { measures, print: track.print }
     }
 }
 
@@ -289,20 +302,21 @@ mod tests {
         assert_eq!(grid.boundaries[1], (7680, 15360, ts_4_4));
     }
 
+    fn mock_event(tick: u64, duration: u64) -> AtomicEvent {
+        AtomicEvent {
+            tick, duration_ticks: duration, gate_ticks: duration, physical_tick_offset: 0,
+            kind: crate::ir::EventKind::Rest, tuplet_state: None, is_grace: false, is_ghost: false,
+            tremolo_slashes: None, cc_automations: vec![], tab_articulation: TabArticulation::None,
+            synth_glide_start_midi: None, synth_glide_ticks: None, synth_accelerate_semitones: None,
+            lyric: None, lyric_extension: LyricExtension::None,
+        }
+    }
+
     #[test]
     fn test_guillotine_contained_note() {
         let ts = TimeSignature::parse("4/4").unwrap();
         let grid = MeasureGrid::generate(ts, &HashMap::new(), 7680, 1920);
-        let event = AtomicEvent {
-            tick: 0, duration_ticks: 1920, gate_ticks: 1920,
-            kind: crate::ir::EventKind::Rest, 
-            tuplet_state: None, 
-            is_grace: false, 
-            is_ghost: false, 
-            tremolo_slashes: None,
-            cc_automations: vec![],
-            tab_articulation: TabArticulation::None,
-        };
+        let event = mock_event(0, 1920);
         let slices = grid.slice_event(&event);
         assert_eq!(slices.len(), 1);
         assert!(!slices[0].1.tie_start && !slices[0].1.tie_stop); 
@@ -312,19 +326,12 @@ mod tests {
     fn test_guillotine_straddling_note() {
         let ts = TimeSignature::parse("4/4").unwrap();
         let grid = MeasureGrid::generate(ts, &HashMap::new(), 15360, 1920);
-        let event = AtomicEvent {
-            tick: 5760, duration_ticks: 3840, gate_ticks: 3840,
-            kind: crate::ir::EventKind::Note { 
-                pitch_midi: 60, cents: 0, velocity: 100, 
-                spelling: crate::spelling::SpelledPitch::from_midi(60, 0, &crate::spelling::KeySignature::default()) 
-            },
-            tuplet_state: None, 
-            is_grace: false, 
-            is_ghost: false, 
-            tremolo_slashes: None,
-            cc_automations: vec![],
-            tab_articulation: TabArticulation::None,
+        let mut event = mock_event(5760, 3840);
+        event.kind = crate::ir::EventKind::Note { 
+            pitch_midi: 60, cents: 0, velocity: 100, 
+            spelling: crate::spelling::SpelledPitch::from_midi(60, 0, &crate::spelling::KeySignature::default()) 
         };
+
         let slices = grid.slice_event(&event);
         assert_eq!(slices.len(), 2);
         assert_eq!(slices[0].1.atomic.duration_ticks, 1920);
@@ -338,9 +345,10 @@ mod tests {
         let ts = TimeSignature::parse("4/4").unwrap();
         let grid = MeasureGrid::generate(ts, &HashMap::new(), 7680, 1920);
         let track = crate::ir::Track {
-            label: "Vln".into(), patch: "violin".into(), tuning: vec![],
-            keyswitches: HashMap::new(), perc_map: HashMap::new(), events: vec![],
-            current_key: crate::spelling::KeySignature::default(),
+            label: "Vln".into(), patch: "violin".into(), style: "standard".into(), print: true,
+            tuning: vec![], keyswitches: HashMap::new(), perc_map: HashMap::new(), 
+            concrete_map: HashMap::new(), env: HashMap::new(), cut_group: None,
+            events: vec![], current_key: crate::spelling::KeySignature::default(),
             spelling_state: crate::spelling::MeasureSpellingState::new(crate::spelling::KeySignature::default()),
         };
         let visual_staff = VisualStaff::build(&track, &grid);
@@ -351,23 +359,17 @@ mod tests {
     fn test_void_filler_partial_gaps() {
         let ts = TimeSignature::parse("4/4").unwrap();
         let grid = MeasureGrid::generate(ts, &HashMap::new(), 7680, 1920);
-        let event = AtomicEvent {
-            tick: 3840, duration_ticks: 1920, gate_ticks: 1920,
-            kind: crate::ir::EventKind::Note { 
-                pitch_midi: 60, cents: 0, velocity: 100, 
-                spelling: crate::spelling::SpelledPitch::from_midi(60, 0, &crate::spelling::KeySignature::default()) 
-            },
-            tuplet_state: None, 
-            is_grace: false, 
-            is_ghost: false, 
-            tremolo_slashes: None,
-            cc_automations: vec![],
-            tab_articulation: TabArticulation::None,
+        let mut event = mock_event(3840, 1920);
+        event.kind = crate::ir::EventKind::Note { 
+            pitch_midi: 60, cents: 0, velocity: 100, 
+            spelling: crate::spelling::SpelledPitch::from_midi(60, 0, &crate::spelling::KeySignature::default()) 
         };
+
         let track = crate::ir::Track {
-            label: "Vln".into(), patch: "violin".into(), tuning: vec![],
-            keyswitches: HashMap::new(), perc_map: HashMap::new(), events: vec![event],
-            current_key: crate::spelling::KeySignature::default(),
+            label: "Vln".into(), patch: "violin".into(), style: "standard".into(), print: true,
+            tuning: vec![], keyswitches: HashMap::new(), perc_map: HashMap::new(), 
+            concrete_map: HashMap::new(), env: HashMap::new(), cut_group: None,
+            events: vec![event], current_key: crate::spelling::KeySignature::default(),
             spelling_state: crate::spelling::MeasureSpellingState::new(crate::spelling::KeySignature::default()),
         };
         let visual_staff = VisualStaff::build(&track, &grid);
@@ -382,17 +384,16 @@ mod tests {
     #[test]
     fn test_visual_score_orchestrator() {
         let mut timeline = Timeline {
-            title: "Rebar Test".into(), tempo: 120, ppq: 1920, tracks: HashMap::new(),
+            title: "Rebar Test".into(), tempo: 120, ppq: 1920, 
+            auto_pad_voices: false, swing: HashMap::new(), humanize: 0.0,
+            tracks: HashMap::new(),
         };
         
         let track = crate::ir::Track {
-            label: "Vln".into(), 
-            patch: "violin".into(), 
-            tuning: Vec::new(),
-            keyswitches: HashMap::new(), 
-            perc_map: HashMap::new(), 
-            events: Vec::new(),
-            current_key: crate::spelling::KeySignature::default(),
+            label: "Vln".into(), patch: "violin".into(), style: "standard".into(), print: true,
+            tuning: Vec::new(), keyswitches: HashMap::new(), perc_map: HashMap::new(), 
+            concrete_map: HashMap::new(), env: HashMap::new(), cut_group: None,
+            events: Vec::new(), current_key: crate::spelling::KeySignature::default(),
             spelling_state: crate::spelling::MeasureSpellingState::new(crate::spelling::KeySignature::default()),
         };
         

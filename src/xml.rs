@@ -1,11 +1,13 @@
 //! # Tenuto MusicXML 4.0 Exporter
 //! 
 //! Transforms the `VisualScore` IR into valid MusicXML. 
-//! Implements strict Polyphony rewinding (<backup>), Chord detection, 
-//! and Visual Type inference (<type> and <dot/>).
+//! 
+//! **V3.0.0 Updates:**
+//! - Master Slice: Demarcation pass completely drops unprintable tracks.
+//! - Master Slice: Outputs perfectly formatted `<lyric>` tags with syllabic extensions.
 
 use crate::rebar::{VisualScore, VisualEvent};
-use crate::ir::EventKind;
+use crate::ir::{EventKind, LyricExtension};
 use crate::spelling::AccidentalDisplay;
 
 // ============================================================================
@@ -23,7 +25,9 @@ pub fn export(score: &VisualScore, ppq: u32) -> Result<String, String> {
     xml.push_str(&format!("    <work-title>{}</work-title>\n", escape_xml(&score.title)));
     xml.push_str("  </work>\n");
 
-    let mut staves: Vec<_> = score.staves.iter().collect();
+    // --- V3.0 MASTER SLICE: DEMARCATION PASS ---
+    // Only collect and export staves that are explicitly flagged to print!
+    let mut staves: Vec<_> = score.staves.iter().filter(|(_, s)| s.print).collect();
     staves.sort_by_key(|(id, _)| *id);
 
     xml.push_str("  <part-list>\n");
@@ -54,7 +58,6 @@ pub fn export(score: &VisualScore, ppq: u32) -> Result<String, String> {
                 xml.push_str("      </attributes>\n");
             }
 
-            // --- V2.1 POLYPHONY & CHORD ORCHESTRATOR ---
             let mut current_xml_tick = measure.start_tick;
             let mut last_tick = None;
             let mut current_voice = 1;
@@ -101,14 +104,21 @@ fn escape_xml(input: &str) -> String {
 // ============================================================================
 
 fn write_event(xml: &mut String, event: &VisualEvent, ppq: u32, is_chord: bool, voice: u32) {
-    xml.push_str("      <note>\n");
+    let is_space = matches!(event.atomic.kind, EventKind::Space);
+
+    // Safely hide pure CC automation lanes from the printed page.
+    if is_space {
+        xml.push_str("      <note print-object=\"no\">\n");
+    } else {
+        xml.push_str("      <note>\n");
+    }
 
     if is_chord {
         xml.push_str("        <chord/>\n");
     }
 
     match &event.atomic.kind {
-        EventKind::Rest => { xml.push_str("        <rest/>\n"); },
+        EventKind::Rest | EventKind::Space | EventKind::Concrete { .. } => { xml.push_str("        <rest/>\n"); },
         EventKind::Note { spelling, .. } => {
             xml.push_str("        <pitch>\n");
             xml.push_str(&format!("          <step>{}</step>\n", spelling.step));
@@ -122,8 +132,11 @@ fn write_event(xml: &mut String, event: &VisualEvent, ppq: u32, is_chord: bool, 
 
     xml.push_str(&format!("        <duration>{}</duration>\n", event.atomic.duration_ticks));
     
-    if event.tie_stop { xml.push_str("        <tie type=\"stop\"/>\n"); }
-    if event.tie_start { xml.push_str("        <tie type=\"start\"/>\n"); }
+    // Safety guard: Spaces should never render ties.
+    if !is_space {
+        if event.tie_stop { xml.push_str("        <tie type=\"stop\"/>\n"); }
+        if event.tie_start { xml.push_str("        <tie type=\"start\"/>\n"); }
+    }
 
     xml.push_str(&format!("        <voice>{}</voice>\n", voice));
 
@@ -139,13 +152,15 @@ fn write_event(xml: &mut String, event: &VisualEvent, ppq: u32, is_chord: bool, 
 
     let has_accidental = if let EventKind::Note { spelling, .. } = &event.atomic.kind { spelling.display != AccidentalDisplay::Implicit } else { false };
     let has_tuplet_bracket = event.atomic.tuplet_state.as_ref().map_or(false, |ts| ts.is_start || ts.is_stop);
-    let has_notations = event.tie_start || event.tie_stop || has_accidental || has_tuplet_bracket;
+    let has_notations = (!is_space && (event.tie_start || event.tie_stop)) || has_accidental || has_tuplet_bracket;
 
     if has_notations {
         xml.push_str("        <notations>\n");
 
-        if event.tie_stop { xml.push_str("          <tied type=\"stop\"/>\n"); }
-        if event.tie_start { xml.push_str("          <tied type=\"start\"/>\n"); }
+        if !is_space {
+            if event.tie_stop { xml.push_str("          <tied type=\"stop\"/>\n"); }
+            if event.tie_start { xml.push_str("          <tied type=\"start\"/>\n"); }
+        }
 
         if let Some(ts) = &event.atomic.tuplet_state {
             if ts.is_start { xml.push_str("          <tuplet type=\"start\" bracket=\"yes\"/>\n"); }
@@ -167,6 +182,25 @@ fn write_event(xml: &mut String, event: &VisualEvent, ppq: u32, is_chord: bool, 
         xml.push_str("        </notations>\n");
     }
 
+    // --- V3.0 MASTER SLICE: LYRIC EXPORT ---
+    if let Some(lyric) = &event.atomic.lyric {
+        xml.push_str("        <lyric>\n");
+        
+        let syllabic = match event.atomic.lyric_extension {
+            LyricExtension::Hyphen => "begin",
+            _ => "single" 
+        };
+        
+        xml.push_str(&format!("          <syllabic>{}</syllabic>\n", syllabic));
+        xml.push_str(&format!("          <text>{}</text>\n", escape_xml(lyric)));
+        
+        if event.atomic.lyric_extension == LyricExtension::Melisma {
+            xml.push_str("          <extend/>\n");
+        }
+        
+        xml.push_str("        </lyric>\n");
+    }
+
     xml.push_str("      </note>\n");
 }
 
@@ -179,7 +213,6 @@ fn write_type_and_dots(xml: &mut String, event: &VisualEvent, ppq: u32) {
         ticks = (ticks * ts.actual_notes) / ts.normal_notes;
     }
 
-    // FIXED: Explicitly cast ppq to u64 so it can be compared against ticks
     let ppq64 = ppq as u64;
     let q = ppq64;
     let e = ppq64 / 2;

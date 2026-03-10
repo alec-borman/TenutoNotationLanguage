@@ -1,3 +1,12 @@
+//! # Tenuto Macro & Variable Preprocessor
+//! 
+//! Recursively evaluates the AST *before* the Inference Engine.
+//! Expands `$variables`, unpacks `$macros`, evaluates `if` directives, 
+//! and resolves `@{}` Data Maps.
+//! 
+//! **V3.0.0 Update (Slice 1):** Safely routes the inner contents of 
+//! Euclidean `(k):3/8` blocks through the macro expansion pipeline.
+
 use std::collections::HashMap;
 use crate::ast::*;
 
@@ -48,17 +57,14 @@ impl Preprocessor {
                         result.append(&mut inner);
                     }
                 }
-                // V2.1: Resolve variables inside Global Meta maps (@{})
                 TopLevel::Meta(map) => {
                     let resolved_map = self.resolve_map(map)?;
                     result.push(TopLevel::Meta(resolved_map));
                 }
-                // V2.1: Resolve variables inside Def attributes
                 TopLevel::Def { id, label, attributes } => {
                     let resolved_attrs = self.resolve_map(attributes)?;
                     result.push(TopLevel::Def { id, label, attributes: resolved_attrs });
                 }
-                // V2.1: Resolve variables inside Measure attributes (local meta)
                 TopLevel::Measure { range, attributes, content } => {
                     let resolved_attrs = self.resolve_map(attributes)?;
                     let expanded_content = self.process_logics(content)?;
@@ -87,7 +93,7 @@ impl Preprocessor {
                 }
                 Logic::Assignment { staff_id, voices } => {
                     let mut expanded_voices = Vec::new();
-                    // V2.1: Handles `<[ ]>` polyphony implicitly via vec iteration
+                    // Handles `<[ ]>` polyphony implicitly via vec iteration
                     for voice in voices {
                         expanded_voices.push(self.process_voice(voice)?);
                     }
@@ -103,7 +109,7 @@ impl Preprocessor {
         let mut expanded_events = Vec::new();
 
         for mut event in voice.events {
-            // V2.1: Recursively expand variables provided to dot attributes (e.g., .vol($Var))
+            // Recursively expand variables provided to dot attributes (e.g., .vol($Var))
             self.resolve_event_attributes(&mut event)?;
 
             match event {
@@ -113,7 +119,7 @@ impl Preprocessor {
                         return Err(format!("E5002: Recursion Limit Exceeded (>{}) in macro '{}'", MAX_RECURSION_DEPTH, name));
                     }
 
-                    // ----- FIX: Resolve macro name if it's a variable (e.g., $root:16) -----
+                    // Resolve macro name if it's a variable (e.g., $root:16)
                     let actual_name = if name.starts_with('$') {
                         let var_name = &name[1..];
                         match self.variables.get(var_name) {
@@ -124,7 +130,6 @@ impl Preprocessor {
                     } else {
                         name.clone()
                     };
-                    // ----------------------------------------------------------------------
 
                     // Resolve arguments before passing to macro
                     let mut resolved_args = Vec::new();
@@ -149,10 +154,30 @@ impl Preprocessor {
                     expanded_events.extend(macro_events);
                     self.depth -= 1;
                 }
+                
                 Event::Tuplet { content, p, q } => {
                     let expanded_content = self.process_voice(content)?;
                     expanded_events.push(Event::Tuplet { content: expanded_content, p, q });
                 }
+
+                // --- V3.0 EUCLIDEAN BIFURCATION ---
+                // We must safely route the internal event through the preprocessor
+                // just in case it is a macro or contains variable attributes.
+                Event::Euclidean { content, k, n } => {
+                    let mut expanded_content = *content;
+                    self.resolve_event_attributes(&mut expanded_content)?;
+                    
+                    // Route the inner event through the macro expander safely
+                    let temp_voice = Voice { voice_id: None, events: vec![expanded_content] };
+                    let expanded_temp = self.process_voice(temp_voice)?;
+                    
+                    // Extract the resolved event and wrap it back into a Euclidean node
+                    if let Some(first) = expanded_temp.events.into_iter().next() {
+                        expanded_events.push(Event::Euclidean { content: Box::new(first), k, n });
+                    }
+                }
+                // ----------------------------------
+
                 Event::Chord { notes, duration, dots, multiplier, is_tied, attributes } => {
                     let mut expanded_notes = Vec::new();
                     for mut n in notes {
@@ -196,7 +221,7 @@ impl Preprocessor {
         }
     }
 
-    /// Deeply resolves variables, expanding arrays and V2.1 `@{}` Maps.
+    /// Deeply resolves variables, expanding arrays and `@{}` Maps.
     fn resolve_value(&self, val: &Value) -> Result<Value, String> {
         match val {
             Value::Id(id) if id.starts_with('$') => {
@@ -277,6 +302,10 @@ impl Preprocessor {
             Event::Note { pitch, .. } => { *pitch = shift_spn(pitch, delta); }
             Event::Chord { notes, .. } => { for n in notes { Self::apply_transposition(n, delta); } }
             Event::Tuplet { content, .. } => { for e in &mut content.events { Self::apply_transposition(e, delta); } }
+            
+            // --- V3.0 EUCLIDEAN BIFURCATION ---
+            Event::Euclidean { content, .. } => { Self::apply_transposition(content, delta); }
+            
             _ => {} // Transposition ignores Rests, Percussion (Map Keys), Tablature (Coords)
         }
     }
@@ -292,11 +321,15 @@ fn get_event_fields_mut(event: &mut Event) -> Option<(&mut Option<String>, &mut 
         Event::MacroCall { duration, dots, multiplier, attributes, .. } => Some((duration, dots, multiplier, Some(attributes))),
         Event::Frequency { duration, dots, multiplier, attributes, .. } => Some((duration, dots, multiplier, Some(attributes))),
         Event::Rest { duration, dots, multiplier } => Some((duration, dots, multiplier, None)),
-        Event::Space { duration, dots, multiplier } => Some((duration, dots, multiplier, None)),
+        // Replace the existing Event::Space line with this:
+        Event::Space { duration, dots, multiplier, attributes } => Some((duration, dots, multiplier, Some(attributes))),        // --- V3.0 EUCLIDEAN BIFURCATION ---
+        Event::Euclidean { content, .. } => get_event_fields_mut(content),
+
         _ => None,
     }
 }
 
+/// Algebraic manipulation of Scientific Pitch Notation strings
 fn shift_spn(pitch: &str, delta: i32) -> String {
     if delta == 0 { return pitch.to_string(); }
     let chars: Vec<char> = pitch.chars().collect();

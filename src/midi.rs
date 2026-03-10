@@ -1,20 +1,24 @@
+//! # Tenuto MIDI 1.0 / 2.0 Exporter
+//! 
+//! Converts the absolute Timeline IR into a standard MIDI file (.mid).
+//! 
+//! **V3.0.0 Updates:**
+//! - Slice 2: Hoisted CC automation extraction for Space events.
+//! - Slice 4: Injects physical_tick_offset for Micro-Timing.
+//! - Slice 6: Safely ignores abstract `Concrete` audio buffer slices.
+//! - Slice 7: Calculates continuous 14-bit Pitch Bend arrays for 
+//!   Synth Portamento (`.glide`) and Drops (`.accelerate`).
+
 use crate::ir::{Timeline, EventKind, TabArticulation};
 use midly::{Smf, Header, Format, Timing, TrackEvent, TrackEventKind, MidiMessage, MetaMessage};
 use midly::num::{u28, u14, u15};
 
-// ============================================================================
-// 1. TEMPORAL SORTING STRUCTURE
-// ============================================================================
 #[derive(Debug, Clone)]
 struct AbsEvent<'a> {
     pub tick: u64,
     pub priority: u8, // 0=Meta, 1=CC/Bend, 2=NoteOff, 3=NoteOn, 4=BendReset
     pub kind: TrackEventKind<'a>,
 }
-
-// ============================================================================
-// 2. THE MIDI ENCODER ENGINE (Tenuto 2.1.0 Compliant)
-// ============================================================================
 
 pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let safe_ppq = u15::from_int_lossy(timeline.ppq as u16);
@@ -67,89 +71,101 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
 
         // 2. Unroll IR Events into MIDI strikes
         for event in &track_data.events {
+            // --- V3.0 SLICE 4: PHYSICAL TIME OFFSET ---
+            let actual_start_tick = (event.tick as i64 + event.physical_tick_offset).max(0) as u64;
+            
+            // --- CONTINUOUS CONTROL ---
+            if !event.cc_automations.is_empty() || event.tab_articulation != TabArticulation::None || event.synth_glide_ticks.is_some() || event.synth_accelerate_semitones.is_some() {
+                
+                // V3.0 SLICE 7: Determine the continuous tick span to interpolate across
+                let sweep_duration = event.synth_glide_ticks.unwrap_or(event.duration_ticks);
+                let resolution = 48; 
+                let steps = (sweep_duration / resolution).max(1);
+                
+                for i in 0..=steps {
+                    let current_tick = actual_start_tick + (i * sweep_duration / steps);
+                    let progress = i as f32 / steps as f32;
+
+                    for cc in &event.cc_automations {
+                        let val = cc.start_val as f32 + (cc.end_val as f32 - cc.start_val as f32) * progress;
+                        abs_events.push(AbsEvent {
+                            tick: current_tick, priority: 1,
+                            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::Controller { controller: cc.controller.into(), value: (val as u8).min(127).into() } }
+                        });
+                    }
+
+                    match event.tab_articulation {
+                        TabArticulation::BendUp(target) => {
+                            let bend_val = 8192.0 + (target * 8191.0 * progress);
+                            abs_events.push(AbsEvent {
+                                tick: current_tick, priority: 1,
+                                kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0.0, 16383.0) as u16)) } }
+                            });
+                        },
+                        TabArticulation::BendDown(target) => {
+                            let bend_val = 8192.0 + (target * 8191.0 * (1.0 - progress));
+                            abs_events.push(AbsEvent {
+                                tick: current_tick, priority: 1,
+                                kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0.0, 16383.0) as u16)) } }
+                            });
+                        },
+                        _ => {}
+                    }
+
+                    // --- V3.0 SLICE 7: SYNTH GLIDE (Portamento) ---
+                    // FIX: Prefixed `_glide_ticks` to safely ignore the warning
+                    if let (Some(_glide_ticks), Some(start_midi), EventKind::Note { pitch_midi, .. }) = (event.synth_glide_ticks, event.synth_glide_start_midi, &event.kind) {
+                        // Most DAWs assume a pitch bend range of 12 semitones (1 octave) for Synths
+                        let pitch_bend_range: f32 = 12.0; 
+                        let semitone_diff = start_midi as f32 - *pitch_midi as f32;
+                        
+                        // We start at the previous pitch (start_midi) and glide to the center (the current note)
+                        let start_bend_val = 8192.0 + (semitone_diff / pitch_bend_range * 8191.0);
+                        let current_bend_val = start_bend_val + ((8192.0 - start_bend_val) * progress);
+                        
+                        abs_events.push(AbsEvent {
+                            tick: current_tick, priority: 1,
+                            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(current_bend_val.clamp(0.0, 16383.0) as u16)) } }
+                        });
+                    }
+
+                    // --- V3.0 SLICE 7: SYNTH ACCELERATE (Pitch Dive) ---
+                    if let Some(target_semitones) = event.synth_accelerate_semitones {
+                        let pitch_bend_range: f32 = 12.0;
+                        let target_bend_val = 8192.0 + (target_semitones / pitch_bend_range * 8191.0);
+                        let current_bend_val = 8192.0 + ((target_bend_val - 8192.0) * progress);
+
+                        abs_events.push(AbsEvent {
+                            tick: current_tick, priority: 1,
+                            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(current_bend_val.clamp(0.0, 16383.0) as u16)) } }
+                        });
+                    }
+                }
+            }
+
+            // --- ACOUSTIC TRIGGERS ---
             match &event.kind {
                 EventKind::Note { pitch_midi, cents, velocity, spelling: _ } => {
                     let key = (*pitch_midi).min(127).into();
                     let vel = (*velocity).min(127).into();
                     let cents_val = *cents;
 
-                    // --- CONTINUOUS CONTROL (CC Automations & Tab Bends) ---
-                    // Generates a high-res sweep of MIDI events every 48 ticks (approx 10ms)
-                    if !event.cc_automations.is_empty() || event.tab_articulation != TabArticulation::None {
-                        let resolution = 48; 
-                        let steps = (event.duration_ticks / resolution).max(1);
-                        
-                        for i in 0..=steps {
-                            let current_tick = event.tick + (i * event.duration_ticks / steps);
-                            let progress = i as f32 / steps as f32; // 0.0 to 1.0
-
-                            // 1. CC Automations
-                            for cc in &event.cc_automations {
-                                // Linear interpolation
-                                let val = cc.start_val as f32 + (cc.end_val as f32 - cc.start_val as f32) * progress;
-                                abs_events.push(AbsEvent {
-                                    tick: current_tick, priority: 1,
-                                    kind: TrackEventKind::Midi {
-                                        channel: channel.into(),
-                                        message: MidiMessage::Controller {
-                                            controller: cc.controller.into(),
-                                            value: (val as u8).min(127).into(),
-                                        }
-                                    }
-                                });
-                            }
-
-                            // 2. Tablature Bends (Assumes standard GM pitch bend range is +/- 2 semitones = 1 whole step)
-                            // Center = 8192. Max Up (1 whole step) = 16383. Max Down = 0.
-                            match event.tab_articulation {
-                                TabArticulation::BendUp(target) => {
-                                    let bend_val = 8192.0 + (target * 8191.0 * progress);
-                                    abs_events.push(AbsEvent {
-                                        tick: current_tick, priority: 1,
-                                        kind: TrackEventKind::Midi {
-                                            channel: channel.into(),
-                                            message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0.0, 16383.0) as u16)) }
-                                        }
-                                    });
-                                },
-                                TabArticulation::BendDown(target) => {
-                                    // Bend down releases back to center
-                                    let bend_val = 8192.0 + (target * 8191.0 * (1.0 - progress));
-                                    abs_events.push(AbsEvent {
-                                        tick: current_tick, priority: 1,
-                                        kind: TrackEventKind::Midi {
-                                            channel: channel.into(),
-                                            message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0.0, 16383.0) as u16)) }
-                                        }
-                                    });
-                                },
-                                _ => {}
-                            }
-                        }
-                    }
-
-                    // --- STATIC MICROTONALITY ---
-                    if cents_val != 0 && event.tab_articulation == TabArticulation::None {
+                    // Static microtonal detune
+                    if cents_val != 0 && event.tab_articulation == TabArticulation::None && event.synth_glide_ticks.is_none() && event.synth_accelerate_semitones.is_none() {
                         let bend_val = 8192 + (cents_val as f32 * 8192.0 / 200.0) as i32;
                         abs_events.push(AbsEvent {
-                            tick: event.tick, priority: 1,
-                            kind: TrackEventKind::Midi {
-                                channel: channel.into(),
-                                message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0, 16383) as u16)) },
-                            },
+                            tick: actual_start_tick, priority: 1,
+                            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(bend_val.clamp(0, 16383) as u16)) } },
                         });
                     }
 
-                    // --- NOTE GENERATION & TREMOLO ROLLS ---
                     if let Some(slashes) = event.tremolo_slashes {
-                        // Unroll the tremolo into rapid-fire notes!
-                        // 1 slash = divide by 2. 2 slashes = divide by 4. 3 slashes = divide by 8.
                         let repeats = 1 << slashes; 
                         let sub_duration = event.gate_ticks / repeats;
                         
                         for i in 0..repeats {
-                            let start = event.tick + (i * sub_duration);
-                            let end = start + sub_duration - 10; // Slight 10-tick gap so NoteOff processes before next NoteOn
+                            let start = actual_start_tick + (i * sub_duration);
+                            let end = start + sub_duration - 10; 
                             
                             abs_events.push(AbsEvent {
                                 tick: start, priority: 3,
@@ -161,13 +177,13 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
                             });
                         }
                     } else {
-                        // Standard Note Generation
+                        // Standard note
                         abs_events.push(AbsEvent {
-                            tick: event.tick, priority: 3,
+                            tick: actual_start_tick, priority: 3,
                             kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::NoteOn { key, vel } },
                         });
 
-                        let off_tick = event.tick + event.gate_ticks;
+                        let off_tick = actual_start_tick + event.gate_ticks;
                         abs_events.push(AbsEvent {
                             tick: off_tick, priority: 2,
                             kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::NoteOff { key, vel: 0.into() } },
@@ -175,19 +191,18 @@ pub fn export(timeline: &Timeline) -> Result<Vec<u8>, Box<dyn std::error::Error>
                     }
 
                     // Reset Pitch Bend after note finishes
-                    if cents_val != 0 || event.tab_articulation != TabArticulation::None {
-                        let off_tick = event.tick + event.gate_ticks;
+                    if cents_val != 0 || event.tab_articulation != TabArticulation::None || event.synth_glide_ticks.is_some() || event.synth_accelerate_semitones.is_some() {
+                        let off_tick = actual_start_tick + event.gate_ticks;
                         abs_events.push(AbsEvent {
                             tick: off_tick, priority: 4,
-                            kind: TrackEventKind::Midi {
-                                channel: channel.into(),
-                                message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(8192)) },
-                            },
+                            kind: TrackEventKind::Midi { channel: channel.into(), message: MidiMessage::PitchBend { bend: midly::PitchBend(u14::from_int_lossy(8192)) } },
                         });
                     }
                 },
                 EventKind::Frequency { .. } => {},
                 EventKind::Rest => {},
+                EventKind::Space => {}, 
+                EventKind::Concrete { .. } => {}, // SLICE 6: Safely ignore concrete audio buffers in MIDI
             }
         }
 
