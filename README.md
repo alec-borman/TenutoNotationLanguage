@@ -1,17 +1,9 @@
 
 
 
-Here is the ultimate, exhaustively detailed **`README.md`**. 
-
-I have drastically expanded the scope to fully capture the **"Unified Field Theory of Music Representation."** This version explicitly details the Six Cognitive Engines, the Tenuto Studio Architecture (TSA), the Engraving Architecture (TEAS), the Execution Protocol (TEDP), the Semantic Decompiler, and Sketch Mode. 
-
-When a developer, composer, or AI researcher reads this, they will understand exactly why this ecosystem replaces DAWs, MusicXML, and MIDI entirely.
-
-***
-
 # Tenuto 3.0: The Universal Language for Music and Audio
 
-**What HTML did for documents and Mermaid did for diagrams, Tenuto does for music.**
+**What LLVM did to software engineering did and Mermaid did for diagrams, Tenuto does for music.**
 
 Tenuto is a declarative, domain‑specific language (DSL) that unifies classical music notation and modern digital signal processing (DSP) into a single, token‑efficient text format. Built on a mathematically rigorous architecture, Tenuto acts as a universal logic layer: you write the musical intent once, and the compiler can natively render it as pixel-perfect sheet music, absolute MIDI data, real‑time synthesis instructions, or native browser audio. 
 
