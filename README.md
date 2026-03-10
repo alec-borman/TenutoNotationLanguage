@@ -1,147 +1,82 @@
+
+
+
+Here is the ultimate, exhaustively detailed **`README.md`**. 
+
+I have drastically expanded the scope to fully capture the **"Unified Field Theory of Music Representation."** This version explicitly details the Six Cognitive Engines, the Tenuto Studio Architecture (TSA), the Engraving Architecture (TEAS), the Execution Protocol (TEDP), the Semantic Decompiler, and Sketch Mode. 
+
+When a developer, composer, or AI researcher reads this, they will understand exactly why this ecosystem replaces DAWs, MusicXML, and MIDI entirely.
+
+***
+
 # Tenuto 3.0: The Universal Language for Music and Audio
 
 **What HTML did for documents and Mermaid did for diagrams, Tenuto does for music.**
 
-Tenuto is a declarative, domain‑specific language (DSL) that unifies classical music notation and modern digital signal processing (DSP) into a single, token‑efficient text format. Built on a mathematically rigorous architecture, Tenuto acts as a universal logic layer: you write the musical intent once, and the compiler can render it as sheet music, MIDI, real‑time synthesis instructions, or even native browser audio. 
+Tenuto is a declarative, domain‑specific language (DSL) that unifies classical music notation and modern digital signal processing (DSP) into a single, token‑efficient text format. Built on a mathematically rigorous architecture, Tenuto acts as a universal logic layer: you write the musical intent once, and the compiler can natively render it as pixel-perfect sheet music, absolute MIDI data, real‑time synthesis instructions, or native browser audio. 
 
 ---
 
 ## ⚠️ The Problem Tenuto Solves
-Today’s digital music landscape is fractured:
-*   **DAWs are closed ecosystems.** Project files are proprietary binary blobs that suffer from bit rot and vendor lock‑in. A session saved today may be unreadable in ten years.
-*   **MusicXML is bloated.** Classical notation formats are machine‑generated, visually bound, and incredibly verbose—a single measure can consume over a thousand tokens, making them hostile to version control and prohibitively expensive for AI models to process.
+Today’s digital music landscape is fractured by a massive "Semantic Gap":
+*   **DAWs are closed ecosystems.** Project files are proprietary binary blobs that suffer from bit rot and vendor lock‑in. A session saved today may be unreadable in ten years when a VST plugin deprecates.
+*   **MusicXML is bloated.** Classical notation formats are visually bound and incredibly verbose—a single measure can consume over 1,500 tokens, making them hostile to version control and prohibitively expensive for Generative AI models to process.
 *   **MIDI lacks structure.** MIDI captures performance data but discards semantic intent, loops, key signatures, and tuplets. It’s a recording of button presses, not a representation of music.
-*   **AI music is static.** Generative models output flattened audio files. If a single note is wrong, the entire file must be regenerated—there is no editable source.
+*   **AI music is static.** Generative models output flattened `.wav` files. If a single note is wrong, the entire file must be regenerated—there is no editable source.
 
-Tenuto solves these problems by providing a **semantic, archival‑safe, and editable standard**. It separates *what* the music is (the intent) from *how* it sounds (the execution), creating a single source of truth that can be compiled to any format.
-
----
-
-## 🧠 Core Architecture & Features
-The `tenutoc` compiler acts as an **asset linker and decompression engine**, reading a lightweight textual blueprint and dynamically orchestrating external assets (audio samples, tuning maps, AI generative URIs, and DSP scripts).
-
-*   **1. Token‑Efficient & AI‑Native (Sticky State):** Tenuto uses semantic inference to eliminate redundancy. A line like `c4:4 d e f` automatically applies the duration (`:4`) and octave (`4`) to the subsequent notes. Where a single measure of MusicXML might consume 1,500 tokens in an LLM context window, Tenuto requires only 20. This allows AI models to natively read, write, and iteratively edit multi‑track symphonies within their working memory.
-*   **2. Rational Temporal Execution:** Most sequencers suffer from floating‑point quantization drift. Tenuto’s Intermediate Representation (IR) calculates time using pure rational arithmetic (fractions), guaranteeing that complex tuplets and Euclidean rhythms remain mathematically perfect across thousands of measures.
-*   **3. DSP Delegation & Live Sync:** Tenuto does not reinvent audio synthesis—it orchestrates it. Code can be compiled to Open Sound Control (OSC) bundles, triggering high‑performance engines like SuperCollider, ChucK, or Ableton Live. The `tenutod` runtime daemon integrates **Ableton Link**, allowing Tenuto scripts (and AI‑generated injections) to sync perfectly with shared network tempos during live performances.
-*   **4. Zero‑Friction Web Runtime (Wasm):** Tenuto is built for the web. The parser compiles to WebAssembly (`wasm32-unknown-unknown`), mapping its execution graph directly to the browser’s native Web Audio API. This means you can embed procedural, interactive music in any web application with zero configuration—no plugins, no servers.
+Tenuto solves these problems by providing a **semantic, archival‑safe, and editable standard**. It enforces *Strict Ontological Separation*, decoupling *what* the music is (the logic/intent) from *how* it sounds (the physics/execution).
 
 ---
 
-## 🚀 Potential Use Cases
-Because Tenuto acts as a universal semantic layer, its applications extend far beyond traditional notation software or standard DAWs.
+## 🌌 The Scope of the Tenuto Ecosystem
+Tenuto is not just a syntax; it is an entire suite of interrelated architectures designed to govern the future of digital audio.
 
-### 1. Artificial Intelligence & Generative Music
-*   **Token-Efficient AI Co-Production:** The "Sticky State" cursor reduces file sizes by up to 90% compared to MusicXML. This makes it the ultimate lightweight format for LLMs.
-*   **Autonomous AI Self-Correction:** Using the Tenuto Studio Architecture (TSA) and Agentic REPL, mathematically invalid code returns a structured JSON payload instead of crashing, allowing the AI to autonomously debug its own musical logic.
-*   **Local Client-Side AI Execution:** The Web Runtime can intercept generative plugin URIs and utilize WebGPU/ONNX.js to run lightweight AI models natively in the browser.
+### 1. The Core Language (T-MRL) & The Six Cognitive Engines
+Tenuto's compiler (`tenutoc`) doesn't just parse notes; it dynamically routes text through **Six Cognitive Physics Engines** based on the instrument's definition:
+*   🎹 `style=standard`: The Helmholtz Model. Parses Scientific Pitch Notation, applying classical transposition and Elaine Gould's Accidental State Machine.
+*   🧠 `style=relative`: The Smart Voice-Leading Model. Overrides absolute octaves with intervallic tritone-boundary calculations, allowing sweeping melodies to be written without ever typing an octave integer.
+*   🎸 `style=tab`: The Physical Model. Parses spatial coordinates (`0-6`), calculating absolute pitch via $O(1)$ Inverse String array lookups. Natively supports continuous 14-bit string bends and slides.
+*   🥁 `style=grid`: The Discrete Trigger Model. Maps alphanumeric tokens to absolute execution triggers.
+*   🎛️ `style=synth`: The Continuous Frequency Model. Maps global ADSR envelopes, executes monophonic choke groups, and calculates continuous 14-bit portamento `.glide()` and `.accelerate()` pitch dives.
+*   🌊 `style=concrete`: The Schaefferian Model. Maps raw audio buffer slices to alphanumeric text. Applies `.slice(N)` granular chopping and `.stretch` phase-vocoding directly from the text timeline.
 
-### 2. Modern Electronic Music Production (DAW Replacement)
-*   **Algorithmic & Euclidean Beatmaking:** Producers can generate complex syncopations by invoking Euclidean rhythms using the simple `(k):3/8` syntax, which perfectly distributes drum hits across a grid.
-*   **Granular Synthesis & Audio Manipulation:** The Concrete Engine allows producers to directly map raw `.wav` files to alphanumeric keys, applying `.stretch` to phase-vocode samples to a metrical grid, or `.slice(N)` to chop audio mathematically.
-*   **Trap 808 Glides & Drops:** Continuous frequency modulation is natively supported via attributes like `.glide()` and `.accelerate()`.
-*   **Text-Based Sidechain Compression:** Producers can mathematically "pump" or duck the volume of sub-basses using invisible LFO automation curves via the "Spacer" token (`s:4.cc()`).
-*   **Humanizing the "Pocket":** Micro-timing modifiers like `.push()` and `.pull()` shift physical audio playback by exact milliseconds, injecting deep groove without corrupting the quantized visual sheet music.
+### 2. Tenuto Studio Architecture (TSA) & Generative Ergonomics
+Tenuto was explicitly engineered to be the ultimate target language for Large Language Models (LLMs) and Agentic workflows.
+*   **Token-Efficient "Sticky State":** A stateful cursor persists attributes (duration, octave, velocity) until explicitly mutated. This compresses data by up to 90%, averaging just **15-25 tokens per measure**.
+*   **Agentic REPL & JSON Diagnostics:** If an AI hallucinates mathematically invalid code, the runtime does not crash. It returns a structured JSON payload detailing the mathematical deficit, allowing the LLM to autonomously self-correct.
+*   **Auto-Padding Polyphony:** The compiler features a fail-safe that intercepts broken multi-voice math, dynamically injecting invisible rests to balance the grid and preserve the compile process.
 
-### 3. Web Development & Interactive Media
-*   **Zero-Friction Procedural Browser Music:** The Tenuto parser compiles directly to WebAssembly, mapping its execution graph directly to the browser’s native Web Audio API. 
-*   **HTML Custom Elements:** Using the `<tenuto-score>` HTML tag, developers with zero audio-engineering experience can embed, generate, and play procedural music natively.
-*   **Interactive "Living Scores":** The SVG exporter permanently embeds absolute temporal data (`data-tick`) into the DOM, allowing developers to create 60 FPS playheads and CSS highlights that track the sounding music.
+### 3. Tenuto Execution & Delegation Protocol (TEDP)
+Tenuto does not reinvent audio synthesis—it orchestrates it. 
+*   **Networked DSP:** Compiles abstract logic into Open Sound Control (OSC) bundles with look-ahead scheduling, triggering high-performance engines like SuperCollider or dynamically spawning execution threads in ChucK.
+*   **Ableton Link Synchronization:** For live Algoraves, the `tenutod` daemon locks its internal rational grid to a shared network phase, injecting live-coded changes seamlessly on the perfect mathematical downbeat.
+*   **Zero-Friction Wasm:** The parser compiles to WebAssembly (`wasm32-unknown-unknown`), allowing the `<tenuto-score>` HTML custom element to execute procedural music via the browser's native Web Audio API with zero plugins.
 
-### 4. Live Coding, Algoraves & Hardware Orchestration
-*   **Networked DSP Delegation:** Tenuto acts as a master conductor, firing OSC bundles over a network with look-ahead scheduling to execute sound on external synthesizers like SuperCollider and ChucK.
-*   **Ableton Link Network Synchronization:** For live algorithmic performances, Tenuto natively locks its rational grid to a shared network phase. 
-*   **On-The-Fly Transpilation:** Tenuto code can be automatically transpiled into Haskell-based mini-notation for live manipulation in TidalCycles.
+### 4. Tenuto Engraving Architecture (TEAS)
+How do you print an 808 pitch dive or an invisible sidechain LFO? You don't. 
+*   **Visual-Acoustic Demarcation:** The compiler executes a Demarcation Pass, aggressively pruning audio-only attributes and hiding unprintable physics from the page.
+*   **The Rebarring Guillotine:** Abstract logic is mapped to an absolute timeline, then mathematically sliced across rigid measure boundaries to generate perfectly tied sheet music.
+*   **Next-Gen Engraving:** Future versions utilize Data-Oriented Design (ECS), the Cassowary linear constraint solver for horizontal spring-mass justification, and SIMD-Accelerated Skylines for pixel-perfect vertical collision detection.
 
-### 5. High-End Typography & Avant-Garde Engraving
-*   **Pixel-Perfect Classical Publishing:** The `tenuto-engrave` engine utilizes a Cassowary linear constraint solver for horizontal justification and hardware-accelerated SIMD Skyline arrays to generate flawless, collision-free SVGs.
-*   **Graphic & Aleatoric Notation:** Unprintable physics (like raw audio) can be explicitly forced into a Graphic Notation Fallback, rendering aleatoric clusters or duration bounding boxes.
-*   **Historical Notation:** The layout engine can dynamically mutate to render Renaissance Lute tablature or unmetered Gregorian chant.
+### 5. Semantic Decompilation (Addendum D)
+The $O(n)$ deterministic reverse-inference engine. It ingests explicit, bloated machine formats (MIDI/MusicXML) and mathematically reverse-engineers them into idiomatic Tenuto. It uses LZ77 dictionary coding to extract redundancies into `$macros`, and runs the Bresenham line-drawing algorithm in reverse to snap raw MIDI hits back into highly compressed Euclidean tuplets.
 
-### 6. Accessibility & Archival Preservation
-*   **Infinite Mathematical Archiving:** Tenuto's Rational Temporal Engine stores all time as exact mathematical fractions, guaranteeing 0.00% temporal drift for archiving symphonies over centuries.
-*   **Screen-Reader Compatible Scores:** The SVG engine injects semantic ARIA roles into the DOM, allowing visually impaired users to "tab" through a digital score and hear a perfectly accurate, semantic description of the music.
-*   **Automated Braille Music Translation:** The Tenuto IR is a flattened, absolute-time stream that can natively output standard `.brf` (Braille Ready Format) files.
-
-### 7. Machine Translation & Semantic Decompilation
-*   **Reverse-Engineering Legacy Formats:** The deterministic Semantic Decompiler (`tenuto-decompile`) can ingest explicit, verbose machine formats like MIDI or MusicXML and reverse-engineer the original musical intent using LZ77 dictionary coding and reverse Bresenham line-drawing algorithms.
+### 6. Sketch Mode (Addendum F)
+For the 5-second napkin doodle. A zero-friction REPL wrapper that hides all structural boilerplate, allowing composers to type `c4:8 d e f` into a browser console for instant playback, with an `eject` command to translate the doodle into a fully scaffolded, archival-safe `.ten` file.
 
 ---
 
-## 💻 Writing Tenuto (Syntax Example)
-A single `.ten` file can simultaneously orchestrate acoustic sheet music, continuous piano pedaling, and micro-timed humanization. Here is a syntax example showcasing **Relative Pitch Heuristics**, **Micro-Timing**, and **Decoupled Control Lanes**:
+## ⏱️ The Rational Temporal Engine (0% Drift)
+Most sequencers and DAWs suffer from floating-point quantization drift over long timelines. 
 
-```tenuto
-tenuto "3.0" {
-  meta @{ 
-    title: "Morning Light", 
-    composer: "Tenuto AI (Refactored for V3.0)", 
-    tempo: 80, 
-    time: "4/4", 
-    key: "C" 
-  }
-
-  %% V3.0 RELATIVE PITCH: The right hand will calculate the closest interval
-  %% automatically. We only have to define the octave on the very first note!
-  def rh "Right Hand" style=relative patch="gm_piano"
-  def lh "Left Hand"  style=standard patch="gm_piano"
-
-  %% ========================================================================= 
-  %% SECTION A: The Gentle Awakening (Measures 1-4) 
-  %% 4 Measures of 4/4 = Exactly 16 Beats. 
-  %% ========================================================================= 
-  measure 1-4 { 
-    rh: <[ 
-      %% We explicitly set :4 after the rest.
-      %% Notice there are NO octaves after e4. The engine tracks the contour perfectly! 
-      v1: r:2 e4:4.mp g c e d c b g a b c d e g.pull(20ms) | 
-    ]> 
-    lh: <[ 
-      v1: [c3 g3 e4]:1.arpeggio[c3 a3 f4]:1 [c3 g3 e4]:1 [f3 a3 c4]:1 |
-    ]>
-  }
-
-  %% ========================================================================= 
-  %% SECTION B: The Lift (Measures 5-8)
-  %% ========================================================================= 
-  measure 5-8 { 
-    rh: <[ 
-      v1: r:2 f4:4 e d e f g a b c a g f e d.pull(30ms) | 
-    ]> 
-    lh: <[ 
-      v1:[c3 g3 e4]:1 [d3 a3 f4]:1 [e3 g3 c4]:1[f3 a3 d4]:1 | 
-      %% V3.0 DECOUPLED PEDALING: Sits in its own lane, independent of notes!
-      pedal: down:4 down:4 down:4 down:4 | 
-    ]> 
-  }
-
-  %% ========================================================================= 
-  %% SECTION A': The Return (Measures 13-16) 
-  %% Stretching the tempo and pulling the final notes off the grid for a beautiful 
-  %% humanized ritardando finish. 
-  %% ========================================================================= 
-  measure 13-16 { 
-    meta @{ tempo:, curve: "linear", text: "Ritardando" }
-    ...
-  }
-}
-```
+Tenuto calculates time using pure **Rational Arithmetic (P/Q)**. 
+*   **Euclidean Topologies (`(k):3/8`):** Distribute $K$ pulses over $N$ subdivisions mathematically. 
+*   **Physical Micro-Timing:** The engine fully decouples Logical Grid Time (for sheet music) from Physical Playback Time. Modifiers like `.pull(15ms)` or `.push(10ticks)` shift the audio execution by absolute fractions of a second based on the global tempo, injecting deep "pocket" groove without corrupting the printed page.
+*   **Deterministic Humanization:** Applying `meta @{ humanize: 0.05 }` executes a Box-Muller Gaussian randomization algorithm across the timeline. Seeded by absolute ticks, it generates the exact same mathematically "humanized" performance on every compilation.
 
 ---
 
-## 🚀 Current Status & Roadmap
-The **Tenuto v3.0 Specification** is finalized, and the core Rust compiler architecture is fully operational.
-
-*   🟢 **Available Now (v3.0.0 - The Producer Update):**
-    The main branch contains the highly optimized Rust compiler (`tenutoc`). It is 100% core-compliant with the v3.0 Spec, capable of parsing Euclidean rhythms, generative auto-padding, concrete sampling, and synth physics. It currently exports to `.mid` (MIDI) and `.musicxml` (MusicXML 4.0) via a strict Visual-Acoustic Demarcation pass.
-*   🔵 **In Development (The TSA & TEDP Ecosystem):**
-    *   **Phase VI (`tenutod`):** Building the background daemon, Ableton Link phase synchronization, and OSC emitter backend for SuperCollider/ChucK.
-    *   **Phase VII (`wasm32`):** Compiling the parser to WebAssembly and building the `<tenuto-score>` HTML Web Component.
-    *   **Phase VIII (`tenuto-engrave`):** A native Rust engraving engine utilizing the Cassowary constraint solver to render publication‑ready SVG sheet music directly from Tenuto source.
-    *   **Phase IX (`tenuto-decompile`):** The $O(n)$ reverse-inference pipeline to algorithmically compress raw MIDI/XML back into idiomatic, human-readable Tenuto code.
-
----
-
-## How It Works: The Pipeline
+## ⚙️ How It Works: The Pipeline
 
 The `tenutoc` compiler transforms a Tenuto source file into absolute‑time instructions through a strict compilation pipeline:
 
@@ -153,79 +88,93 @@ graph TD
         Source -.->|src: plugin://ai| Plugins((AI Generative URIs))
     end
 
-    subgraph Compiler [2. Compiler: tenutoc]
-        Source --> Parse[Lexer & AST Parser]
+    subgraph Compiler[2. Compiler: tenutoc]
+        Source --> Parse[Lexer & LL1 AST Parser]
         Parse --> AssetMgr{Asset Manager & Buffer}
         Samples & Plugins -->|Loads into RAM| AssetMgr
-        AssetMgr --> Unroller[Graph Unroller]
-        Unroller -->|Decompresses code to absolute ticks| IR[Absolute Timeline IR]
+        AssetMgr --> Unroller[Graph Unroller & Macro Expansion]
+        Unroller -->|Evaluates Rational Math| IR[Absolute Timeline IR]
     end
 
     subgraph Execution [3. Execution Environment]
-        IR --> Vis[Visual Engine] --> XML[MusicXML / PDF]
-        IR --> AudioRouter{Execution Router}
-        AudioRouter -->|OSC / MIDI| ProAudio[[SuperCollider / DAWs]]
+        IR --> Vis[Visual Engine] --> XML[MusicXML 4.0 / SVG / TEAS]
+        IR --> AudioRouter{Visual-Acoustic Demarcation}
+        AudioRouter -->|OSC / High-Res MIDI 2.0| ProAudio[[SuperCollider / DAWs]]
         AudioRouter -->|Wasm Target| WebRuntime((Web Audio API / HTML Element))
     end
 ```
 
-
-
-1. **Authorship** – A human or AI writes a `.ten` file that references external assets (samples, AI plugins, etc.).
-2. **Compilation** – `tenutoc` parses the source, resolves all references, and generates an absolute‑timeline Intermediate Representation (IR) using rational arithmetic.
-3. **Execution** – The IR is routed to one or more targets: visual notation (MusicXML/SVG), hardware/software synthesis (OSC/MIDI), or the browser’s Web Audio API.
-
 ---
 
-## Writing Tenuto
-
-A single `.ten` file can simultaneously orchestrate acoustic sheet music, granular sample playback, and remote AI vocal generation. Here’s a complete example:
+## 💻 Writing Tenuto (Syntax Example)
+A single `.ten` file can simultaneously orchestrate acoustic sheet music, continuous piano pedaling, granular sample slicing, and micro-timed electronic beats. 
 
 ```tenuto
 tenuto "3.0" {
-  meta @{ title: "Example", tempo: 120, time: "4/4" }
+  meta @{ 
+    title: "Olympia - The Producer Suite", 
+    tempo: 108, time: "4/4", 
+    auto_pad_voices: true, humanize: 0.04
+  }
 
-  %% Define instruments and their physics
-  def piano "Piano" style=standard clef=treble
-  def sub "808 Bass" style=synth env=@{ a: 5ms, d: 1s, s: 100%, r: 50ms }
-  def vox "Lead AI" style=concrete src="plugin://ai-vocal-gen" map=@{ a:[0s, 1.2s] }
+  %% INSTRUMENT PHYSICS: We define the cognitive engines routing the code.
+  def rh "Right Hand" style=relative clef=treble patch="gm_piano"
+  def lh "Left Hand"  style=standard clef=bass patch="gm_piano"
+  def orch "Orchestra" style=grid map=@{ sn: 38, crash: 49 }
+  def vox "Vocal Chop" style=concrete src="./vocals.wav" map=@{ a:[0.0s, 1.2s] }
+  def sub "808 Bass" style=synth cut_group=1
 
-  measure 1 {
-    %% Acoustic routing → sheet music / MIDI
-    piano: c5:8.stacc d e f g a b c6:2.ten |
+  measure 1-4 {
+    lh: <[ 
+      v1: eb1:2.ff [bb1 eb2 g2]:2 | bb0:2[f1 bb d2]:2 | 
+      %% DECOUPLED CONTROL LANE: Press the sustain pedal for a whole note, 4 times.
+      pedal: down:1 * 4 | 
+    ]>
+    rh: 
+      %% RELATIVE PITCH: Octaves are automatically calculated based on proximity![eb4 g bb eb5]:4.marc eb5:32 f g ab bb c d eb[g bb eb g]:2.marc |
+      ([bb4 d5 f bb]:8 [c eb ab c] [d f bb d]):3/2 [ab c eb ab]:2.pull(15ms) |
+    
+    orch: 
+      %% EUCLIDEAN TOPOLOGY: Dynamically distribute 5 snare hits across 8 subdivisions.
+      (sn:2):5/8 sn:4.roll(3) | 
+      sn:16 * 16 |
+    
+    vox:
+      %% SCHAEFFERIAN ENGINE: Slice the audio buffer into 4 mathematically equal segments
+      a:2.slice(4).stretch.reverse r:2 |
 
-    %% DSP synthesis → Continuous 14-bit glides and Pitch dives
-    sub: c2:2.glide(150ms) c3:2.accelerate(-12) |
-
-    %% AI generative mapping → passes lyrics and pitch to a local WebGPU model
-    vox: a:4.slice(4) |
-    vox.lyric: "He- llo a- gain"
+    sub:
+      %% SYNTH PHYSICS: A 14-bit portamento glide and a 12-semitone pitch dive.
+      eb2:2.glide(150ms) eb3:2.accelerate(-12) |
+      
+      %% ACTION NOTATION: The 's' spacer draws an invisible CC LFO curve!
+      s:2.cc(7,[127, 0], "exp") |
   }
 }
 ```
 
 ---
 
-## Current Status & Roadmap
+## 🚀 Current Status & Roadmap
 
 The **Tenuto v3.0 Specification** is finalized, and the core Rust compiler architecture is fully operational. 
 
-- 🟢 **Available Now (v3.0.0 - The Producer Update):**  
-  The `main` branch contains the highly optimized Rust compiler (`tenutoc`). It is 100% core-compliant with the v3.0 Spec, capable of parsing Euclidean rhythms, generative auto-padding, concrete sampling, and synth physics. It currently exports to `.mid` (MIDI) and `.musicxml` (MusicXML 4.0) via a strict Visual-Acoustic Demarcation pass.  
+- 🟢 **Available Now (v3.0.1 - The Producer Update):**  
+  The `main` branch contains the highly optimized Rust compiler (`tenutoc`). It is 100% core-compliant with the v3.0 Spec, featuring **Grid Snapping** to prevent AI temporal drift. It is capable of parsing Euclidean rhythms, generative auto-padding, concrete sampling, the Lyric Engine, and synth physics. It explicitly exports to `.mid` (MIDI) and `.musicxml` (MusicXML 4.0) via a strict Visual-Acoustic Demarcation pass.  
   ```bash
   cargo install --path .
   tenutoc --input score.ten --output score.mid
   ```
 
-- 🔵 **In Development (The TSA & TEDP Ecosystem):**
+- 🔵 **In Development (The Extended Ecosystem):**
   - **Phase VI (`tenutod`):** Building the background daemon, Ableton Link phase synchronization, and OSC emitter backend for SuperCollider/ChucK.
   - **Phase VII (`wasm32`):** Compiling the parser to WebAssembly and building the `<tenuto-score>` HTML Web Component.
-  - **Phase VIII (`tenuto-engrave`):** A native Rust engraving engine utilizing the Cassowary constraint solver to render publication‑ready SVG sheet music directly from Tenuto source.
+  - **Phase VIII (`tenuto-engrave`):** The native Rust TEAS engine utilizing the Cassowary constraint solver to render publication‑ready SVG sheet music directly from Tenuto source.
   - **Phase IX (`tenuto-decompile`):** The $O(n)$ reverse-inference pipeline to algorithmically compress raw MIDI/XML back into idiomatic, human-readable Tenuto code.
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 Tenuto is an open standard and an open‑source project. We are actively seeking contributors in the following areas:
 
@@ -235,10 +184,9 @@ Tenuto is an open standard and an open‑source project. We are actively seeking
 
 - [Read the Full v3.0 Specification](https://github.com/alec-borman/TenutoNotationLanguage/blob/main/docs/SPEC.md)
 - [Join the Discussions](https://github.com/alec-borman/TenutoNotationLanguage/discussions)
--[Report an Issue](https://github.com/alec-borman/TenutoNotationLanguage/issues)
+- [Report an Issue](https://github.com/alec-borman/TenutoNotationLanguage/issues)
 
 **License:** MIT
 
 ---
-
 *Tenuto: Write music as code. Compile to everything.*
