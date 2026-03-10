@@ -1,6 +1,6 @@
 [package]
 name = "tenutoc"
-version = "3.0.0"
+version = "3.0.1"
 edition = "2021"
 description = "The Reference Compiler for the Tenuto v2.1 Domain-Specific Language"
 authors = ["The Tenuto Working Group"]

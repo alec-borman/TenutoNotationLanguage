@@ -189,7 +189,27 @@ fn top_level_parser() -> impl Parser<Token, TopLevel, Error = Simple<Token>> + C
         let value = value_parser();
         let def_attr = select! { Token::Identifier(s) => s }.then_ignore(just(Token::Equals).or(just(Token::Colon))).then(value.clone());
 
-        let measure_block = just(Token::KwMeasure).ignore_then(select! { Token::Integer(i) => MeasureRange::Single(i) }.or(empty().to(MeasureRange::Implicit)))
+let measure_range = choice((
+            // 1. The Lexer swallows `1-8` as a TabLit. We intercept and split it!
+            select! { Token::TabLit(t) => t }.map(|t| {
+                let parts: Vec<&str> = t.split('-').collect();
+                let start = parts[0].parse::<i64>().unwrap_or(1);
+                let end = parts[1].parse::<i64>().unwrap_or(1);
+                MeasureRange::Range(start, end)
+            }),
+            // 2. Parses ranges separated by spaces like `1 - 8`
+            select! { Token::Integer(i) => i }
+                .then_ignore(just(Token::Minus))
+                .then(select! { Token::Integer(j) => j })
+                .map(|(start, end)| MeasureRange::Range(start, end)),
+            // 3. Parses single numbers like `1`
+            select! { Token::Integer(i) => MeasureRange::Single(i) },
+            // 4. Parses named sections like `Chorus`
+            select! { Token::Identifier(s) => MeasureRange::Identifier(s) },
+        )).or_not().map(|r| r.unwrap_or(MeasureRange::Implicit));
+
+        let measure_block = just(Token::KwMeasure)
+            .ignore_then(measure_range)
             .then(logic_parser().repeated().delimited_by(just(Token::LBrace), just(Token::RBrace)))
             .map(|(range, content)| TopLevel::Measure { range, attributes: HashMap::new(), content });
 

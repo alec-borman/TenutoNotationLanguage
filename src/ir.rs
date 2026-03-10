@@ -296,26 +296,102 @@ pub fn compile(score: Score, strict_mode: bool) -> Result<Timeline, String> {
                     if let Some(Value::Float(f)) = kvs.get("humanize") { timeline.humanize = *f; } else if let Some(Value::Num(n)) = kvs.get("humanize") { timeline.humanize = *n as f64; }
                     if let Some(Value::Str(s)) = kvs.get("time") { let parts: Vec<&str> = s.split('/').collect(); if parts.len() == 2 { if let (Ok(num), Ok(den)) = (parts[0].trim().parse::<u64>(), parts[1].trim().parse::<u64>()) { current_ts_ticks = (num * 4 * ppq as u64) / den; } } }
                 },
-                TopLevel::Measure { range, content, attributes } => {
+TopLevel::Measure { range, content, attributes } => {
                     let mut local_ts_ticks = current_ts_ticks;
-                    if let Some(Value::Str(s)) = attributes.get("time") { let parts: Vec<&str> = s.split('/').collect(); if parts.len() == 2 { if let (Ok(num), Ok(den)) = (parts[0].trim().parse::<u64>(), parts[1].trim().parse::<u64>()) { local_ts_ticks = (num * 4 * ppq as u64) / den; } } }
-                    let m_idx = match range { MeasureRange::Single(idx) => std::cmp::max(idx, 1) as u64, MeasureRange::Implicit | _ => *next_unassigned_index, };
-                    let absolute_start_tick = if let Some(&t) = measure_starts.get(&m_idx) { t } else { let t = *next_unassigned_tick; measure_starts.insert(m_idx, t); t };
-                    if m_idx >= *next_unassigned_index { *next_unassigned_index = m_idx + 1; *next_unassigned_tick = absolute_start_tick + local_ts_ticks; }
+                    if let Some(Value::Str(s)) = attributes.get("time") {
+                        let parts: Vec<&str> = s.split('/').collect();
+                        if parts.len() == 2 {
+                            if let (Ok(num), Ok(den)) = (parts[0].trim().parse::<u64>(), parts[1].trim().parse::<u64>()) {
+                                local_ts_ticks = (num * 4 * ppq as u64) / den;
+                            }
+                        }
+                    }
 
-                    // Notice we pass &content now to satisfy the slicing required for the Lyric Engine!
+                    let (m_idx, expected_end_idx) = match range {
+                        MeasureRange::Single(idx) => { let s = std::cmp::max(idx, 1) as u64; (s, s) },
+                        MeasureRange::Range(start, end) => { let s = std::cmp::max(start, 1) as u64; let e = std::cmp::max(end, 1) as u64; (s, e) },
+                        MeasureRange::Implicit | _ => (*next_unassigned_index, *next_unassigned_index),
+                    };
+
+                    let absolute_start_tick = if let Some(&t) = measure_starts.get(&m_idx) {
+                        t 
+                    } else {
+                        let gap_measures = m_idx.saturating_sub(*next_unassigned_index);
+                        let t = *next_unassigned_tick + (gap_measures * local_ts_ticks);
+                        measure_starts.insert(m_idx, t);
+                        t
+                    };
+
                     measure_pass(&content, timeline, cursors, absolute_start_tick, ppq, strict)?;
+                    
+                    let mut max_cursor_tick = absolute_start_tick; 
+                    for c in cursors.values() {
+                        if c.current_tick > max_cursor_tick { max_cursor_tick = c.current_tick; }
+                    }
+
+                    // --- V3.0.1 FIX: GRID SNAPPING ---
+                    // 1. Calculate the raw ticks used.
+                    let consumed_ticks = max_cursor_tick.saturating_sub(absolute_start_tick);
+                    
+                    // 2. Ceiling division: Find how many perfect measures we touched.
+                    let consumed_measures = if consumed_ticks == 0 { 1 } else { (consumed_ticks as f64 / local_ts_ticks as f64).ceil() as u64 };
+                    
+                    // 3. Snap the absolute master clock to the end of that perfect measure boundary!
+                    let snapped_next_tick = absolute_start_tick + (consumed_measures * local_ts_ticks);
+
+                    for offset in 0..=consumed_measures {
+                        measure_starts.insert(m_idx + offset, absolute_start_tick + (offset * local_ts_ticks));
+                    }
+
+                    let final_end_idx = std::cmp::max(expected_end_idx, m_idx + consumed_measures.saturating_sub(1));
+                    
+                    if final_end_idx >= *next_unassigned_index {
+                        *next_unassigned_index = final_end_idx + 1;
+                        *next_unassigned_tick = snapped_next_tick; // Locked perfectly to the downbeat!
+                    }
+
                     for track in timeline.tracks.values_mut() { track.spelling_state.reset_at_barline(); }
                 },
                 
-                // --- V3.0 MASTER SLICE: The Graph Unroller ---
                 TopLevel::Repeat { count, content } => {
                     let repeats = count.unwrap_or(2);
                     for _ in 0..repeats {
                         let absolute_start_tick = *next_unassigned_tick;
                         measure_pass(&content, timeline, cursors, absolute_start_tick, ppq, strict)?;
-                        *next_unassigned_tick += current_ts_ticks; 
-                        *next_unassigned_index += 1;
+                        
+                        let mut max_cursor_tick = absolute_start_tick;
+                        for c in cursors.values() {
+                            if c.current_tick > max_cursor_tick { max_cursor_tick = c.current_tick; }
+                        }
+                        
+                        // --- V3.0.1 FIX: GRID SNAPPING FOR REPEATS ---
+                        let consumed_ticks = max_cursor_tick.saturating_sub(absolute_start_tick);
+                        let consumed_measures = if consumed_ticks == 0 { 1 } else { (consumed_ticks as f64 / current_ts_ticks as f64).ceil() as u64 };
+                        let snapped_next_tick = absolute_start_tick + (consumed_measures * current_ts_ticks);
+
+                        *next_unassigned_tick = snapped_next_tick;
+                        *next_unassigned_index += consumed_measures;
+                        
+                        for track in timeline.tracks.values_mut() { track.spelling_state.reset_at_barline(); }
+                    }
+                },
+                
+                // Ensure Repeats also advance based on true cursor consumption!
+                TopLevel::Repeat { count, content } => {
+                    let repeats = count.unwrap_or(2);
+                    for _ in 0..repeats {
+                        let absolute_start_tick = *next_unassigned_tick;
+                        measure_pass(&content, timeline, cursors, absolute_start_tick, ppq, strict)?;
+                        
+                        let mut max_cursor_tick = absolute_start_tick + current_ts_ticks;
+                        for c in cursors.values() {
+                            if c.current_tick > max_cursor_tick { max_cursor_tick = c.current_tick; }
+                        }
+                        
+                        let consumed_measures = ((max_cursor_tick - absolute_start_tick) as f64 / current_ts_ticks as f64).ceil() as u64;
+                        *next_unassigned_tick = max_cursor_tick;
+                        *next_unassigned_index += consumed_measures;
+                        
                         for track in timeline.tracks.values_mut() { track.spelling_state.reset_at_barline(); }
                     }
                 },
