@@ -95,7 +95,59 @@ graph TD
         AudioRouter -->|Wasm Target| WebRuntime((Web Audio API / HTML Element))
     end
 ```
+```mermaid
+graph TD
+    %% Styling Definitions
+    classDef layer1 fill:#0984e3,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef layer2 fill:#2d3436,stroke:#00b894,stroke-width:4px,color:#fff;
+    classDef layer3 fill:#e67e22,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef layer4 fill:#d63031,stroke:#fff,stroke-width:2px,color:#fff;
 
+    %% LAYER 1: APPLICATION
+    subgraph L1["Layer 1: Application (Ingestion & Frontends)"]
+        direction LR
+        A1("👨‍💻 <b>Sketch Mode REPL</b><br/><i>(Zero-Friction Human Input)</i>"):::layer1
+        A2("🤖 <b>Sticky State API</b><br/><i>(15-Token/Measure LLM Input)</i>"):::layer1
+        A3("📂 <b>Semantic Decompiler</b><br/><i>(O(n) MIDI/XML Reverse Inference)</i>"):::layer1
+    end
+
+    %% LAYER 2: NETWORK (THE NARROW WAIST)
+    subgraph L2["Layer 2: Network (The Narrow Waist)"]
+        IR{"<b>Tenuto Universal IR</b><br/><hr/><i>Strict Ontological Separation<br/>Rational Temporal Engine<br/>(0.00% Quantization Drift)</i>"}:::layer2
+    end
+
+    %% LAYER 3: TRANSPORT
+    subgraph L3 ["Layer 3: Transport (Execution & Protocols)"]
+        direction LR
+        T1("📡 <b>TEDP (OSC)</b><br/><i>(Look-Ahead Packet Scheduling)</i>"):::layer3
+        T2("⏱️ <b>Ableton Link</b><br/><i>(Network Phase Synchronization)</i>"):::layer3
+        T3("🖨️ <b>TEAS Engine</b><br/><i>(Cassowary Layout Router)</i>"):::layer3
+    end
+
+    %% LAYER 4: PHYSICAL
+    subgraph L4 ["Layer 4: Physical (The Output Reality)"]
+        direction LR
+        P1("🎛️ <b>Hardware / Pro Audio</b><br/><i>(SuperCollider / MIDI 2.0)</i>"):::layer4
+        P2("🌐 <b>Native Web Browser</b><br/><i>(Wasm / Web Audio API)</i>"):::layer4
+        P3("📄 <b>Classical Publication</b><br/><i>(SVG / MusicXML 4.0)</i>"):::layer4
+    end
+
+    %% Edge Connections (The Hourglass Flow)
+    A1 -->|Raw Tenuto Text| IR
+    A2 -->|Compressed AI Tokens| IR
+    A3 -->|Extracted Abstract Intent| IR
+
+    IR -->|Continuous DSP Triggers| T1
+    IR -->|Rational Math Grids| T2
+    IR -->|Guillotine Bounding Boxes| T3
+    
+    %% Direct Wasm route mapping Transport to Web
+    IR -.->|Wasm Memory Bindings| P2
+
+    T1 -->|Absolute Microseconds| P1
+    T2 -->|Locked Downbeats| P1
+    T3 -->|Pixel-Perfect Vectors| P3
+```
 ---
 
 ## 💻 Writing Tenuto (Syntax Example)
