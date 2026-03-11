@@ -1484,3 +1484,125 @@ If the compiler is executed in `--strict` mode (which forbids Implicit Masking t
 * **`E4006: Visual Translation Impossible.`**
 * *Trigger:* Target is visual, `--strict` is enabled, and a `concrete` or `synth` staff is evaluated.
 * *Resolution:* The user must explicitly wrap the track in `if ($target == "audio")`, or append `print=true` to force graphic notation.
+
+
+# Addendum G: The Signal Routing & Spatial Audio Matrix (The Post-Production Engine)
+
+**Version:** 1.0 (Extension to Tenuto 3.0.1)  
+**Status:** Normative / Final  
+**Scope:** Internal Bus Routing, Spatial Primitives, Abstract DSP Effects, and Layered Execution.
+
+## G.1 Architectural Philosophy
+
+Historically, the act of *composing* music (writing notes) and the act of *mixing* music (panning, reverb, live audio buffering) have existed in two separate ontological domains. Mixing data is almost exclusively trapped in proprietary, closed-ecosystem Digital Audio Workstation (DAW) files, making it highly susceptible to "bit rot" when third-party VST plugins deprecate.
+
+**Addendum G** collapses the mixing console into the Tenuto 3.0 Abstract Syntax Tree (AST). By strictly adhering to the **"Narrow Waist" Layered Architecture**, Tenuto serializes post-production intent as abstract mathematical data in the Intermediate Representation (IR). It stores the *concept* of an acoustic space, guaranteeing that a cinematic, heavily-processed track will render perfectly a century from now, regardless of the underlying physical audio hardware.
+
+---
+
+## G.2 The Internal Bus Protocol (`bus://`)
+
+The Schaefferian Engine (`style=concrete`) is expanded to support internal, real-time live audio buffering alongside external static files.
+
+### G.2.1 Syntax and Routing
+A compiler **MUST** accept the `bus://` URI schema within a `concrete` definition block. 
+*   `src="bus://master"`: Captures the entire global mix output.
+*   `src="bus://[staff_id]"`: Captures the isolated post-fader audio output of a specific track (e.g., `bus://pno`).
+
+**Example:**
+```tenuto
+def live_chop "Glitch Bus" style=concrete src="bus://pno" map=@{ buffer: [0s, 2s] }
+```
+
+### G.2.2 The "No Circular Dependency" Guarantee
+In traditional compilers, loopbacks create fatal infinite loops. Tenuto avoids this by leveraging its **Layered IR**. 
+1. The Tenuto IR mathematically evaluates the timeline and sets an abstract marker: *"At tick 15360, trigger `live_chop`, slice its buffer into 8 pieces, and reverse them."*
+2. The compiler **SHALL NOT** attempt to render this audio internally. 
+3. It passes the timeline to the Transport Layer (OSC / Wasm). The Physical Audio Backend (SuperCollider / Web Audio API) dynamically handles the live RAM buffering and execution during actual playback.
+
+---
+
+## G.3 Spatial Audio Primitives
+
+Tenuto transcends the archaic limitations of MIDI `CC 10` (Pan) by introducing native, high-resolution Spatial Audio modifiers. These evaluate to mathematically exact trajectories across the absolute timeline.
+
+### G.3.1 Stereo Vector Panning (`.pan`)
+**Syntax:** `.pan([Start, End], "Curve")`
+*   Values range from `-1.0` (Hard Left) to `1.0` (Hard Right).
+*   **Execution:** `c4:1.pan([-1.0, 1.0], "linear")` instructs the execution environment to smoothly sweep the audio from the left speaker to the right speaker over exactly one whole note.
+
+### G.3.2 3D Ambisonic Orbiting (`.orbit`)
+For Dolby Atmos, VR spatial audio, and ambisonic arrays, Tenuto introduces a 3D coordinate abstraction.
+**Syntax:** `.orbit(Radius, Velocity_Hz)`
+*   **Execution:** `s:4.orbit(5.0, 0.5)` draws an invisible control lane instructing the physical backend to rotate the audio source around the listener at a distance of 5 meters, completing half a revolution per second ($0.5$ Hz), lasting for one quarter note.
+
+---
+
+## G.4 Abstract DSP Effect Chains (`.fx`)
+
+To ensure absolute archival safety, Tenuto **FORBIDS** the hardcoding of proprietary plugin names (e.g., *FabFilter Pro-Q*). Instead, the language standardizes an abstract dictionary of universal acoustic phenomenon.
+
+### G.4.1 The Standard FX Lexicon
+Compliant compilers **MUST** support the following abstract FX targets: `reverb`, `delay`, `distort`, `chorus`, `filter_lp`, `filter_hp`.
+
+### G.4.2 Syntax and Map Arguments
+Effects are chained to events or invisible Spacers (`s`) using the Map Sigil `@{}`.
+**Syntax:** `Event.fx(Type, @{ parameters })`
+```tenuto
+%% Applies a massive 90% wet 4-second reverb to a single piano chord
+[c3 g3 c4]:1.fx(reverb, @{ mix: 0.90, decay: 4s })
+```
+
+---
+
+## G.5 Execution and Demarcation (The Layered Hand-off)
+
+Addendum G heavily populates the IR with unprintable physics. The Tenuto runtime **MUST** enforce the **Visual-Acoustic Demarcation Pass** before emission.
+
+1. **The Visual Output (MusicXML/TEAS):** The engraving engine actively hunts for `.pan`, `.orbit`, and `.fx`. It aggressively **PRUNES** these attributes from the AST. A note with a complex 3D orbit and delay line will print on the sheet music as a perfectly standard, clean quarter note.
+2. **The Web Audio Output (Wasm):** The web runtime translates `.fx(reverb)` into a native `ConvolverNode`, `.pan` into a `StereoPannerNode`, and `bus://` into a live `MediaStreamAudioDestinationNode`.
+3. **The Pro Audio Output (TEDP/OSC):** The daemon packages the exact float trajectories of the effects into `/tenuto/fx` and `/tenuto/spatial` OSC bundles, transmitting them ahead of the execution horizon to SuperCollider or Ableton Live.
+
+---
+
+## G.6 Reference Implementation: The Avant-Garde Coda
+
+This example demonstrates the extreme power of Addendum G. We take the final chord of a traditional orchestral piece and, entirely through text, route it into a live RAM buffer, shatter it into 16th notes, hard-pan the fragments, and wash the master bus in infinite reverb.
+
+```tenuto
+tenuto "3.0" {
+  meta @{ title: "Rhapsody - The Shattered Coda", tempo: 60, time: "4/4" }
+
+  %% 1. Standard Acoustic Physics
+  def pno "Piano" style=standard patch="gm_piano"
+  def sub "Deep Sine" style=synth cut_group=1
+
+  %% 2. Addendum G: The Post-Production Engines
+  %% We set up a concrete sampler that listens LIVE to the Piano track!
+  def glitch "Resampler" style=concrete src="bus://pno" map=@{ capture: [0s, 4s] }
+  
+  %% We set up a master bus purely to automate the global reverb tail.
+  def master "Master FX" style=concrete src="bus://master"
+
+  measure 80 {
+    pno: <[
+      v1:[eb1 bb1 eb2 g2 bb2 eb3]:1.ffff.letring |
+      v2: s:1.ped | 
+    ]>
+
+    sub: 
+      %% Plunges the sub-bass into sub-sonic frequencies over 4 beats
+      eb1:1.glide(4s) eb0:1 |
+
+    glitch: 
+      %% Mathematically chops the live piano resonance into 16 fragments,
+      %% reverses every other slice, and sweeps them violently from Left to Right.
+      capture:1.slice(16).reverse.pan([-1.0, 1.0], "linear") |
+
+    master:
+      %% Action Notation: An invisible spacer applies an expanding 
+      %% reverb to the entire system, fading into the void.
+      s:1.fx(reverb, @{ mix: [0.0, 1.0], decay: 8s }) |
+  }
+}
+```
