@@ -1,9 +1,6 @@
-
-
-
 # Tenuto 3.0: The Universal Language for Music and Audio
 
-**What LLVM did to software engineering and Mermaid did for diagrams, Tenuto does for music.**
+**What LLVM did for software engineering and Mermaid did for diagrams, Tenuto does for music.**
 
 Tenuto is a declarative, domain‑specific language (DSL) that unifies classical music notation and modern digital signal processing (DSP) into a single, token‑efficient text format. Built on a mathematically rigorous architecture, Tenuto acts as a universal logic layer: you write the musical intent once, and the compiler can natively render it as pixel-perfect sheet music, absolute MIDI data, real‑time synthesis instructions, or native browser audio. 
 
@@ -20,6 +17,14 @@ Tenuto solves these problems by providing a **semantic, archival‑safe, and edi
 
 ---
 
+## 🤖 The AI Catalyst: Overcoming the Perceptual Gap
+Large Language Models (LLMs) possess immense innate power for pattern recognition and latent-space mapping, allowing them to extract the "fossilized" structural DNA of a composition. However, they inherently suffer from **polyphonic and temporal blindness**. Without sensory auditory awareness, they hallucinate math and conflate layered timelines. 
+
+**Tenuto is the catalyst that unlocks true AI musical expertise.**
+If an LLM attempts to generate music using XML, it wastes its entire context window explicitly declaring redundant tags, destroying its ability to reason about macro-level structures. By forcing the AI to communicate through Tenuto's highly constrained, token-efficient scaffolding, the LLM's raw computational power is safely channeled into perfect acoustic reality.
+
+---
+
 ## 🌌 The Scope of the Tenuto Ecosystem
 Tenuto is not just a syntax; it is an entire suite of interrelated architectures designed to govern the future of digital audio.
 
@@ -33,8 +38,8 @@ Tenuto's compiler (`tenutoc`) doesn't just parse notes; it dynamically routes te
 *   🌊 `style=concrete`: The Schaefferian Model. Maps raw audio buffer slices to alphanumeric text. Applies `.slice(N)` granular chopping and `.stretch` phase-vocoding directly from the text timeline.
 
 ### 2. Tenuto Studio Architecture (TSA) & Generative Ergonomics
-Tenuto was explicitly engineered to be the ultimate target language for Large Language Models (LLMs) and Agentic workflows.
-*   **Token-Efficient "Sticky State":** A stateful cursor persists attributes (duration, octave, velocity) until explicitly mutated. This compresses data by up to 90%, averaging just **15-25 tokens per measure**.
+Tenuto was explicitly engineered to be the ultimate target language for Agentic workflows.
+*   **Token-Efficiency (Sticky State):** A stateful cursor persists attributes (duration, octave, velocity) until explicitly mutated. This compresses data by up to 90%, averaging just **15-25 tokens per measure**.
 *   **Agentic REPL & JSON Diagnostics:** If an AI hallucinates mathematically invalid code, the runtime does not crash. It returns a structured JSON payload detailing the mathematical deficit, allowing the LLM to autonomously self-correct.
 *   **Auto-Padding Polyphony:** The compiler features a fail-safe that intercepts broken multi-voice math, dynamically injecting invisible rests to balance the grid and preserve the compile process.
 
@@ -74,29 +79,6 @@ The `tenutoc` compiler transforms a Tenuto source file into absolute‑time inst
 
 ```mermaid
 graph TD
-    subgraph Workspace [1. Authorship & Assets]
-        Composer[Human / AI Composer] -->|Writes Logic & Pointers| Source[(score.ten)]
-        Source -.->|src: amen.wav| Samples[(Audio Samples .wav)]
-        Source -.->|src: plugin://ai| Plugins((AI Generative URIs))
-    end
-
-    subgraph Compiler[2. Compiler: tenutoc]
-        Source --> Parse[Lexer & LL1 AST Parser]
-        Parse --> AssetMgr{Asset Manager & Buffer}
-        Samples & Plugins -->|Loads into RAM| AssetMgr
-        AssetMgr --> Unroller[Graph Unroller & Macro Expansion]
-        Unroller -->|Evaluates Rational Math| IR[Absolute Timeline IR]
-    end
-
-    subgraph Execution [3. Execution Environment]
-        IR --> Vis[Visual Engine] --> XML[MusicXML 4.0 / SVG / TEAS]
-        IR --> AudioRouter{Visual-Acoustic Demarcation}
-        AudioRouter -->|OSC / High-Res MIDI 2.0| ProAudio[[SuperCollider / DAWs]]
-        AudioRouter -->|Wasm Target| WebRuntime((Web Audio API / HTML Element))
-    end
-```
-```mermaid
-graph TD
     %% Styling Definitions
     classDef layer1 fill:#0984e3,stroke:#fff,stroke-width:2px,color:#fff;
     classDef layer2 fill:#2d3436,stroke:#00b894,stroke-width:4px,color:#fff;
@@ -113,7 +95,6 @@ graph TD
 
     %% LAYER 2: NETWORK (THE NARROW WAIST)
     subgraph L2["Layer 2: Network (The Narrow Waist)"]
-        %% Changed from a diamond {} to a rounded rectangle () to fix text clipping
         IR("<b>Tenuto Universal IR</b><br/><i>Strict Ontological Separation<br/>Rational Temporal Engine<br/>(0.00% Quantization Drift)</i>"):::layer2
     end
 
@@ -149,6 +130,7 @@ graph TD
     T2 -->|Locked Downbeats| P1
     T3 -->|Pixel-Perfect Vectors| P3
 ```
+
 ---
 
 ## 💻 Writing Tenuto (Syntax Example)
@@ -171,13 +153,14 @@ tenuto "3.0" {
 
   measure 1-4 {
     lh: <[ 
-      v1: eb1:2.ff [bb1 eb2 g2]:2 | bb0:2[f1 bb d2]:2 | 
+      v1: eb1:2.ff[bb1 eb2 g2]:2 | bb0:2[f1 bb d2]:2 | 
       %% DECOUPLED CONTROL LANE: Press the sustain pedal for a whole note, 4 times.
       pedal: down:1 * 4 | 
     ]>
     rh: 
-      %% RELATIVE PITCH: Octaves are automatically calculated based on proximity![eb4 g bb eb5]:4.marc eb5:32 f g ab bb c d eb[g bb eb g]:2.marc |
-      ([bb4 d5 f bb]:8 [c eb ab c] [d f bb d]):3/2 [ab c eb ab]:2.pull(15ms) |
+      %% RELATIVE PITCH: Octaves are automatically calculated based on proximity!
+      [eb4 g bb eb5]:4.marc eb5:32 f g ab bb c d eb [g bb eb g]:2.marc |
+      ([bb4 d5 f bb]:8 [c eb ab c] [d f bb d]):3/2[ab c eb ab]:2.pull(15ms) |
     
     orch: 
       %% EUCLIDEAN TOPOLOGY: Dynamically distribute 5 snare hits across 8 subdivisions.
@@ -229,7 +212,7 @@ Tenuto is an open standard and an open‑source project. We are actively seeking
 
 - [Read the Full v3.0 Specification](https://github.com/alec-borman/TenutoNotationLanguage/blob/main/docs/SPEC.md)
 - [Join the Discussions](https://github.com/alec-borman/TenutoNotationLanguage/discussions)
-- [Report an Issue](https://github.com/alec-borman/TenutoNotationLanguage/issues)
+-[Report an Issue](https://github.com/alec-borman/TenutoNotationLanguage/issues)
 
 **License:** MIT
 
