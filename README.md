@@ -53,9 +53,7 @@ npm run dev
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
-## License
 
-[Add License Information Here]
 
 ## Addendum: Monetization & Sustainability
 
