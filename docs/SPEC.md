@@ -1606,3 +1606,88 @@ tenuto "3.0" {
   }
 }
 ```
+
+# Addendum H: The Theatrical Orchestration Layer
+**Version:** 1.0 (Integration with Tenuto 3.0.1)  
+**Status:** Normative / Final  
+**Classification:** Real-Time Network Orchestration  
+
+## H.1 Architectural Objective: The End of Reactive Latency
+Legacy show control is **reactive**: a trigger is sent, and the hardware responds as quickly as its buffer allows. This results in "inter-system smear," where lighting, lasers, and audio drift by 5–50ms depending on network congestion.
+
+**Addendum H** mandates a **Predictive Execution Model**. By utilizing Time-Sensitive Networking (TSN) and Look-Ahead Scheduling, the `tenutod` daemon delegates the *timing* responsibility to the hardware's own clock, ensuring that the physical emission of photons (lights/lasers) and phonons (audio) is phase-aligned to a single, global Grandmaster clock.
+
+---
+
+## H.2 The Deterministic Network (IEEE 802.1 TSN)
+A compliant Tenuto Stage environment must utilize a network topology that supports the following three pillars of **Time-Sensitive Networking**:
+
+### H.2.1 Temporal Synchronization (IEEE 802.1AS / gPTP)
+* **The Mandate:** The `tenutod` daemon acts as the **PTP Grandmaster** or syncs to an external high-stability clock (e.g., GPS-disciplined oscillator).
+* **The Resolution:** Every node on the network (Switch, Lighting Console, Laser Server) MUST maintain a synchronized clock with a deviation of less than **1 microsecond**.
+* **The Result:** "Zero-drift" performance over indefinite durations.
+
+### H.2.2 The Time-Aware Shaper (IEEE 802.1Qbv)
+* **Logic:** Stage networks often collapse when a media server sends a 4K video file, flooding the buffers and delaying a critical DMX "On" packet.
+* **Implementation:** Tenuto utilizes **Gate Control Lists (GCL)**. Network switches are instructed to "close the gate" to background traffic (video/management) during specific micro-windows reserved exclusively for **Control Stream** packets (sACN/OSC).
+
+---
+
+## H.3 Protocol Delegation Models
+
+### H.3.1 style=sacn (ANSI E1.31 Streaming ACN)
+For high-density lighting (Moving heads, pixel maps, stadium washes).
+* **Multicast Mandate:** `tenutod` MUST utilize Multicast addressing to prevent broadcast storms. 
+* **Look-ahead Logic:** DMX frames are calculated by `tenutoc` and buffered by `tenutod`. Each packet is transmitted with an sACN **Sequence Number** and an optional **OSC NTP Timetag** for hardware that supports buffered execution.
+* **Efficiency:** Uses IGMP Snooping to ensure a 50-Universe show doesn't throttle a single-universe node.
+
+### H.3.2 style=fb4 (Networked Laser Integration)
+For direct control of Pangolin FB4 or similar networked laser media nodes.
+* **Geometric Mapping:** Spatial `(x, y)` data in the `.ten` file is translated into 16-bit galvanometer coordinates.
+* **Curve Interpolation:** `tenutod` performs JIT (Just-In-Time) Bezier interpolation to ensure laser paths are smooth, even when the rational grid density is low.
+
+---
+
+## H.4 Language Extensions & Syntax
+
+### H.4.1 Hardware Attribute Stacking
+Lighting and Lasers support specialized attribute chaining.
+
+| Attribute | Effect | Parameter |
+| :--- | :--- | :--- |
+| `.rgb()` | Color assignment | Hex string or `@RGB` object |
+| `.strobe()` | Phase-locked oscillation | Frequency in Hz |
+| `.tilt() / .pan()`| Physical movement | Angle in degrees or `[start, end]` array |
+| `.dim()` | Intensity | Percentage (0-100%) |
+
+### H.4.2 The "Panic" Safety Protocol
+Given the high-energy nature of lasers and pyrotechnics, Addendum H introduces the **Global Panic State**.
+* **Command:** `panic`
+* **Behavior:** If `tenutod` loses its heartbeat with the `tenutoc` compiler or the gPTP Grandmaster, it MUST immediately broadcast:
+    1.  `sACN Universe Priority 0` (Blackout).
+    2.  `OSC /laser/stop` (Shutter close).
+    3.  `WebAudio masterGain.ramp(0, 10ms)`.
+
+---
+
+## H.5 Reference Example: The Unified Drop
+This snippet demonstrates the simultaneous execution of the three layers (Logic, Audio, Physics).
+
+```tenuto
+measure 128 {
+  %% 1. Logic: Macro for a bass descent
+  bass: $drop_sequence:1.fx("distortion", 0.5) |
+
+  %% 2. Theatrical: Stadium strobe phase-locked to the 16th note grid
+  stadium_rig: s:1.rgb("#FFFFFF").strobe(16).tilt([0, 90], "exp") |
+
+  %% 3. Spatial: Laser fan sweep using Kurbo-derived Bezier logic
+  main_laser: (fan_geometry):1.rgb("#0000FF").orbit(180, 2) |
+}
+```
+
+---
+
+## H.6 Implementation Status: Phase 3 Ready
+This addendum is considered **Final**. The `tenutod` Rust implementation shall follow the **Asynchronous Packet Pacing** model, ensuring that network hardware buffers are filled exactly **50ms** ahead of the gPTP execution deadline.
+
