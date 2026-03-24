@@ -1691,3 +1691,74 @@ measure 128 {
 ## H.6 Implementation Status: Phase 3 Ready
 This addendum is considered **Final**. The `tenutod` Rust implementation shall follow the **Asynchronous Packet Pacing** model, ensuring that network hardware buffers are filled exactly **50ms** ahead of the gPTP execution deadline.
 
+# Addendum I: Codebase Indexing & AI-Assisted Orchestration (The RAG Blueprint)
+
+**Version:** 1.0 (Extension to Tenuto 3.0.1)  
+**Status:** Normative / Final  
+**Scope:** AST-Aware Semantic Chunking, Multi-Dimensional Metadata Tagging, and Retrieval-Augmented Generation (RAG) for Large-Scale AI Orchestration.
+
+## I.1 Architectural Philosophy: Scaling the Skyscraper
+As a Tenuto 3.0 implementation matures toward a "System of Record" for music, the underlying codebase (including the Rust compiler, Wasm runtime, and WebGL/WebAudio engines) inevitably expands beyond the reliable "lost-in-the-middle" thresholds of standard LLM context windows. To maintain 10x development velocity at a scale of **50,000+ lines of code**, the environment **MUST** move from raw file-dumping to a **Domain-Aware Retrieval-Augmented Generation (RAG)** system.
+
+Addendum I formalizes the protocol for indexing the Tenuto codebase, ensuring that an AI collaborator can surgically retrieve the "Narrow Waist" compiler logic without being distracted by peripheral UI or visual scaffolding.
+
+---
+
+## I.2 Semantic Chunking & AST-Aware Vectorization
+Traditional RAG systems utilize arbitrary character counts for chunking, which results in "Logic Fragmentation." A compliant Tenuto Indexer **MUST** utilize **AST-Aware Chunking**.
+
+### I.2.1 Tree-Sitter Integration
+The indexer **SHOULD** utilize a **Tree-sitter** parser for Rust and TypeScript to identify the fundamental logical boundaries of the code. 
+* **The Rule of Atomic Logic:** A "Chunk" **MUST** represent a complete semantic unit—such as a single `struct`, an `impl` block, a `class`, or a top-level `function`.
+* **Overlap Constraint:** To preserve local variable context, chunks **SHOULD** include a 10% line-overlap with adjacent logical blocks.
+
+### I.2.2 Embedding Dimensionality
+Code chunks **MUST** be vectorized using high-dimensional embedding models (e.g., `text-embedding-004`). The resulting vectors represent the "Musical and Algorithmic Intent" of the code in $n$-dimensional space, allowing the AI to find the "Pitch-Bend Logic" even if the specific variable names change.
+
+---
+
+## I.3 Domain-Specific Metadata Tagging
+To prevent "Domain Contamination" (where the AI confuses WebGL shader math with Rust AST logic), the indexer **MUST** apply a multi-dimensional metadata matrix to every vector.
+
+| Metadata Key | Expected Value | Purpose |
+| :--- | :--- | :--- |
+| `domain` | `compiler` \| `audio` \| `visual` \| `infra` | Filters the search space to a specific architectural layer. |
+| `criticality` | `high` \| `medium` \| `low` | Prioritizes "Narrow Waist" logic (e.g., `ir.rs`) over UI components. |
+| `language` | `rust` \| `typescript` \| `wgsl` \| `tenuto` | Ensures syntax-specific retrieval. |
+| `file_path` | String (Full URI) | Provides the absolute reference for the AI to "Write" back to. |
+
+
+
+---
+
+## I.4 The Retrieval-Augmented Generation (RAG) Pipeline
+The Tenuto Orchestrator **SHALL** execute a three-stage retrieval process whenever a developer or agent initiates a code-level query:
+
+1. **Semantic Query Expansion:** The user’s natural language prompt (e.g., *"How do we handle dot-chained articulations?"*) is expanded into a technical query: *"LL(1) parser attribute chaining logic dot-notation"*.
+2. **Filtered Vector Search:** The system executes an $O(\log n)$ similarity search against the local vector database (e.g., **LanceDB**), restricted by the `domain:compiler` metadata tag.
+3. **Context Injection:** The top $K$ most relevant code chunks are injected into the LLM's System Prompt, prepended with a "Contextual Map" explaining how these chunks relate to the broader `src/` hierarchy.
+
+---
+
+## I.5 Hybrid Context Management
+A compliant Tenuto Studio environment **MUST** distinguish between **Exploratory Research** and **Surgical Refactoring**.
+
+### I.5.1 The Exploration Threshold
+For broad queries (e.g., *"Find all instances where we use the Euclidean algorithm"*), the system **SHALL** use the **RAG Pipeline**. This minimizes token consumption and latency by feeding only the relevant fragments to the AI.
+
+### I.5.2 The Refactoring Threshold
+For surgical, cross-file refactoring (e.g., *"Change the return type of the IR unroller across the entire compiler"*), the system **SHALL** bypass RAG and utilize **Full Context Injection**. It loads every file tagged with `domain:compiler` into the 1M+ token window, ensuring the AI has total visibility into the "Narrow Waist" to prevent breaking changes.
+
+---
+
+## I.6 Implementation Reference: The Tenuto Indexer
+Compliant Tenuto development environments **SHOULD** include a local CLI tool for background indexing.
+
+**Usage:** `tenutoc --index ./src --db ./vectors.db`
+
+* **Database Recommendation:** **LanceDB** is the normative target for local-first storage, as it allows the vector index to reside in the same Dickinson-based environment as the source code, requiring no external cloud API for retrieval.
+* **Update Policy:** The indexer **SHOULD** be triggered on every `git commit` to ensure the AI's "Mental Model" of the skyscraper remains mathematically current.
+
+---
+
+**Addendum Status:** This blueprint ensures that the "Narrow Waist" of Tenuto remains accessible and maintainable even as the project scales into a multi-million line production suite. You have built the skyscraper; Addendum I provides the high-speed elevator for the AI.
