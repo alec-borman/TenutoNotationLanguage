@@ -1762,3 +1762,72 @@ Compliant Tenuto development environments **SHOULD** include a local CLI tool fo
 ---
 
 **Addendum Status:** This blueprint ensures that the "Narrow Waist" of Tenuto remains accessible and maintainable even as the project scales into a multi-million line production suite. You have built the skyscraper; Addendum I provides the high-speed elevator for the AI.
+
+
+
+# Addendum J: The Bi-Directional Projectional DAW (The Visual Mutator)
+
+**Version:** 1.0 (Extension to Tenuto 3.0.1)  
+**Status:** Normative / Final  
+**Scope:** Projectional Editing, WebGL Timeline Rendering, Semantic Track Grouping, and Bi-Directional AST Mutation.
+
+## J.1 Architectural Philosophy: Projectional Editing
+
+Traditional Digital Audio Workstations (DAWs) inextricably link visual GUI coordinates to a proprietary, binary state memory; dragging a block with a mouse fundamentally mutates a hidden project file. 
+
+**Addendum J introduces Projectional Editing to the Tenuto ecosystem.** The DAW interface **MUST NOT** possess its own structural state. The Tenuto source text remains the absolute, singular Source of Truth. The DAW interface is a **Bi-Directional Projection**. It renders the Intermediate Representation (IR) onto a WebGL/Canvas grid, and it translates human input (mouse drags, resizes, clicks) directly into deterministic text-mutations within the source code editor. 
+
+
+
+When a graphical mutation occurs, the editor updates the text, triggering a rapid re-compilation of the AST, which instantaneously redraws the GUI. The code drives the GUI, even when the GUI initiates the change.
+
+---
+
+## J.2 Semantic Stratification & Visual Grouping
+
+The DAW View **MUST** derive its vertical track lanes directly from the Phase 2 Configuration (`def` blocks).
+
+### J.2.1 Track Generation
+1. **Lane Instantiation:** For every unique `def` identifier in the Global Symbol Table, the renderer **MUST** generate a dedicated horizontal track lane.
+2. **Semantic Grouping:** If instruments are wrapped in a `group "Name" { ... }` block, the renderer **SHOULD** visually encapsulate these lanes into a collapsible folder track.
+3. **Micro-Mapping:** Within a track lane, `style=standard` and `style=synth` utilize the Y-axis as a localized piano roll (derived from `pitch_midi` 0-127). Tracks defined as `style=concrete` and `style=grid` utilize a flattened Y-axis, rendering blocks purely based on temporal X-coordinates.
+
+---
+
+## J.3 Topological Mutation Algorithms (The Interaction Layer)
+
+Compliant Projectional Interfaces **MUST** map graphical interactions to strict text-replacement algorithms utilizing the `line` and `column` origin data attached to every `AtomicEvent`.
+
+### J.3.1 Duration Mutation (X-Axis Resizing)
+When a user graphically drags the right edge of an event block to extend or compress its length:
+* **The Algorithm:** The mutator targets the exact `Duration` token (e.g., `:4`) associated with the origin `AtomicEvent`.
+* **Execution:** It algebraically calculates the new rational duration based on the pixel-delta and the active PPQ grid. It executes a string replacement in the source text (e.g., replacing `:4` with `:8.`).
+
+### J.3.2 Pitch Mutation (Y-Axis Dragging)
+When a user drags an event block vertically within a `style=standard` or `style=synth` lane:
+* **The Algorithm:** The mutator targets the `PitchLit` token (e.g., `c4`).
+* **Execution:** It maps the new vertical pixel coordinate to a target MIDI integer. It invokes the Inverse Spelling Engine to translate the integer back into Scientific Pitch Notation (preferring the active Key Signature), and executes a text replacement (e.g., `c4` becomes `eb4`).
+
+### J.3.3 Temporal Shifting (X-Axis Dragging)
+Moving an event horizontally across the timeline requires topological awareness to maintain textual flow without corrupting adjacent logic.
+
+* **Grid-Snapped Shifting:** If the user drags a note later in time by exactly one 8th note, the mutator **SHALL** inject a literal Rest token (`r:8`) directly preceding the target event in the source code, physically pushing the logic down the timeline.
+* **Micro-Timing Shifting (Off-Grid):** If the user bypasses the visual snap-grid (e.g., holding `Alt`/`Option` while dragging), the mutator **SHALL NOT** inject rests. Instead, it calculates the absolute microsecond delta and appends or modifies the `.push(TimeVal)` or `.pull(TimeVal)` attribute on the target token (e.g., `c4:4` becomes `c4:4.pull(15ms)`).
+
+### J.3.4 Attribute Injection (Context Menus)
+Right-clicking a block or drawing automation curves **MUST** append dot-chained modifiers to the text.
+* *Example:* Selecting "Staccato" from a visual dropdown locates the note's text bounds and physically types `.stacc` at the end of the token.
+
+---
+
+## J.4 Implementation Constraints & Safeties
+
+To guarantee stability during bi-directional communication:
+
+### J.4.1 Lexical Lock (The AST Guard)
+If a user attempts a graphical mutation on an event generated by a `$macro` expansion, the mutator **MUST** reject the interaction and issue a visual lock. Macros define 1-to-many relationships; dragging a macro-generated note cannot deterministically mutate the original macro definition without unpredictable cascading effects. The GUI must flag macro-generated blocks as *Read-Only*.
+
+### J.4.2 Debounced Commits
+To prevent overwhelming the Language Server Protocol (LSP) and the Text Editor (e.g., Monaco) during continuous mouse dragging, the Projectional Interface **SHOULD** utilize `requestAnimationFrame` for localized visual updates, but **MUST** debounce the actual text-mutation commit to the editor buffer until the `onMouseUp` event fires.
+
+**Addendum Status:** By converting the DAW from an opaque binary editor into a transparent, text-mutating projection, Tenuto achieves absolute parity between programmers and traditional music producers.
