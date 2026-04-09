@@ -1866,3 +1866,81 @@ Because the Teleportation Execution Engine strictly governs the Tenuto architect
 While Tenuto acts as the crucible for Tela's genesis phase, the `.tela` protocol is fundamentally **domain-agnostic**. A drum beat in Tenuto, a visual particle effect in Gesso, and a paragraph of text in Codice all compile down into the exact same 1024-dimension mathematical format. 
 
 Once Tenuto achieves 100% Track B (Rust) parity and full structural realization, the Skybridge will be formalized into a clean, public API. The `telac` Embedding Compiler will be decoupled and ultimately prepared for its own fully standalone release. Tenuto will remain its flagship audio projection, proving the immortality of the protocol for all future domain applications.
+### Addendum L: Professional Interface Constraints & Advanced Projectional Ergonomics
+
+**Version:** 1.0 (Extension to Tenuto 3.0.1)
+**Status:** Normative / Final
+**Scope:** Enterprise UI Layouts, Playback State Transitions, Deterministic Interaction Algorithms, and Keyboard Modifiers.
+
+#### L.1 Architectural Philosophy: The Stateless Enterprise DAW
+To build a professional, "$1000-per-seat" Digital Audio Workstation on top of the Tenuto compilation engine, the application **MUST** strictly adhere to the "Narrow Waist" layered architecture. The graphical user interface **MUST NOT** possess its own hidden structural state or binary project files. The DAW interface operates entirely as a **Bi-Directional Projection**. Every graphical interaction must execute a deterministic algorithm that instantly mutates the underlying `.ten` text source code, which then drives the WebGL/Canvas redraw. 
+
+--------------------------------------------------------------------------------
+
+#### L.2 Core Geometry & Viewport Layout
+The interface **SHALL** be divided into two primary projectional spaces: a declarative text editor (e.g., Monaco) and a WebGL/Canvas DAW View.
+
+##### L.2.1 Track & Folder Generation
+*   **Track Instantiation:** For every unique `def` identifier registered in the Global Symbol Table during Phase 2 Configuration, the renderer **MUST** generate a dedicated horizontal track lane.
+*   **Semantic Folders:** If instrument definitions are wrapped in a `group "Name" { ... }` block, the GUI **SHOULD** visually encapsulate these individual lanes into a collapsible folder track.
+
+##### L.2.2 Y-Axis Micro-Mapping
+The vertical axis of a track lane is strictly dictated by its `style` attribute:
+*   **Acoustic & Synth Lanes:** Tracks operating under `style=standard` or `style=synth` **MUST** utilize the Y-axis as a localized piano roll, mapping pixel coordinates to MIDI integers 0-127.
+*   **Temporal & Grid Lanes:** Tracks defined as `style=concrete` (sampling) or `style=grid` (percussion) **MUST** utilize a flattened Y-axis, rendering blocks purely based on temporal X-coordinates.
+
+--------------------------------------------------------------------------------
+
+#### L.3 Topological Mutation Algorithms (Mouse Interactions)
+Visual interactions **MUST** execute strict text-replacement algorithms utilizing the line and column origin data attached to every `AtomicEvent`.
+
+##### L.3.1 Duration Mutation (X-Axis Resizing)
+*   **Trigger:** Dragging the right edge of an event block.
+*   **Algorithm:** The mutator targets the exact Duration token (e.g., `:4`). It algebraically calculates the new rational duration based on the pixel-delta against the active PPQ grid, and executes a string replacement in the source text (e.g., replacing `:4` with `:8.`).
+
+##### L.3.2 Pitch Mutation (Y-Axis Dragging)
+*   **Trigger:** Dragging an event block vertically in a standard or synth lane.
+*   **Algorithm:** The mutator maps the new vertical pixel coordinate to a target MIDI integer. It invokes the Inverse Spelling Engine to translate the integer back into Scientific Pitch Notation (preferring the active Key Signature), and executes a text replacement (e.g., `c4` becomes `eb4`).
+
+##### L.3.3 Temporal Shifting (X-Axis Dragging)
+*   **Trigger:** Moving an event horizontally across the grid.
+*   **Algorithm:** The mutator **SHALL** inject a literal Rest token (e.g., `r:8`) directly preceding the target event in the source code, physically pushing the logic down the timeline without breaking the rational measure constraints.
+
+##### L.3.4 Attribute Injection (Context Menus)
+*   **Trigger:** Right-clicking a visual block to open a dropdown menu.
+*   **Algorithm:** Selecting a modifier (e.g., "Staccato") locates the note's text bounds and physically types the corresponding dot-chained attribute (e.g., `.stacc`) at the end of the token.
+
+--------------------------------------------------------------------------------
+
+#### L.4 Keyboard Modifiers & Micro-Timing Shortcuts
+Professional interfaces must support off-grid "humanization" without corrupting the quantized sheet music layout.
+
+##### L.4.1 The Micro-Timing Override (Alt/Option Shift)
+*   **Trigger:** Holding the `Alt` or `Option` key while executing an X-Axis Drag.
+*   **Algorithm:** The GUI **MUST** bypass the visual snap-grid and suppress the injection of Rest tokens. Instead, it calculates the absolute microsecond or tick delta from the grid line and appends or modifies the `.push(TimeVal)` or `.pull(TimeVal)` attribute on the target token (e.g., `c4:4` mutates to `c4:4.pull(15ms)`).
+
+--------------------------------------------------------------------------------
+
+#### L.5 Playback Transitions & Visual Effects
+To provide fluid, 60 FPS visual feedback without overwhelming the compiler, the UI must intelligently decouple display effects from structural AST mutations.
+
+##### L.5.1 The Interpolated Playhead
+The application **MUST** calculate an exact X-coordinate interpolation for a moving vertical playhead line based on the current tick of the Web Audio context or Ableton Link phase.
+
+##### L.5.2 Active Note Highlighting
+*   **Execution:** The compiler embeds absolute Timeline ticks directly into the generated SVG or DOM elements as `data-tick` attributes. 
+*   **Visual Feedback:** When the active audio tick matches a `data-tick`, the JavaScript application **SHOULD** instantly toggle a CSS class (e.g., `.playing { fill: #FF0000; }`) on the graphical element. This highlights sounding notes in real-time without forcing a recalculation of the layout logic.
+
+##### L.5.3 Debounced Commits & Lexical Locks
+*   **Animation Smoothing:** To prevent overwhelming the Language Server Protocol (LSP) and the text editor buffer during continuous mouse dragging, the GUI **SHOULD** utilize `requestAnimationFrame` for smooth localized visual updates.
+*   **Commit Debouncing:** The interface **MUST** debounce the actual text-mutation commit to the editor buffer until the `onMouseUp` event fires.
+*   **Read-Only Locks:** If a user attempts to interact with an event generated by a `$macro` expansion, the mutator **MUST** reject the interaction and issue a visual lock, flagging the block as *Read-Only* to prevent unpredictable cascading effects on the 1-to-many macro relationship.
+
+--------------------------------------------------------------------------------
+
+#### L.6 Buttons, File Handling & Hardware Integration
+A fully compliant enterprise interface **MUST** expose controls that bridge the abstract `.ten` text file with external workflows.
+
+*   **Playback Translation:** A "Play" command **MUST** trigger the WebAssembly Wasm worker to compile the JSON Intermediate Representation (IR), routing the payload through the native browser Web Audio API.
+*   **Semantic Decompilation:** The UI **SHALL** provide file upload handling that intercepts raw `.mid` or `.musicxml` files, passing the byte arrays to the `tenuto-decompile` engine to algorithmically extract macros, tuplets, and stateful cursors back into Tenuto source code.
+*   **Universal Export:** The interface **SHOULD** provide instantaneous export targets for the compiled logic, allowing users to download perfectly quantized MIDI 1.0/2.0 files or MusicXML 4.0 layout scores.
